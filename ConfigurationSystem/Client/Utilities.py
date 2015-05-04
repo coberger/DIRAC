@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # Author : Andrei Tsaregorodtsev
 ########################################################################
 """
@@ -231,6 +230,8 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
             break
         if newCEType=='ARC-CE':
           newCEType = 'ARC'
+
+        newSubmissionMode = None
         if newCEType in ['ARC','CREAM']:
           newSubmissionMode = "Direct" 
         newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
@@ -241,7 +242,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         addToChangeSet( ( ceSection, 'SI00', si00, newsi00 ), changeSet )
         addToChangeSet( ( ceSection, 'CEType', ceType, newCEType ), changeSet )
         addToChangeSet( ( ceSection, 'MaxRAM', ram, newRAM ), changeSet )
-        if submissionMode == "Unknown":
+        if submissionMode == "Unknown" and newSubmissionMode:
           addToChangeSet( ( ceSection, 'SubmissionMode', submissionMode, newSubmissionMode ), changeSet )
   
         queues = ceInfo['Queues'].keys()

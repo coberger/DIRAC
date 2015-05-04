@@ -221,12 +221,10 @@ class StorageBase( object ):
     :param self: self reference
     :param str fileName: path on storage
     """
-    if fileName.startswith( '/' ):
-      # Assume full path is given, e.g. LFN
-      return self.getURL( fileName )
-    
     urlDict = dict( self.protocolParameters )
-    urlDict['Path'] = self.cwd
+    if not fileName.startswith( '/' ):
+      # Relative path is given
+      urlDict['Path'] = self.cwd
     result = pfnunparse( urlDict )
     if not result['OK']:
       return result
