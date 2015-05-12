@@ -1,0 +1,72 @@
+'''
+Created on May 7, 2015
+
+@author: Corentin Berger
+'''
+
+methodsArgs = {'isFile' :
+                  {'Required' : ['self', 'lfns', 'name'],
+                  'Default' : {'default': 'defIsFileArgsDefaultValue'} },
+              'isDirectory' :
+                  {'Required' : ['self', 'lfns'],
+                  'Default' : {'default': 'defIsDirectoryArgsDefaultValue'} }
+              }
+
+
+def extractArgs( name, argsPosition, *args, **kwargs ):
+  """ create a dict with the key and value of a decorate function"""
+  wantedArgs = ['lfns', 'srcSE', 'targetSE']
+
+  # print 'argsPosition %s args %s kwargs %s' % ( argsPosition, args, kwargs )
+
+  opArgs = dict.fromkeys( wantedArgs, None )
+  blobList = []
+  for i in range( len( argsPosition ) ):
+    a = argsPosition[i]
+    ainwanted = a in wantedArgs
+
+    if ainwanted:
+      if a is 'lfns':
+        opArgs[a] = getLFNSArgs( args[i] )
+      else :
+        opArgs[a] = args[i]
+    else:
+      if a is not 'self':
+        blobList.append( "%s = %s" % ( a, args[i] ) )
+
+  for key in kwargs:
+    blobList.append( "%s = %s" % ( key, kwargs[key] ) )
+
+  if blobList:
+    opArgs['blob'] = ','.join( blobList )
+  else:
+    opArgs['blob'] = None
+
+  opArgs['name'] = name
+  return opArgs
+
+
+def getArgsExecute( funcName, argsPosition, *args, **kwargs ):
+  opArgs = extractArgs( funcName, methodsArgs[funcName]['Required'] , *args, **kwargs )
+
+  return opArgs
+
+
+def getLFNSArgs( args ):
+  """ get  lfn(s) from args, args can be a string, a list or a dictionary
+      return a string with lfn's name separate by ','
+  """
+  # if args is a list
+  if isinstance( args , list ):
+    lfns = args
+
+  # if args is a dictionary
+  elif isinstance( args , dict ):
+    lfns = []
+    for el in args.keys() :
+      lfns .append( str( el ) )
+
+  else :
+    lfns = [args]
+
+  return lfns
