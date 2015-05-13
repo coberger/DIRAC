@@ -22,9 +22,10 @@ class DataLoggingClient( Client ):
 
   def insertSequence( self, sequence ):
     sequenceJSON = sequence.toJSON()
-    # print "BEFORE SENDING %s" % sequenceJSON['Value']
     if not sequenceJSON["OK"]:
+      print'error sequenceJSON bad'
       return sequenceJSON
+    print "BEFORE SENDING %s" % sequenceJSON['Value']
     sequenceJSON = sequenceJSON["Value"]
     res = self.testManager.insertSequence( sequenceJSON )
     # gLogger.error( 'res = ', res )

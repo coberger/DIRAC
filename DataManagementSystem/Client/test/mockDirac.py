@@ -10,6 +10,7 @@ from DIRAC.DataManagementSystem.Client.DataLoggingDecorator  import DataLoggingD
 
 import random
 from threading import Thread
+from time import sleep
 
 
 def splitIntoSuccFailed( lfns ):
@@ -121,6 +122,15 @@ class TestDataManager:
 
     return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
+
+  @DataLoggingDecorator( argsPosition = ['self', 'fileTuple' ], getArgsFunction = 'tuple' , \
+                          specialPosition = ['lfns', 'physicalFile', 'fileSize', 'targetSE', 'fileGuid', 'checksum' ] )
+  def registerFile( self, fileTuple, catalog = '' ):
+    s, f = splitIntoSuccFailed( fileTuple[0][0] )
+    # print 'suc %s fail %s' % ( s, f )
+    return S_OK( {'Successful' : s, 'Failed' : f} )
+
+
 class ClientA( Thread ):
 
   def __init__( self, lfn ):
@@ -129,47 +139,51 @@ class ClientA( Thread ):
 
   def doSomething( self ):
     dm = TestDataManager()
-    res = dm.replicateAndRegister( self.lfn, 'sourceSE', 'destSE', 1, protocol = 'toto' )
-    s = res['Value']['Successful']
-    f = res['Value']['Failed']
+#===============================================================================
+#     res = dm.replicateAndRegister( self.lfn, 'sourceSE', 'destSE', 1, protocol = 'toto' )
+#     s = res['Value']['Successful']
+#     f = res['Value']['Failed']
+#
+#     #===========================================================================
+#     # print "s : %s" % s
+#     # print "f : %s" % f
+#     #===========================================================================
+#
+#     res = TestStorageElement( 'sourceSE' ).getFileSize( self.lfn )
+#     #===========================================================================
+#     # print res
+#     #===========================================================================
+#===============================================================================
 
-    #===========================================================================
-    # print "s : %s" % s
-    # print "f : %s" % f
-    #===========================================================================
 
-    res = TestStorageElement( 'sourceSE' ).getFileSize( self.lfn )
-    #===========================================================================
-    # print res
-    #===========================================================================
+    fileTuple = [( 'M', 'destUrl', 150, 'destinationSE', 40, 108524789 ),
+                 ( 'TITI', 'targetURL', 7855, 'TargetSE', 14, 155 )]
+    dm.registerFile( fileTuple )
 
   def run( self ):
     self.doSomething()
 
 class ClientB( Thread ):
 
-  def __init__( self, lfn ):
+  def __init__( self ):
     Thread.__init__( self )
-    self.lfn = lfn
 
-  def doSomething( self ):
+
+  def doSomethingElse( self ):
     dm = TestDataManager()
-    res = dm.replicateAndRegister( self.lfn, 'sourceSE', 'destSE', 1, protocol = 'toto' )
+    res = dm.putAndRegister( [18], '/local/path/', 'destSE' )
     s = res['Value']['Successful']
     f = res['Value']['Failed']
-
     #===========================================================================
     # print "s : %s" % s
     # print "f : %s" % f
     #===========================================================================
 
-    res = TestStorageElement( 'sourceSE' ).getFileSize( self.lfn )
-    #===========================================================================
-    # print res
-    #===========================================================================
+    res = TestFileCatalog().getFileSize( s )
+    print res
 
   def run( self ):
-    self.doSomething()
+    self.doSomethingElse()
 
 
 
@@ -230,6 +244,7 @@ class ClientC( Thread ):
   def doSomethingElse( self ):
     test = FileCatalog()
     test.isDirectory( ['lfn1', 'lfn2'] )
+    sleep( 1 )
     test.isFile( ['lfn3', 'lfn4'], 'titi' )
 
   def run( self ):
@@ -237,16 +252,14 @@ class ClientC( Thread ):
 
 
 
-#===============================================================================
-# c1 = ClientA( ['A', 'B'] )
-# c2 = ClientB( [ 'C', 'D'] )
-# c3 = ClientA( ['A', 'B'] )
-# c4 = ClientB( [ 'C', 'D'] )
-# c5 = ClientA( ['A', 'B'] )
-# c6 = ClientB( [ 'C', 'D'] )
-# c7 = ClientA( ['A', 'B'] )
-# c8 = ClientB( [ 'C', 'D'] )
-#===============================================================================
+c1 = ClientA( ['A', 'B'] )
+c2 = ClientA( ['C', 'D'] )
+c3 = ClientA( ['A', 'B'] )
+c4 = ClientA( ['C', 'D'] )
+c5 = ClientA( ['A', 'B'] )
+c6 = ClientA( ['C', 'D'] )
+c7 = ClientA( ['A', 'B'] )
+c8 = ClientA( ['C', 'D'] )
 
 #===============================================================================
 # c1 = ClientB()
@@ -255,32 +268,66 @@ class ClientC( Thread ):
 # c4 = ClientB()
 #===============================================================================
 
-c1 = ClientC()
-c2 = ClientC()
-c3 = ClientC()
-c4 = ClientC()
-c5 = ClientC()
-c6 = ClientC()
-c7 = ClientC()
-c8 = ClientC()
+#===============================================================================
+# c1 = ClientC()
+# c2 = ClientC()
+# c3 = ClientC()
+# c4 = ClientC()
+# c5 = ClientC()
+# c6 = ClientC()
+# c7 = ClientC()
+# c8 = ClientC()
+# c9 = ClientC()
+# c10 = ClientC()
+# c11 = ClientC()
+# c12 = ClientC()
+# c13 = ClientC()
+# c14 = ClientC()
+# c15 = ClientC()
+# c16 = ClientC()
+#===============================================================================
 
 c1.start()
-c2.start()
-c3.start()
-c4.start()
-c5.start()
-c6.start()
-c7.start()
-c8.start()
+#===============================================================================
+# c2.start()
+# c3.start()
+# c4.start()
+# c5.start()
+# c6.start()
+# c7.start()
+# c8.start()
+#===============================================================================
+#===============================================================================
+# c9.start()
+# c10.start()
+# c11.start()
+# c12.start()
+# c13.start()
+# c14.start()
+# c15.start()
+# c16.start()
+#===============================================================================
 
 c1.join()
-c2.join()
-c3.join()
-c4.join()
-c5.join()
-c6.join()
-c7.join()
-c8.join()
+#===============================================================================
+# c2.join()
+# c3.join()
+# c4.join()
+# c5.join()
+# c6.join()
+# c7.join()
+#===============================================================================
+#===============================================================================
+# c8.join()
+# c9.join()
+# c10.join()
+# c11.join()
+# c12.join()
+# c13.join()
+# c14.join()
+# c15.join()
+# c16.join()
+#===============================================================================
 
 
  #==============================================================================

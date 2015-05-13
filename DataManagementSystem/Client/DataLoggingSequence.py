@@ -71,42 +71,62 @@ class DataLoggingSequence( object ) :
     return jsonData
 
 
-  def appendOperation( self, operationName, args ):
+  def appendOperation( self, args ):
     """
     append an operation into the stack
     :param self: self reference
-    :param operationName: name of the operation to append in the stack
+    :param args: dict with the args to create an operation
     """
+
     op = DataLoggingOperation( args )
     op.sequence = self
     self.operations.append( op )
     self.stack.append( op )
+    print 'append %s' % op.name
 
     return op
 
 
 
-  def popOperation( self ):
+  def popOperation( self, number ):
     """
     :param self: self reference
     Pop an operation from the stack
     """
+    operations = list()
     if len( self.stack ) != 1 :
-      self.stack[len( self.stack ) - 2].addChild( self.stack[len( self.stack ) - 1] )
+      if len( self.stack ) != number :
+        for i in range( number ):
+          self.stack[len( self.stack ) - number - 1 + i].addChild( self.stack[len( self.stack ) - 1] )
+          op = self.stack.pop()
+          operations.append( op )
+          print 'pop %s' % op.name
+      else:
+        for i in range( number ):
+          op = self.stack.pop()
+          operations.append( op )
+          print 'pop %s' % op.name
+    else :
+      op = self.stack.pop()
+      operations.append( op )
+      print 'pop %s' % op.name
 
-    res = self.stack.pop()
-
-    cpt = 0
-    for child in res.children :
-      child.order = cpt
-      cpt += 1
+    for operation in operations:
+      cpt = 0
+      for child in operation.children :
+        child.order = cpt
+        cpt += 1
 
     if len( self.stack ) == 0 :
+
+      print 'insert'
+      print self.operations
       client = DataLoggingClient()
       client.insertSequence( self )
       self.operations = list()
 
-    return res
+    return operations
+
 
   def setCaller( self, caller ):
     self.caller = DataLoggingCaller( caller )
