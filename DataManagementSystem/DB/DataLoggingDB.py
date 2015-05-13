@@ -112,6 +112,8 @@ class DataLoggingDB( object ):
     caller = self.putCaller( sequence.caller, session )
     sequence.caller = caller['Value']
 
+    print 'sequence opreations : %s' % sequence.operations
+
     for op in sequence.operations:
       for action in op.actions :
         res = self.putFile( action.file , session )

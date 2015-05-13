@@ -70,7 +70,7 @@ class DataLoggingOperation( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['ID', 'creationTime', "name", "caller", "lfn", "srcSE",
+    attrNames = ['ID', 'creationTime', "name", "caller", "files", "srcSE",
                  "targetSE", "blob", "parent_id", "sequence_id", "order"]
     jsonData = {}
 
