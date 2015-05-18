@@ -13,22 +13,21 @@ methodsArgs = {'isFile' :
               }
 
 
-def extractArgs( name, argsPosition , specialPosition, *args, **kwargs ):
+def extractArgs( argsPosition , specialPosition, *args, **kwargs ):
   """ create a dict with the key and value of a decorate function"""
-  wantedArgs = ['lfns', 'srcSE', 'targetSE']
+  wantedArgs = ['files', 'srcSE', 'targetSE']
 
 
   # print 'argsPosition %s  args %s kwargs %s ' % ( argsPosition, args, kwargs )
 
   opArgs = dict.fromkeys( wantedArgs, None )
-  del opArgs[ 'lfns' ]
   blobList = []
   for i in range( len( argsPosition ) ):
     a = argsPosition[i]
     ainwanted = a in wantedArgs
     if ainwanted:
       if a is 'lfns':
-        opArgs['files'] = getLFNSArgs( args[i] )
+        opArgs[a] = getLFNSArgs( args[i] )
       else :
         opArgs[a] = args[i]
     else:
@@ -43,13 +42,18 @@ def extractArgs( name, argsPosition , specialPosition, *args, **kwargs ):
   else:
     opArgs['blob'] = None
 
-  opArgs['name'] = name
 
-  return [opArgs]
+  actionArgs = []
+  for file in opArgs['files'] :
+    d = dict( opArgs )
+    d['files'] = file
+    actionArgs.append( d )
+
+  return actionArgs
 
 
-def getArgsExecute( funcName, argsPosition, *args, **kwargs ):
-  opArgs = extractArgs( funcName, methodsArgs[funcName]['Required'] , *args, **kwargs )
+def getArgsExecute( funcName, argsPosition, specialPosition, *args, **kwargs ):
+  opArgs = extractArgs( methodsArgs[funcName]['Required'] , *args, **kwargs )
   return opArgs
 
 

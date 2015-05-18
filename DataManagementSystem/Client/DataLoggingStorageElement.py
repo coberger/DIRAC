@@ -1,5 +1,5 @@
 '''
-Created on May 4, 2015
+Created on May 18, 2015
 
 @author: Corentin Berger
 '''
@@ -8,13 +8,13 @@ import json
 from DIRAC.DataManagementSystem.private.DataLoggingEncoder import DataLoggingEncoder
 from DIRAC import S_ERROR, S_OK
 
-class DataLoggingFile( object ):
+class DataLoggingStorageElement( object ):
 
   def __init__( self, name ):
     self.name = name
 
   def toJSON( self ):
-    """ Returns the JSON description string of the DataLoggingFile """
+    """ Returns the JSON description string of the DataLoggingStorageElement """
     try:
       jsonStr = json.dumps( self, cls = DataLoggingEncoder )
       return S_OK( jsonStr )
@@ -29,6 +29,7 @@ class DataLoggingFile( object ):
     jsonData = {}
 
     for attrName in attrNames :
+
       # ID might not be set since it is managed by SQLAlchemy
       if not hasattr( self, attrName ):
         continue

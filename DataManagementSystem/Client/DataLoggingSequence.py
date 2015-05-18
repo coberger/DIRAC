@@ -7,23 +7,23 @@ Created on May 4, 2015
 import json
 from DIRAC import S_ERROR, S_OK
 from DIRAC.DataManagementSystem.private.DataLoggingEncoder import DataLoggingEncoder
-from DIRAC.DataManagementSystem.Client.DataLoggingOperation import DataLoggingOperation
+from DIRAC.DataManagementSystem.Client.DataLoggingMethodCall import DataLoggingMethodCall
 from DIRAC.DataManagementSystem.Client.DataLoggingCaller import DataLoggingCaller
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 
 class DataLoggingSequence( object ) :
-  """ Describe a sequence, used to know sequence of operation"""
+  """ Describe a sequence, used to know sequence of MethodCall"""
 
   def __init__( self ):
     self.caller = None
     self.stack = list()
-    self.operations = list()
+    self.methodCalls = list()
 
 
 
   def toJSON( self ):
-    """ Returns the JSON description string of the Operation """
+    """ Returns the JSON description string of the Sequence """
     try:
       jsonStr = json.dumps( self, cls = DataLoggingEncoder , indent = 4 )
       return S_OK( jsonStr )
@@ -32,19 +32,19 @@ class DataLoggingSequence( object ) :
 
 
   @staticmethod
-  def fromJSON( operation, caller ):
+  def fromJSON( methodCall, caller ):
     seq = DataLoggingSequence()
     stack = list()
     seq.caller = caller
-    seq.operations = list()
+    seq.methodCalls = list()
 
     # depth first search
-    stack.append( operation )
+    stack.append( methodCall )
     while len( stack ) != 0 :
-      op = stack.pop()
-      op.sequence = seq
-      seq.operations.append( op )
-      for child in op.children :
+      mc = stack.pop()
+      mc.sequence = seq
+      seq.methodCalls.append( mc )
+      for child in mc.children :
         stack.append( child )
 
     return seq
@@ -65,67 +65,49 @@ class DataLoggingSequence( object ) :
 
       jsonData[attrName] = value
 
-    jsonData['operations'] = self.operations
+    jsonData['MethodCalls'] = self.methodCalls
     jsonData['__type__'] = self.__class__.__name__
 
     return jsonData
 
 
-  def appendOperation( self, args ):
+  def appendMethodCall( self, args ):
     """
     append an operation into the stack
     :param self: self reference
-    :param args: dict with the args to create an operation
+    :param args: dict with the args to create an methodCall
     """
 
-    op = DataLoggingOperation( args )
-    op.sequence = self
-    self.operations.append( op )
-    self.stack.append( op )
-    print 'append %s' % op.name
+    methodCall = DataLoggingMethodCall( args )
+    methodCall.sequence = self
+    self.methodCalls.append( methodCall )
+    self.stack.append( methodCall )
 
-    return op
-
+    return methodCall
 
 
-  def popOperation( self, number ):
+  def popMethodCall( self ):
     """
     :param self: self reference
     Pop an operation from the stack
     """
-    operations = list()
     if len( self.stack ) != 1 :
-      if len( self.stack ) != number :
-        for i in range( number ):
-          self.stack[len( self.stack ) - number - 1 + i].addChild( self.stack[len( self.stack ) - 1] )
-          op = self.stack.pop()
-          operations.append( op )
-          print 'pop %s' % op.name
-      else:
-        for i in range( number ):
-          op = self.stack.pop()
-          operations.append( op )
-          print 'pop %s' % op.name
-    else :
-      op = self.stack.pop()
-      operations.append( op )
-      print 'pop %s' % op.name
+      self.stack[len( self.stack ) - 2].addChild( self.stack[len( self.stack ) - 1] )
 
-    for operation in operations:
-      cpt = 0
-      for child in operation.children :
-        child.order = cpt
-        cpt += 1
+    res = self.stack.pop()
+
+    cpt = 0
+    for child in res.children :
+      child.order = cpt
+      cpt += 1
 
     if len( self.stack ) == 0 :
-
-      print 'insert'
-      print self.operations
       client = DataLoggingClient()
       client.insertSequence( self )
-      self.operations = list()
+      self.methodCalls = list()
 
-    return operations
+    return res
+
 
 
   def setCaller( self, caller ):

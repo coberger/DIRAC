@@ -13,6 +13,8 @@ from DIRAC.DataManagementSystem.Client.DataLoggingAction import DataLoggingActio
 from DIRAC.DataManagementSystem.Client.DataLoggingBuffer import DataLoggingBuffer
 from DIRAC.DataManagementSystem.Client.DataLoggingFile import DataLoggingFile
 from DIRAC.DataManagementSystem.Client.DataLoggingStatus import DataLoggingStatus
+from DIRAC.DataManagementSystem.Client.DataLoggingStorageElement import DataLoggingStorageElement
+from DIRAC.DataManagementSystem.Client.DataLoggingMethodName import DataLoggingMethodName
 
 
 
@@ -55,34 +57,34 @@ funcdict = {
   'normal':extractArgs,
   'default':extractArgs,
   'execute': getArgsExecute,
-  'tuple': getTupleArgs
+  'tuple': getTupleArgs,
 }
 
 
 # wrap _Cache to allow for deferred calling
-def DataLoggingDecorator( function = None, argsPosition = None, getArgsFunction = None, specialPosition = None ):
-
+def DataLoggingDecorator( function = None, argsPosition = None, getActionArgsFunction = None, specialPosition = None ):
     if function:
         return _DataLoggingDecorator( function )
     else:
       def wrapper( function ):
-          return _DataLoggingDecorator( function, argsPosition , getArgsFunction, specialPosition )
+          return _DataLoggingDecorator( function, argsPosition , getActionArgsFunction, specialPosition )
       return wrapper
+
 
 class _DataLoggingDecorator( object ):
   """ decorator for data logging
       only works with method
   """
 
-  def __init__( self, func , argsPosition = None, getArgsFunction = None , specialPosition = None ):
+  def __init__( self, func , argsPosition = None, getActionArgsFunction = None , specialPosition = None ):
     self.argsPosition = argsPosition
     self.specialPosition = specialPosition
     self.func = func
     self.name = self.func.__name__
-    if getArgsFunction :
-      self.getArgs = funcdict[getArgsFunction]
+    if getActionArgsFunction :
+      self.getActionArgs = funcdict[getActionArgsFunction]
     else :
-      self.getArgs = funcdict['default']
+      self.getActionArgs = funcdict['default']
     functools.wraps( func )( self )
 
   def __get__( self, inst, owner = None ):
@@ -93,24 +95,23 @@ class _DataLoggingDecorator( object ):
     """ method called each time when a decorate function is called
         get information about the function and create a stack of functions called
     """
-
     # we set the caller
     self.setCaller()
 
+    methodCallDict = dict()
     # this will not work with a function because the first arguments in args should be the self reference of the object
     if self.name is 'execute':
-      name = args[0].call
+      methodCallDict['name'] = DataLoggingMethodName( args[0].call )
     else:
-      name = self.name
+      methodCallDict['name'] = DataLoggingMethodName( self.name )
 
-    # get args of the decorate function
-    funcArgs = self.getArgs( name, self.argsPosition, self.specialPosition, *args, **kwargs )
+    # create and append methodCall into the sequence of the thread
+    methodCall = self.createMethodCall( methodCallDict )
 
-    # create and append operation into the sequence of the thread
-    operations = self.createOperations( funcArgs )
+    # get args for the actions
+    actionArgs = self.getActionArgs( self.argsPosition, self.specialPosition, *args, **kwargs )
 
-
-    self.initialiseAction( operations )
+    self.initialiseAction( methodCall, actionArgs )
     # print '%s %s' % ( self.inst, self.inst.attr )
 
     result = ''
@@ -121,63 +122,57 @@ class _DataLoggingDecorator( object ):
       raise
 
     # now we get the status ( failed or successful) of operation 'op' in each lfn
-    self.getAction( result, operations )
+    self.getActionStatus( result, methodCall )
 
     # pop of the operations corresponding to the decorate method
-    self.popOperations( operations )
+    self.popMethodCall()
 
     return result
 
 
 
-  def getAction( self, foncResult, operations ):
+  def getActionStatus( self, foncResult, methodCall ):
     """ get status of an operation's list
       :param foncResult: result of a decorate function
       :param operation: operation in wich we have to add the status
     """
+
     if foncResult['OK']:
 
       if not foncResult['Value']:
-        for operation in operations :
-          for action in operation.actions :
-            action.status.name = 'Successful'
+        for action in methodCall.actions :
+          action.status.name = 'Successful'
 
       elif  isinstance( foncResult['Value'], dict ):
       # get the success and the fail
         successful = foncResult['Value']['Successful']
         failed = foncResult['Value']['Failed']
-        for operation in operations :
-          for action in operation.actions :
-            # print action.file.name
+        for action in methodCall.actions :
+          if action.file.name in successful :
+            action.status.name = 'Successful'
 
-            if action.file.name in successful :
-              action.status.name = 'Successful'
-
-            if action.file.name in failed :
-              action.status.name = 'Failed'
+          if action.file.name in failed :
+            action.status.name = 'Failed'
     else :
-      for operation in operations :
-        for action in operation.actions :
-          action.status.name = 'Failed'
-
-  def initialiseAction( self, operations ):
-    for operation in operations :
-      for file in operation.files :
-        operation.addAction( DataLoggingAction( DataLoggingFile( file ), DataLoggingStatus( 'Unknown' ) ) )
+      for action in methodCall.actions :
+        action.status.name = 'Failed'
 
 
-  def createOperations(self,args):
-    operations =list()
-    for arg in args :
-      op = DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).appendOperation( arg )
-      operations.append( op )
-    return operations
+  def initialiseAction( self, methodCall, actionArgs ):
+    for arg in actionArgs :
+        methodCall.addAction( DataLoggingAction( DataLoggingFile( arg['files'] ), DataLoggingStatus( 'Unknown' ) ,
+                              DataLoggingStorageElement( arg['srcSE'] ), DataLoggingStorageElement( arg['targetSE'] ), arg['blob'] ) )
+
+  def createMethodCall( self, args ):
+    methodCall = DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).appendMethodCall( args )
+    return methodCall
 
 
-  def popOperations(self,operations):
-    DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).popOperation( len( operations ) )
+  def popMethodCall( self ):
+    DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).popMethodCall()
+
 
   def setCaller( self ):
     res = DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).isCallerSet()
     if not res["OK"]:
-      DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).setCaller( caller_name() )
+      DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).setCaller( caller_name( 3 ) )
