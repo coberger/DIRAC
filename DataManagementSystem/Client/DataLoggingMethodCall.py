@@ -11,7 +11,7 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.DataManagementSystem.private.DataLoggingEncoder import DataLoggingEncoder
 
 
-class DataLoggingOperation( object ):
+class DataLoggingMethodCall( object ):
   """
   describe an operation on file
   """
@@ -29,10 +29,6 @@ class DataLoggingOperation( object ):
     self.children = []
     self.actions = []
     self.name = None
-    self.srcSE = None
-    self.targetSE = None
-    self.files = None
-    self.blob = None
     self.order = 0
     self.sequence = None
 
@@ -40,10 +36,8 @@ class DataLoggingOperation( object ):
     for key, value in fromDict.items():
       if type( value ) in StringTypes:
         value = value.encode()
-
       if value is not None:
         setattr( self, key, value )
-
 
   def addChild( self, child ):
     """
@@ -70,8 +64,7 @@ class DataLoggingOperation( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['ID', 'creationTime', "name", "caller", "files", "srcSE",
-                 "targetSE", "blob", "parent_id", "sequence_id", "order"]
+    attrNames = ['ID', 'creationTime', 'name', 'caller', 'files', 'parentID', 'sequenceID', 'order']
     jsonData = {}
 
     for attrName in attrNames :

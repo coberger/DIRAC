@@ -10,9 +10,11 @@ from json import JSONDecoder
 from DIRAC.DataManagementSystem.Client.DataLoggingAction import DataLoggingAction
 from DIRAC.DataManagementSystem.Client.DataLoggingFile import DataLoggingFile
 from DIRAC.DataManagementSystem.Client.DataLoggingSequence import DataLoggingSequence
-from DIRAC.DataManagementSystem.Client.DataLoggingOperation import DataLoggingOperation
+from DIRAC.DataManagementSystem.Client.DataLoggingMethodCall import DataLoggingMethodCall
+from DIRAC.DataManagementSystem.Client.DataLoggingMethodName import DataLoggingMethodName
 from DIRAC.DataManagementSystem.Client.DataLoggingStatus import DataLoggingStatus
 from DIRAC.DataManagementSystem.Client.DataLoggingCaller import DataLoggingCaller
+from DIRAC.DataManagementSystem.Client.DataLoggingStorageElement import DataLoggingStorageElement
 
 
 class DataLoggingDecoder( json.JSONDecoder ):
@@ -25,15 +27,15 @@ class DataLoggingDecoder( json.JSONDecoder ):
         # print 'decode %s' % d
         if '__type__' not in d:
             return d
-        # print 'type %s'%__type__
+        # print 'type %s' % d['__type__']
         typeObj = d.pop( '__type__' )
         try:
             if typeObj == 'DataLoggingAction':
-              obj = DataLoggingAction( d['file'], d['status'] )
+              obj = DataLoggingAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['blob'] )
               return obj
 
             if typeObj == 'DataLoggingSequence':
-              obj = DataLoggingSequence.fromJSON( d['operations'][0], d['caller'] )
+              obj = DataLoggingSequence.fromJSON( d['MethodCalls'][0], d['caller'] )
               return obj
 
             if typeObj == 'DataLoggingFile':
@@ -44,8 +46,8 @@ class DataLoggingDecoder( json.JSONDecoder ):
               obj = DataLoggingStatus( d['name'] )
               return obj
 
-            if typeObj == 'DataLoggingOperation':
-              obj = DataLoggingOperation( d )
+            if typeObj == 'DataLoggingMethodCall':
+              obj = DataLoggingMethodCall( d )
               obj.actions = d['Actions']
               obj.children = d['Children']
               return obj
@@ -54,11 +56,20 @@ class DataLoggingDecoder( json.JSONDecoder ):
               obj = DataLoggingCaller( d['name'] )
               return obj
 
+            if typeObj == 'DataLoggingMethodName':
+              obj = DataLoggingMethodName( d['name'] )
+              return obj
+
+            if typeObj == 'DataLoggingStorageElement':
+              obj = DataLoggingStorageElement( d['name'] )
+              return obj
+
             else:
               return d
 
-        except:
-            d['__type__'] = type
-            return d
+        except Exception as e:
+          print 'exception in decoder %s' % e
+          d['__type__'] = type
+          return d
 
 

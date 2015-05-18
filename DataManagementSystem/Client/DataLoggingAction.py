@@ -9,9 +9,13 @@ from DIRAC import S_ERROR, S_OK
 
 class DataLoggingAction ( object ):
 
-  def __init__( self, file, status ):
+
+  def __init__( self, file, status, srcSE, targetSE, blob ):
     self.file = file
     self.status = status
+    self.srcSE = srcSE
+    self.targetSE = targetSE
+    self.blob = blob
 
 
   def toJSON( self ):
@@ -40,6 +44,10 @@ class DataLoggingAction ( object ):
 
     jsonData['file'] = self.file
     jsonData['status'] = self.status
+    jsonData['srcSE'] = self.srcSE
+    jsonData['targetSE'] = self.targetSE
+    jsonData['blob'] = self.blob
+
     jsonData['__type__'] = self.__class__.__name__
 
     return jsonData
