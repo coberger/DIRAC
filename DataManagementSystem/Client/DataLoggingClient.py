@@ -1,30 +1,33 @@
-# """
-# :mod: DataLoggingClient
-#
-# .. module: DataLoggingClient
-#
-# :synopsis: client for DataLoggingDB
-#
-# """
-#
-# ## RSCID
-# __RCSID__ = "$Id$"
-#
-# ## imports
-# from DIRAC.Core.Base.Client import Client
-#
-# class DataLoggingClient( Client ):
-#   """
-#   .. class:: DataLoggingClient
-#
-#   rpc client for DataLoggingDB
-#   """
-#   def __init__( self, **kwargs  ):
-#     """
-#     :param self: self reference
-#     :param str url: service URL
-#     """
-#     Client.__init__( self, **kwargs )
-#     self.setServer( "DataManagement/DataLogging" )
-#     self.setTimeout( 120 )
+'''
+Created on May 5, 2015
+
+@author: Corentin Berger
+'''
+from DIRAC.Core.Base.Client               import Client
+from DIRAC.ConfigurationSystem.Client     import PathFinder
+from DIRAC.Core.DISET.RPCClient           import RPCClient
+
+from DIRAC import gLogger
+
+class DataLoggingClient( Client ):
+
+  def __init__( self ):
+    Client.__init__( self )
+    self.setServer( "DataManagement/DataLogging" )
+
+    url = PathFinder.getServiceURL( "DataManagement/DataLogging" )
+    if not url:
+      raise RuntimeError( "CS option DataManagement/DataLogging URL is not set!" )
+    self.testManager = RPCClient( url )
+
+  def insertSequence( self, sequence ):
+    sequenceJSON = sequence.toJSON()
+    if not sequenceJSON["OK"]:
+      print'error sequenceJSON bad'
+      return sequenceJSON
+    # print "BEFORE SENDING %s" % sequenceJSON['Value']
+    sequenceJSON = sequenceJSON["Value"]
+    res = self.testManager.insertSequence( sequenceJSON )
+    # gLogger.error( 'res = ', res )
+    return res
 
