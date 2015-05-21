@@ -33,6 +33,7 @@ class DataLoggingSequence( object ) :
 
   @staticmethod
   def fromJSON( methodCall, caller ):
+    """ create a sequence from a JSON representation"""
     seq = DataLoggingSequence()
     stack = list()
     seq.caller = caller

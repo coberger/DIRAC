@@ -20,7 +20,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_insertSequence = [StringTypes]
   def export_insertSequence( self, sequenceJSON ):
-    # print "After recieving %s" % sequenceJSON
+    # print "After receiving %s" % sequenceJSON
     sequence = json.loads( sequenceJSON, cls = DataLoggingDecoder )
     db = DataLoggingDB()
     db.createTables()

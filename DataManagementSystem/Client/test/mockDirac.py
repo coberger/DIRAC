@@ -49,7 +49,7 @@ class TestStorageElement:
   def __init__( self, seName ):
     self.seName = seName
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'srcSE' ], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE' ], getActionArgsFunction = 'normal' )
   def putFile( self, lfns, src ):
     """Physicaly copying one file from src"""
 
@@ -124,9 +124,12 @@ class TestDataManager:
 
 
   @DataLoggingDecorator( argsPosition = ['self', 'fileTuple' ], getActionArgsFunction = 'tuple' , \
-                          specialPosition = ['files', 'physicalFile', 'fileSize', 'targetSE', 'fileGuid', 'checksum' ] )
+                          tupleArgsPosition = ['files', 'physicalFile', 'fileSize', 'targetSE', 'fileGuid', 'checksum' ] )
   def registerFile( self, fileTuple, catalog = '' ):
-    s, f = splitIntoSuccFailed( fileTuple[0][0] )
+    args = []
+    for t in fileTuple :
+      args.append( t[0] )
+    s, f = splitIntoSuccFailed( args )
     # print 'suc %s fail %s' % ( s, f )
     return S_OK( {'Successful' : s, 'Failed' : f} )
 
@@ -139,26 +142,26 @@ class ClientA( Thread ):
 
   def doSomething( self ):
     dm = TestDataManager()
-    res = dm.replicateAndRegister( self.lfn, 'sourceSE', 'destSE', 1, protocol = 'toto' )
-    s = res['Value']['Successful']
-    f = res['Value']['Failed']
-
-    #===========================================================================
-    # print "s : %s" % s
-    # print "f : %s" % f
-    #===========================================================================
-
-    res = TestStorageElement( 'sourceSE' ).getFileSize( self.lfn )
-    #===========================================================================
-    # print res
-    #===========================================================================
-
 #===============================================================================
+#     res = dm.replicateAndRegister( self.lfn, 'sourceSE', 'destSE', 1, protocol = 'toto' )
+#     s = res['Value']['Successful']
+#     f = res['Value']['Failed']
 #
-#     fileTuple = [( 'M', 'destUrl', 150, 'destinationSE', 40, 108524789 ),
-#                  ( 'TITI', 'targetURL', 7855, 'TargetSE', 14, 155 )]
-#     dm.registerFile( fileTuple )
+#     #===========================================================================
+#     # print "s : %s" % s
+#     # print "f : %s" % f
+#     #===========================================================================
+#
+#     res = TestStorageElement( 'sourceSE' ).getFileSize( self.lfn )
+#     #===========================================================================
+#     # print res
+#     #===========================================================================
 #===============================================================================
+
+
+    fileTuple = [( 'M', 'destUrl', 150, 'destinationSE', 40, 108524789 ),
+                 ( 'TITI', 'targetURL', 7855, 'TargetSE', 14, 155 )]
+    dm.registerFile( fileTuple )
 
   def run( self ):
     self.doSomething()
@@ -171,7 +174,7 @@ class ClientB( Thread ):
 
   def doSomethingElse( self ):
     dm = TestDataManager()
-    res = dm.putAndRegister( [18], '/local/path/', 'destSE' )
+    res = dm.putAndRegister( [18, 19, 20], '/local/path/', 'destSE' )
     s = res['Value']['Successful']
     f = res['Value']['Failed']
     #===========================================================================
@@ -180,7 +183,6 @@ class ClientB( Thread ):
     #===========================================================================
 
     res = TestFileCatalog().getFileSize( s )
-    print res
 
   def run( self ):
     self.doSomethingElse()
@@ -225,7 +227,7 @@ class FileCatalog ( object ) :
     else:
       raise AttributeError
 
-  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute' )
+  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute', attributesToGet = ['call' ] )
   def execute( self, *parms, **kws ):
     method = getattr( FileCatalogMethod(), self.call )
     res = method( *parms, **kws )
@@ -243,9 +245,9 @@ class ClientC( Thread ):
 
   def doSomethingElse( self ):
     test = FileCatalog()
-    test.isDirectory( ['lfn1', 'lfn2'] )
-    sleep( 1 )
+
     test.isFile( ['lfn3', 'lfn4'], 'titi' )
+    test.isDirectory( ['lfn1', 'lfn2'] )
 
   def run( self ):
     self.doSomethingElse()
@@ -269,7 +271,7 @@ c8 = ClientA( ['C', 'D'] )
 #===============================================================================
 
 #===============================================================================
-# c1 = ClientC()
+c1 = ClientC()
 # c2 = ClientC()
 # c3 = ClientC()
 # c4 = ClientC()

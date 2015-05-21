@@ -133,7 +133,6 @@ class DataLoggingDB( object ):
     sequence.caller = caller['Value']
 
     for mc in sequence.methodCalls:
-      print 'method call %s' % mc.name
 
       res = self.putMethodName( mc.name, session )
       mc.name = res['Value']
@@ -168,7 +167,6 @@ class DataLoggingDB( object ):
         if the MethodName's name is already in data base, we just return the object
         else we insert a new MethodName
     """
-    print mn.name
     try:
       instance = session.query( DataLoggingMethodName ).filter_by( name = mn.name ).first()
       if not instance:
@@ -190,13 +188,16 @@ class DataLoggingDB( object ):
         else we insert a new lfn
     """
     try:
-      instance = session.query( DataLoggingStorageElement ).filter_by( name = se.name ).first()
-      if not instance:
-        instance = DataLoggingStorageElement( se.name )
-        session.add( instance )
-        session.commit()
+      if se.name is None :
+        return S_OK( None )
+      else :
+        instance = session.query( DataLoggingStorageElement ).filter_by( name = se.name ).first()
+        if not instance:
+          instance = DataLoggingStorageElement( se.name )
+          session.add( instance )
+          session.commit()
 
-      return S_OK( instance )
+        return S_OK( instance )
 
     except Exception, e:
       session.rollback()
@@ -272,7 +273,7 @@ class DataLoggingDB( object ):
     """
     session = self.DBSession()
     try:
-      operations = session.query( DataLoggingSequence, DataLoggingOperation, DataLoggingAction ).join( DataLoggingOperation )\
+      operations = session.query( DataLoggingSequence, DataLoggingMethodCall, DataLoggingAction ).join( DataLoggingMethodCall )\
       .join( DataLoggingAction ).join( DataLoggingFile ).filter( DataLoggingFile.name == lfn ).all()
       for row in operations :
         print "%s %s %s %s %s %s %s" % ( row.Sequence.ID, row.OperationFile.ID, row.OperationFile.creationTime,
@@ -293,7 +294,7 @@ class DataLoggingDB( object ):
     """
     session = self.DBSession()
     try:
-      operations = session.query( DataLoggingOperation, DataLoggingAction ).join( DataLoggingAction )\
+      operations = session.query( DataLoggingMethodCall, DataLoggingAction ).join( DataLoggingAction )\
       .join( DataLoggingFile ).filter( DataLoggingFile.name == lfn ).all()
       print operations
       for row in operations :
