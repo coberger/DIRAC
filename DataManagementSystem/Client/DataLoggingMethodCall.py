@@ -13,7 +13,7 @@ from DIRAC.DataManagementSystem.private.DataLoggingEncoder import DataLoggingEnc
 
 class DataLoggingMethodCall( object ):
   """
-  describe an operation on file
+  describe a method call
   """
 
   _datetimeFormat = '%Y-%m-%d %H:%M:%S'

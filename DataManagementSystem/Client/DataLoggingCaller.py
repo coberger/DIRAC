@@ -29,7 +29,7 @@ class DataLoggingCaller( object ):
 
     for attrName in attrNames :
 
-      # RequestID and OperationID might not be set since they are managed by SQLAlchemy
+      # ID might not be set since it is managed by SQLAlchemy
       if not hasattr( self, attrName ):
         continue
 
