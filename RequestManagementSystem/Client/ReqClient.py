@@ -20,10 +20,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 class ReqClient( Client ):
-  """
-  .. class:: ReqClient
-
-  ReqClient is a class manipulating and operation on Requests.
+  """ReqClient is a class manipulating and operation on Requests.
 
   :param RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
@@ -77,13 +74,14 @@ class ReqClient( Client ):
     return self.__requestValidator
 
   def putRequest( self, request, useFailoverProxy = True, retryMainService = 0 ):
-    """ put request to RequestManager
+    """Put request to RequestManager
 
-    :param self: self reference
-    :param Request request: Request instance
-    :param useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
-    :param retryMainService : Amount of time we retry on the main ReqHandler in case of failures.
+      :param self: self reference
+      :param Request.Request request: Request instance
+      :param bool useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
+      :param int retryMainService: Amount of time we retry on the main ReqHandler in case of failures
 
+      :return S_OK/S_ERROR
     """
     errorsDict = { "OK" : False }
     valid = self.requestValidator().validate( request )
@@ -131,12 +129,12 @@ class ReqClient( Client ):
     return errorsDict
 
   def getRequest( self, requestID = 0 ):
-    """ get request from RequestDB
+    """Get request from RequestDB
 
-    :param self: self reference
-    :param requestID : ID of the request. If 0, choice is made for you
+      :param self: self reference
+      :param int requestID: ID of the request. If 0, choice is made for you
 
-    :return: S_OK( Request instance ) or S_OK() or S_ERROR
+      :return S_OK( Request instance ) or S_OK() or S_ERROR
     """
     self.log.debug( "getRequest: attempting to get request." )
     getRequest = self.requestManager().getRequest( requestID )
@@ -242,13 +240,15 @@ class ReqClient( Client ):
     """ Get the request status given a request id.
 
     :param self: self reference
-    :param str requestID: id of the request
+    :param int requestID: id of the request
     """
-    self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestID )
+    if isinstance( requestID, basestring ):
+      requestID = int( requestID )
+    self.log.debug( "getRequestStatus: attempting to get status for '%d' request." % requestID )
     requestStatus = self.requestManager().getRequestStatus( requestID )
     if not requestStatus["OK"]:
       self.log.error( "getRequestStatus: unable to get status for request",
-                      "request: '%s' %s" % ( requestID, requestStatus["Message"] ) )
+                      "request: '%d' %s" % ( requestID, requestStatus["Message"] ) )
     return requestStatus
 
 #   def getRequestName( self, requestID ):
@@ -259,7 +259,7 @@ class ReqClient( Client ):
     """ The the request info given a request id.
 
     :param self: self reference
-    :param str requestID: request nid
+    :param int requestID: request nid
     """
     self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestID )
     requestInfo = self.requestManager().getRequestInfo( int( requestID ) )
@@ -447,8 +447,9 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
 
   ftsClient = None
   try:
-    from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
-    ftsClient = FTSClient()
+    if request.RequestID:
+      from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
+      ftsClient = FTSClient()
   except Exception, e:
     gLogger.debug( "Could not instantiate FtsClient", e )
 
@@ -493,7 +494,7 @@ def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   if prStr:
     prStr += ' - '
   prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
-  if op.Type == 'ForwardDISET':
+  if op.Type == 'ForwardDISET' and op.Arguments:
     from DIRAC.Core.Utilities import DEncode
     decode, _length = DEncode.decode( op.Arguments )
     if verbose:

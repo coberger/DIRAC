@@ -4,15 +4,9 @@
 # Date: 2013/04/02 13:41:20
 ########################################################################
 """
-:mod: FTSJob
-
-.. module: FTSJob
-
-:synopsis: class representing FTS job
-
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-class representing single FTS request
+FTSJob class representing single FTS request
 """
 
 __RCSID__ = "$Id $"
@@ -44,8 +38,6 @@ import fts3.rest.client.easy as fts3
 ########################################################################
 class FTSJob( object ):
   """
-  .. class:: FTSJob
-
   class describing one FTS job
   """
 
@@ -525,6 +517,7 @@ class FTSJob( object ):
 
     # The order of informations is not the same for glite- and fts- !!!
     # In order: new fts-, old fts-, glite-
+    realJob = len( self ) != 0
     iExptr = None
     for iExptr, exptr in enumerate( ( 
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
@@ -550,12 +543,21 @@ class FTSJob( object ):
       else:
         return S_ERROR( 'Error monitoring job (implement match %d)' % iExptr )
       candidateFile = None
-      for ftsFile in self:
-        if ftsFile.SourceSURL == sourceURL:
-          candidateFile = ftsFile
-          break
-      if not candidateFile:
-        continue
+
+      if not realJob:
+        # This is used by the CLI monitoring of jobs in case no file was specified
+        candidateFile = FTSFile()
+        candidateFile.LFN = overlap( sourceURL, targetURL )
+        candidateFile.SourceSURL = sourceURL
+        candidateFile.Size = 0
+        self +=candidateFile
+      else:
+        for ftsFile in self:
+          if ftsFile.SourceSURL == sourceURL:
+            candidateFile = ftsFile
+            break
+        if not candidateFile:
+          continue
       # Can be uppercase for FTS3
       if not candidateFile.TargetSURL:
         candidateFile.TargetSURL = targetURL
@@ -701,7 +703,7 @@ class FTSJob( object ):
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
     for ftsFile in toRegister:
-      pfn = returnSingleResult( targetSE.getURL( ftsFile.TargetSURL, protocol = 'srm' ) )
+      pfn = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = 'srm' ) )
       if not pfn["OK"]:
         continue
       pfn = pfn["Value"]
@@ -712,6 +714,7 @@ class FTSJob( object ):
       register = self._fc.addReplica( toRegisterDict )
       self._regTime += time.time() - startTime
       if not register["OK"]:
+        self._log.error( 'Error registering replica', register['Message'] )
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
         return register
@@ -765,3 +768,16 @@ class FTSJob( object ):
       digest["FTSFiles"].append( fileJSON["Value"] )
     return S_OK( digest )
 
+def overlap( s1, s2 ):
+  """ Method returning the common end of 2 strings """
+  s = ''
+  while s1 and s2:
+      c1 = s1[-1]
+      c2 = s2[-1]
+      if c1 == c2:
+          s = c1 + s
+      else:
+          break
+      s1 = s1[:-1]
+      s2 = s2[:-1]
+  return s
