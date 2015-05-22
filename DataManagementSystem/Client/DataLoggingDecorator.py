@@ -61,7 +61,7 @@ funcdict = {
 }
 
 
-# wrap _Cache to allow for deferred calling
+# wrap _DataLoggingDecorator to allow for deferred calling
 def DataLoggingDecorator( function = None, *args, **kwargs ):
     if function:
         return _DataLoggingDecorator( function )
@@ -72,8 +72,29 @@ def DataLoggingDecorator( function = None, *args, **kwargs ):
 
 
 class _DataLoggingDecorator( object ):
-  """ decorator for data logging
+  """ decorator for data logging in Dirac
+      the aim of this decorator is to know all operation done about a Dirac LFN
+      for this, the decorator get arguments from the called of the decorate method
+      create a DataLoggingMethodCall which is an operation on a single lfn or multiple lfn
+      then create as much DataLoggingAction as there is lfn
+      then call the decorate method and get the result to update the status of each action
+      if an exception is raised by the decorate function, the exception is raised by the decorator
+      if an exception is raised due to the decorator, it's like nothing happened for the decorate method
       only works with method
+
+
+      for this to work, you have to pass some arguments to the decorator
+      the first arguments to pass is a list with the arguments positions in the decorate method
+      for example for the putAndRegister method you have to pass argsPosition = ['self', 'files', 'localPath', 'targetSE' ]
+      in the decorator
+      some keywords are very important like files, targetSE and srcSE
+      so if the parameter of the decorate Function is 'sourceSE' you have to write 'srcSE' in the argsPosition's list
+      if the parameter of the decorate Function is 'lfns' you have to write 'files' in the argsPosition's list
+
+      next you have to tell to the decorator which function you want to called to extract arguments
+      for example getActionArgsFunction = 'tuple', there is a dictionary to map keywords with functions to extract arguments
+
+      you can pass much argument as you want to the decorator
   """
 
   def __init__( self, func , *args, **kwargs ):
@@ -110,25 +131,26 @@ class _DataLoggingDecorator( object ):
       # we set the caller
       self.setCaller()
 
-      # sometime we need an attribute into the object, we will get it here and add it in the argsDecorator dictionary
-      self.getAttribute( args[0] )
-
+      # sometime we need an attribute into the object who called the decorate method
+      # we will get it here and add it in the local argsDecorator dictionary
+      # we need a local dictionary because of the different called from different thread
       # this will not work with a function because the first arguments in args should be the self reference of the object
-      methodCallArgsDict = self.getMethodCallArgs( *args )
+      localArgsDecorator = self.getAttribute( args[0] )
+
+      # we get the arguments from the call of the decorate method to create the DataLoggingMethodCall object
+      methodCallArgsDict = self.getMethodCallArgs( localArgsDecorator, *args )
 
       # create and append methodCall into the sequence of the thread
       methodCall = self.createMethodCall( methodCallArgsDict )
 
-      # get args for the actions
-      actionArgs = self.getActionArgs( *args, **kwargs )
+      # get args for the DataLoggingAction objects
+      actionArgs = self.getActionArgs( localArgsDecorator, *args, **kwargs )
 
-      print 'args for %s : %s' % ( self.func.__name__, actionArgs )
-
-      # initialization of the action with the different arguments, set theirs status to 'unknown'
+      # initialization of the DataLoggingActions with the different arguments, set theirs status to 'unknown'
       self.initializeAction( methodCall, actionArgs )
 
       try :
-      # call of the func, result of the return of the decorate function
+      # call of the func, result is the return of the decorate function
         result = self.func( *args, **kwargs )
       except Exception as e:
         exception = e
@@ -137,7 +159,7 @@ class _DataLoggingDecorator( object ):
       # now we get the status ( failed or successful) of methodCall's actions
       self.getActionStatus( result, methodCall, exception )
 
-      # pop of the operations corresponding to the decorate method
+      # pop of the methodCall corresponding to the decorate method
       self.popMethodCall()
 
     except DataLoggingException as e:
@@ -156,7 +178,8 @@ class _DataLoggingDecorator( object ):
       :param methodCall: methodCall in wich we have to update the status of its actions
     """
     try :
-      if exception is not None :
+      if not exception  :
+        print 'toto'
         if foncResult is not None :
           if isinstance( foncResult, dict ):
             if foncResult['OK']:
@@ -236,14 +259,14 @@ class _DataLoggingDecorator( object ):
 
 
 
-  def getMethodCallArgs(self,*args):
+  def getMethodCallArgs( self, argsDecorator, *args ):
     """ get arguments to create a method call
         :return methodCallDict : contains all the arguments to create a method call
     """
     try :
       methodCallDict = {}
       if self.name is 'execute':
-        self.argsDecorator['funcName'] = args[0].call
+        argsDecorator['funcName'] = args[0].call
         methodCallDict['name'] = DataLoggingMethodName( args[0].call )
       else:
         methodCallDict['name'] = DataLoggingMethodName( self.name )
@@ -256,21 +279,23 @@ class _DataLoggingDecorator( object ):
     """ get attributes from an object
         add this attributes to the dict which contains all arguments of the decorator
     """
+    d = dict( self.argsDecorator )
     try :
       if 'attributesToGet' in self.argsDecorator:
         for attrName in self.argsDecorator['attributesToGet']:
           attr = getattr( obj, attrName, None )
-          self.argsDecorator[attrName] = attr
+          d[attrName] = attr
     except Exception as e:
       raise DataLoggingException( repr( e ) )
 
+    return d
 
-  def getActionArgs( self, *args, **kwargs ):
+  def getActionArgs( self, argsDecorator, *args, **kwargs ):
     """ this method is here to call the function to get arguments of the decorate function
         we don't call directly this function because if an exception is raised we need to raise a specific exception
     """
     try :
-      ret = self.getActionArgsFunction( self.argsDecorator, *args, **kwargs )
+      ret = self.getActionArgsFunction( argsDecorator, *args, **kwargs )
     except Exception as e:
       raise DataLoggingException( repr( e ) )
 
