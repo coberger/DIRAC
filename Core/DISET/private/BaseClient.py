@@ -39,6 +39,7 @@ class BaseClient:
     if type( serviceName ) not in types.StringTypes:
       raise TypeError( "Service name expected to be a string. Received %s type %s" %
                        ( str( serviceName ), type( serviceName ) ) )
+      print 'titi '
     self._destinationSrv = serviceName
     self._serviceName = serviceName
     self.kwargs = kwargs
@@ -200,21 +201,21 @@ class BaseClient:
       return S_ERROR( "Cannot get URL for %s in setup %s: %s" % ( self._destinationSrv, self.setup, str( e ) ) )
     if not urls:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
-    
+
     urls = List.fromChar( urls, "," )
-      
+
     if len( urls ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
       self.__retryDelay = 5 / len ( urls )  # we run only one service! In that case we increase the retry delay.
-      gLogger.debug( "Retrying again all URLs" )      
-      
+      gLogger.debug( "Retrying again all URLs" )
+
     if len( self.__bannedUrls ) > 0 and len( urls ) > 1 :
       # we have host which is not accessible. We remove that host from the list.
       # We only remove if we have more than one instance
       for i in self.__bannedUrls:
         gLogger.debug( "Removing banned URL", "%s" % i )
         urls.remove( i )
-        
+
     sURL = List.randomize( urls )[0]
 
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self._destinationSrv, sURL ) )
@@ -252,9 +253,9 @@ and this is thread %s
       if not retVal[ 'OK' ]:
         if self.__retry < 5:
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
-          if url not in self.__bannedUrls: 
+          if url not in self.__bannedUrls:
             gLogger.info( "URL banned", "%s" % url )
-            self.__bannedUrls += [url]   
+            self.__bannedUrls += [url]
           self.__retry += 1
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
           time.sleep( self.__retryDelay )

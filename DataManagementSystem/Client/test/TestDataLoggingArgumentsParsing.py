@@ -5,7 +5,7 @@ Created on May 20, 2015
 '''
 import unittest
 
-from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import funcdict
+from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import funcDict
 from DIRAC.DataManagementSystem.Client.DataLoggingException import DataLoggingException
 
 argsDictDefault = {}
@@ -44,15 +44,15 @@ class DefaultCase ( DataLoggingArgumentsParsingTestCase ):
     ok = [{'files': 18, 'targetSE': 'destSE', 'blob': 'localPath = /local/path/', 'srcSE': None},
           {'files': 19, 'targetSE': 'destSE', 'blob': 'localPath = /local/path/', 'srcSE': None},
            {'files': 20, 'targetSE': 'destSE', 'blob': 'localPath = /local/path/', 'srcSE': None}]
-    getArgs = funcdict['normal']
+    getArgs = funcDict['normal']
     ret = callFunction( getArgs, dict( argsDictDefault ), *argumentsDefault )
 
     self.assert_( ret, ok )
 
   def test_ExceptionRaise( self ):
-    getArgs = funcdict['execute']
+    getArgs = funcDict['execute']
     self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictDefault ), *argumentsDefault )
-    getArgs = funcdict['tuple']
+    getArgs = funcDict['tuple']
     self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictDefault ), *argumentsDefault )
 
 
@@ -62,19 +62,19 @@ class TupleCase ( DataLoggingArgumentsParsingTestCase ):
   def test_DictEqual( self ):
     ok = [{'files': 'M', 'targetSE': 'destinationSE', 'blob': 'physicalFile = destUrl,fileSize = 150,fileGuid = 40,checksum = 108524789', 'srcSE': None},
          {'files': 'TITI', 'targetSE': 'TargetSE', 'blob': 'physicalFile = targetURL,fileSize = 7855,fileGuid = 14,checksum = 155', 'srcSE': None}]
-    getArgs = funcdict['tuple']
+    getArgs = funcDict['tuple']
     ret = callFunction( getArgs, dict( argsDictTuple ), *argumentsTuple )
 
     self.assert_( ret, ok )
 
   def test_ExceptionRaise( self ):
-    getArgs = funcdict['execute']
+    getArgs = funcDict['execute']
     self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictTuple ), *argumentsTuple )
-    getArgs = funcdict['default']
+    getArgs = funcDict['default']
     self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictTuple ), *argumentsTuple )
 
   def test_TupleAsNone( self ):
-    getArgs = funcdict['tuple']
+    getArgs = funcDict['tuple']
     self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictTuple ), [None] )
 
 
@@ -82,16 +82,15 @@ class ExecuteCase ( DataLoggingArgumentsParsingTestCase ):
   def test_DictEqual( self ):
     ok = [{'files': 'lfn3', 'targetSE': None, 'blob': 'name = titi', 'srcSE': None},
            {'files': 'lfn4', 'targetSE': None, 'blob': 'name = titi', 'srcSE': None}]
-    getArgs = funcdict['execute']
+    getArgs = funcDict['execute']
     ret = callFunction( getArgs, dict( argsDictExecute ), *argumentsExecute )
 
     self.assert_( ret, ok )
 
   def test_ExceptionRaise( self ):
-    getArgs = funcdict['tuple']
+    getArgs = funcDict['tuple']
     self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictExecute ), *argumentsExecute )
-    getArgs = funcdict['default']
-    print argsDictExecute
+    getArgs = funcDict['default']
     self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictExecute ), *argumentsExecute )
 
 

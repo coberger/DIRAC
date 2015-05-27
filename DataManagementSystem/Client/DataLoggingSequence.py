@@ -5,6 +5,7 @@ Created on May 4, 2015
 '''
 
 import json
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.DataManagementSystem.private.DataLoggingEncoder import DataLoggingEncoder
 from DIRAC.DataManagementSystem.Client.DataLoggingMethodCall import DataLoggingMethodCall
@@ -92,6 +93,7 @@ class DataLoggingSequence( object ) :
     :param self: self reference
     Pop an operation from the stack
     """
+    toInsert = False
     if len( self.stack ) != 1 :
       self.stack[len( self.stack ) - 2].addChild( self.stack[len( self.stack ) - 1] )
 
@@ -103,11 +105,9 @@ class DataLoggingSequence( object ) :
       cpt += 1
 
     if len( self.stack ) == 0 :
-      client = DataLoggingClient()
-      client.insertSequence( self )
-      self.methodCalls = list()
+      toInsert = True
 
-    return res
+    return toInsert
 
 
 

@@ -31,7 +31,6 @@ class DataLoggingBuffer :
       cls.dict[threadID] = DataLoggingSequence()
     res = cls.dict[threadID]
     cls.lock.release()
-
     return res
 
 

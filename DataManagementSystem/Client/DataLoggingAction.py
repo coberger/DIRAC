@@ -16,6 +16,10 @@ class DataLoggingAction ( object ):
     self.srcSE = srcSE
     self.targetSE = targetSE
     self.blob = blob
+    self.ID = None
+    self.IDOp = None
+    self.IDFile = None
+    self.IDStatus = None
 
 
   def toJSON( self ):
@@ -30,7 +34,7 @@ class DataLoggingAction ( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['ID', 'IDOp', "IDLFN", "IDStatus"]
+    attrNames = ['ID', 'IDOp', 'IDFile', 'IDStatus']
     jsonData = {}
 
     for attrName in attrNames :

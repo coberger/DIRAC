@@ -32,6 +32,99 @@ class FileCatalog( object ):
   write_meta_methods = ['addMetadataField', 'deleteMetadataField', 'setMetadata', 'setMetadataBulk',
                         'removeMetadata', 'addMetadataSet']
 
+  method_to_log = ['isDirectory', 'isFile', 'createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica',
+                   'removeReplica', 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
+                   'setDirectoryStatus', 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset',
+                   'changePathMode', 'changePathOwner', 'changePathGroup', 'addMetadataField', 'setMetadata',
+                   'setMetadataBulk', 'removeMetadata', 'addMetadataSet']
+
+  methods_to_log_arguments = {
+              'isFile' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'isDirectory' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'exists' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'createLink' :
+                {'Required' : ['self', 'link'],
+                  'Default' : {} },
+              'removeLink' :
+                {'Required' : ['self', 'link'],
+                  'Default' : {} },
+              'addFile' :
+                {'Required' : ['self', 'files', ],
+                  'Default' : {} },
+              'setFileStatus' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'addReplica' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'removeReplica' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'removeFile' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'setReplicaStatus' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'setReplicaHost' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'setReplicaProblematic' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {'revert' : False} },
+              'createDirectory' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'setDirectoryStatus' :
+                {'Required' : ['self', 'path', 'status'],
+                  'Default' : {} },
+              'removeDirectory' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {} },
+              'removeDataset' :
+                {'Required' : ['self', 'dataset'],
+                  'Default' : {} },
+              'removeFileFromDataset' :
+                {'Required' : ['self', 'dataset'],
+                  'Default' : {} },
+              'createDataset' :
+                {'Required' : ['self', 'dataset'],
+                  'Default' : {} },
+              'changePathMode' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {'recursive' : False} },
+              'changePathOwner' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {'recursive' : False} },
+              'changePathGroup' :
+                {'Required' : ['self', 'files'],
+                  'Default' : {'recursive' : False} },
+              'addMetadataField' :
+                {'Required' : ['self', 'fieldName', 'fieldType'],
+                  'Default' : {'metaType' : '-d'} },
+              'addMetadataField' :
+                {'Required' : ['self', 'fieldName'],
+                  'Default' : {} },
+              'setMetadata' :
+                {'Required' : ['self', 'path', 'metadatadict'],
+                  'Default' : {} },
+              'setMetadataBulk' :
+                {'Required' : ['self', 'pathMetadataDict'],
+                  'Default' : {} },
+              'removeMetadata' :
+                {'Required' : ['self', 'pathMetadataDict'],
+                  'Default' : {} },
+              'addMetadataSet' :
+                {'Required' : ['self', 'setName', 'setDict'],
+                  'Default' : {} },
+              }
+
   write_methods += write_meta_methods
 
   def __init__( self, catalogs = None, vo = None ):
@@ -88,6 +181,9 @@ class FileCatalog( object ):
     else:
       raise AttributeError
 
+  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute',
+                          attributesToGet = ['call' ], methods_to_log = methods_to_log,
+                           methods_to_log_arguments = methods_to_log_arguments )
   def w_execute( self, *parms, **kws ):
     """ Write method executor.
     """
@@ -145,6 +241,9 @@ class FileCatalog( object ):
     else:
       return res
 
+  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute',
+                          attributesToGet = ['call' ], methods_to_log = methods_to_log,
+                           methods_to_log_arguments = methods_to_log_arguments )
   def r_execute( self, *parms, **kws ):
     """ Read method executor.
     """
