@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
 from DIRAC.Resources.Utilities                              import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
+from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
 
 class FileCatalog( object ):
 

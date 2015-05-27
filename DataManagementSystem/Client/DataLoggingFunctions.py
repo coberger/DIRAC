@@ -133,7 +133,7 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
         else :
           opArgs[a] = tuple[i]
       else:
-        if a is 'fileTuple':
+        if a is 'tuple':
           tupleArgs = list()
           dictExtract = dict( argsDecorator )
           dictExtract['argsPosition'] = tupleArgsPosition
