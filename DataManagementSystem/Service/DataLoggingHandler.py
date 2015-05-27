@@ -30,3 +30,21 @@ class DataLoggingHandler( RequestHandler ):
       DIRAC.exit( -1 )
     return res
 
+
+  types_getSequenceOnFile = [StringTypes]
+  def export_getSequenceOnFile( self, fileName ):
+    db = DataLoggingDB()
+    res = db.getSequenceOnFile( fileName )
+    return res
+
+
+  types_getMethodCallOnFile = [StringTypes]
+  def export_getMethodCallOnFile( self, fileName ):
+    db = DataLoggingDB()
+    res = db.getMethodCallOnFile( fileName )
+    return res
+
+  def export_createTables( self ):
+    db = DataLoggingDB()
+    res = db.createTables()
+    return res

@@ -12,6 +12,7 @@ class DataLoggingFile( object ):
 
   def __init__( self, name ):
     self.name = name
+    self.ID = None
 
   def toJSON( self ):
     """ Returns the JSON description string of the DataLoggingFile """

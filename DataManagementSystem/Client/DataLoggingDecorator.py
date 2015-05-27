@@ -4,56 +4,25 @@ Created on May 4, 2015
 @author: Corentin Berger
 '''
 
-import inspect, functools, types
+import functools, types
 from types import StringTypes
 from threading import current_thread
 
 
-from DIRAC.DataManagementSystem.Client.ArgsFunction import extractArgs, getArgsExecute, getTupleArgs
+from DIRAC.DataManagementSystem.Client.DataLoggingFunctions import *
 from DIRAC.DataManagementSystem.Client.DataLoggingAction import DataLoggingAction
 from DIRAC.DataManagementSystem.Client.DataLoggingBuffer import DataLoggingBuffer
 from DIRAC.DataManagementSystem.Client.DataLoggingFile import DataLoggingFile
 from DIRAC.DataManagementSystem.Client.DataLoggingStatus import DataLoggingStatus
 from DIRAC.DataManagementSystem.Client.DataLoggingStorageElement import DataLoggingStorageElement
 from DIRAC.DataManagementSystem.Client.DataLoggingMethodName import DataLoggingMethodName
-from DIRAC.DataManagementSystem.Client.DataLoggingException import DataLoggingException
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 
 
 
-def caller_name( skip = 2 ):
-  """Get a name of a caller in the format module.class.method
-
-     `skip` specifies how many levels of stack to skip while getting caller
-     name. skip=1 means "who calls me", skip=2 "who calls my caller" etc.
-
-     An empty string is returned if skipped levels exceed stack height
-  """
-  stack = inspect.stack()
-  start = 0 + skip
-  if len( stack ) < start + 1:
-    return ''
-  parentframe = stack[start][0]
-  name = []
-  module = inspect.getmodule( parentframe )
-  if module:
-      name.append( module.__name__ )
-
-  if 'self' in parentframe.f_locals:
-      # I don't know any way to detect call from the object method
-      # XXX: there seems to be no way to detect static method call - it will
-      #      be just a function call
-      name.append( parentframe.f_locals['self'].__class__.__name__ )
-  codename = parentframe.f_code.co_name
-  if codename != '<module>':  # top level usually
-      name.append( codename )  # function or a method
-  del parentframe
-  return ".".join( name )
-
-
-
-funcdict = {
+funcDict = {
   'normal':extractArgs,
   'default':extractArgs,
   'execute': getArgsExecute,
@@ -109,9 +78,9 @@ class _DataLoggingDecorator( object ):
         self.argsDecorator[key] = value
 
     if 'getActionArgsFunction' in self.argsDecorator:
-      self.getActionArgsFunction = funcdict[self.argsDecorator['getActionArgsFunction']]
+      self.getActionArgsFunction = funcDict[self.argsDecorator['getActionArgsFunction']]
     else :
-      self.getActionArgsFunction = funcdict['default']
+      self.getActionArgsFunction = funcDict['default']
 
     functools.wraps( func )( self )
 
@@ -126,8 +95,12 @@ class _DataLoggingDecorator( object ):
     """
     result = None
     exception = None
+    isSequenceComplete = False
 
     try:
+
+      # we test here if we have to use the data logging system for this method
+      # toLog = self.isMethodToLog( *args )
       # we set the caller
       self.setCaller()
 
@@ -154,13 +127,19 @@ class _DataLoggingDecorator( object ):
         result = self.func( *args, **kwargs )
       except Exception as e:
         exception = e
+        print self.func.__name__
+        gLogger.error( 'Decorate function %s' % e )
         raise e
 
       # now we get the status ( failed or successful) of methodCall's actions
       self.getActionStatus( result, methodCall, exception )
 
       # pop of the methodCall corresponding to the decorate method
-      self.popMethodCall()
+      isSequenceComplete = self.popMethodCall()
+
+      # if the sequence is complete we insert it into DB
+      if isSequenceComplete :
+        self.insertSequence()
 
     except DataLoggingException as e:
       if not result :
@@ -179,7 +158,6 @@ class _DataLoggingDecorator( object ):
     """
     try :
       if not exception  :
-        print 'toto'
         if foncResult is not None :
           if isinstance( foncResult, dict ):
             if foncResult['OK']:
@@ -231,7 +209,7 @@ class _DataLoggingDecorator( object ):
     :param args : a dict with the arguments needed to create a methodcall
     """
     try :
-      methodCall = DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).appendMethodCall( args )
+      methodCall = DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).appendMethodCall( args )
     except Exception as e:
       raise DataLoggingException( repr( e ) )
     return methodCall
@@ -240,9 +218,11 @@ class _DataLoggingDecorator( object ):
   def popMethodCall( self ):
     """ pop a methodCall from the sequence corresponding to its thread """
     try :
-      DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).popMethodCall()
+      res = DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).popMethodCall()
     except Exception as e:
       raise DataLoggingException( repr( e ) )
+
+    return res
 
 
   def setCaller( self ):
@@ -251,9 +231,9 @@ class _DataLoggingDecorator( object ):
         next if the caller is not set, we set it
     """
     try :
-      res = DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).isCallerSet()
+      res = DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).isCallerSet()
       if not res["OK"]:
-        DataLoggingBuffer.getDataLoggingSequence( str( current_thread().ident ) ).setCaller( caller_name( 3 ) )
+        DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).setCaller( caller_name( 3 ) )
     except Exception as e:
       raise DataLoggingException( repr( e ) )
 
@@ -300,3 +280,9 @@ class _DataLoggingDecorator( object ):
       raise DataLoggingException( repr( e ) )
 
     return ret
+
+
+  def insertSequence( self ):
+    client = DataLoggingClient()
+    client.insertSequence( DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ) )
+    DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).methodCalls = list()

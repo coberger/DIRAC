@@ -141,9 +141,11 @@ class DataLoggingDB( object ):
         # putfile
         res = self.putFile( action.file , session )
         action.file = res['Value']
+
         # putStatus
         res = self.putStatus( action.status, session )
         action.status = res['Value']
+
         # put storage element
         res = self.putStorageElement( action.srcSE, session )
         action.srcSE = res['Value']
@@ -161,6 +163,9 @@ class DataLoggingDB( object ):
       return S_ERROR( "putSequence: unexpected exception %s" % e )
     finally:
       session.close()
+
+    return S_OK()
+
 
   def putMethodName( self, mn, session ):
     """ put a MethodName into datbase
@@ -196,13 +201,13 @@ class DataLoggingDB( object ):
           instance = DataLoggingStorageElement( se.name )
           session.add( instance )
           session.commit()
-
         return S_OK( instance )
 
     except Exception, e:
       session.rollback()
       gLogger.error( "putStorageElement: unexpected exception %s" % e )
       return S_ERROR( "putStorageElement: unexpected exception %s" % e )
+
 
   def putFile( self, file, session ):
     """ put a file into datbase
@@ -267,28 +272,32 @@ class DataLoggingDB( object ):
 
 
 
-  def getLFNSequence( self, lfn ):
+  def getSequenceOnFile( self, lfn ):
     """
       get all sequence about a lfn's name
     """
     session = self.DBSession()
     try:
-      operations = session.query( DataLoggingSequence, DataLoggingMethodCall, DataLoggingAction ).join( DataLoggingMethodCall )\
-      .join( DataLoggingAction ).join( DataLoggingFile ).filter( DataLoggingFile.name == lfn ).all()
-      for row in operations :
-        print "%s %s %s %s %s %s %s" % ( row.Sequence.ID, row.OperationFile.ID, row.OperationFile.creationTime,
-                                       row.OperationFile.name, lfn, row.OperationFile.caller, row.StatusOperation.status )
+      result = session.query( DataLoggingSequence, DataLoggingCaller, DataLoggingMethodCall, DataLoggingMethodName,
+                                  DataLoggingAction, DataLoggingStatus, DataLoggingFile )\
+                                  .join( DataLoggingMethodCall ).join( DataLoggingMethodName ).join( DataLoggingAction )\
+                                  .join( DataLoggingStatus ).join( DataLoggingFile )\
+                                  .filter( DataLoggingFile.name == lfn ).all()
+      for row in result :
+        print "%s %s %s %s " % ( row.DataLoggingSequence.ID, row.DataLoggingMethodName.name,
+                                       row.DataLoggingFile.name, row.DataLoggingStatus.name )
 
     except Exception, e:
-      gLogger.error( "getLFNOperation: unexpected exception %s" % e )
-      return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
+      gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
+      return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
 
     finally:
       session.close
 
+    return S_OK()
 
 
-  def getLFNOperation( self, lfn ):
+  def getMethodCallOnFile( self, lfn ):
     """
       get all operation about a lfn's name
     """
@@ -296,9 +305,8 @@ class DataLoggingDB( object ):
     try:
       operations = session.query( DataLoggingMethodCall, DataLoggingAction ).join( DataLoggingAction )\
       .join( DataLoggingFile ).filter( DataLoggingFile.name == lfn ).all()
-      print operations
       for row in operations :
-        print "%s %s %s %s %s %s" % ( row.OperationFile.ID, row.OperationFile.creationTime,
+        print "%s %s %s %s %s %s" % ( row.DataLoggingMethodCall.ID, row.OperationFile.creationTime,
                                        row.OperationFile.name, lfn, row.OperationFile.caller, row.StatusOperation.status )
 
     except Exception, e:
@@ -307,3 +315,5 @@ class DataLoggingDB( object ):
 
     finally:
       session.close
+
+    return S_OK()

@@ -4,15 +4,39 @@ Created on May 7, 2015
 @author: Corentin Berger
 '''
 
+import inspect
+
+
 from DIRAC.DataManagementSystem.Client.DataLoggingException import DataLoggingException
 
-methodsArgs = {'isFile' :
-                  {'Required' : ['self', 'files', 'name'],
-                  'Default' : {'default': 'defIsFileArgsDefaultValue'} },
-              'isDirectory' :
-                  {'Required' : ['self', 'files'],
-                  'Default' : {'default': 'defIsDirectoryArgsDefaultValue'} }
-              }
+def caller_name( skip = 2 ):
+  """Get a name of a caller in the format module.class.method
+
+     `skip` specifies how many levels of stack to skip while getting caller
+     name. skip=1 means "who calls me", skip=2 "who calls my caller" etc.
+
+     An empty string is returned if skipped levels exceed stack height
+  """
+  stack = inspect.stack()
+  start = 0 + skip
+  if len( stack ) < start + 1:
+    return ''
+  parentframe = stack[start][0]
+  name = []
+  module = inspect.getmodule( parentframe )
+  if module:
+      name.append( module.__name__ )
+
+  if 'self' in parentframe.f_locals:
+      # I don't know any way to detect call from the object method
+      # XXX: there seems to be no way to detect static method call - it will
+      #      be just a function call
+      name.append( parentframe.f_locals['self'].__class__.__name__ )
+  codename = parentframe.f_code.co_name
+  if codename != '<module>':  # top level usually
+      name.append( codename )  # function or a method
+  del parentframe
+  return ".".join( name )
 
 
 def extractArgs( argsDecorator, *args, **kwargs ):
@@ -77,8 +101,11 @@ def getArgsExecute( argsDecorator, *args, **kwargs ):
   """
   try :
     funcName = argsDecorator['call']
-    argsDecorator['argsPosition'] = methodsArgs[funcName]['Required']
-    args = extractArgs( argsDecorator , *args, **kwargs )
+    if funcName in argsDecorator['methods_to_log']:
+      argsDecorator['argsPosition'] = argsDecorator['methods_to_log_arguments'][funcName]['Required']
+      args = extractArgs( argsDecorator , *args, **kwargs )
+    else:
+      raise DataLoggingException( 'Method is not into the list of method to log' )
   except Exception as e:
     raise DataLoggingException( repr( e ) )
   return args

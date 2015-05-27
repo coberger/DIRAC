@@ -4,16 +4,19 @@ Created on May 5, 2015
 @author: Corentin Berger
 '''
 
+
 from DIRAC              import S_OK
 from DIRAC.DataManagementSystem.Client.DataLoggingDecorator  import DataLoggingDecorator
 
+import random
 from threading import Thread
+from time import sleep
+
 
 def splitIntoSuccFailed( lfns ):
-  """return some as successful, others as failed """
-  localLfns = list( lfns )
-  successful = dict.fromkeys( localLfns[0::2], {} )
-  failed = dict.fromkeys( set( localLfns ) - set( successful ), {} )
+  """ Randomly return some as successful, others as failed """
+  successful = dict.fromkeys( random.sample( lfns, random.randint( 0, len( lfns ) ) ), {} )
+  failed = dict.fromkeys( set( lfns ) - set( successful ), {} )
 
   return successful, failed
 
@@ -222,19 +225,9 @@ class FileCatalog ( object ) :
     else:
       raise AttributeError
 
-  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute',
-                          attributesToGet = ['call' ], methods_to_log = ['isDirectory', 'isFile'],
-                           methods_to_log_arguments = {'isFile' :
-                                                        {'Required' : ['self', 'files', 'name'],
-                                                            'Default' : {'default': 'defIsFileArgsDefaultValue'} },
-                                                      'isDirectory' :
-                                                        {'Required' : ['self', 'files'],
-                                                          'Default' : {'default': 'defIsDirectoryArgsDefaultValue'} }
-                                                       }
-                         )
+  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute', attributesToGet = ['call' ] )
   def execute( self, *parms, **kws ):
-    fcm = FileCatalogMethod()
-    method = getattr( fcm, self.call )
+    method = getattr( FileCatalogMethod(), self.call )
     res = method( *parms, **kws )
     return res
 
@@ -249,11 +242,96 @@ class ClientC( Thread ):
 
 
   def doSomethingElse( self ):
-    fc = FileCatalog()
+    test = FileCatalog()
 
-    fc.isFile( ['lfn3', 'lfn4', 'lfn5', 'lfn6'], 'titi' )
-    fc.isDirectory( ['lfn1', 'lfn2'] )
+    test.isFile( ['lfn3', 'lfn4'], 'titi' )
+    test.isDirectory( ['lfn1', 'lfn2'] )
 
   def run( self ):
     self.doSomethingElse()
 
+
+
+c1 = ClientA( ['A', 'B'] )
+c2 = ClientA( ['C', 'D'] )
+c3 = ClientA( ['A', 'B'] )
+c4 = ClientA( ['C', 'D'] )
+c5 = ClientA( ['A', 'B'] )
+c6 = ClientA( ['C', 'D'] )
+c7 = ClientA( ['A', 'B'] )
+c8 = ClientA( ['C', 'D'] )
+
+#===============================================================================
+# c1 = ClientB()
+# c2 = ClientB()
+# c3 = ClientB()
+# c4 = ClientB()
+#===============================================================================
+
+c1 = ClientC()
+c2 = ClientC()
+c3 = ClientC()
+c4 = ClientC()
+c5 = ClientC()
+c6 = ClientC()
+c7 = ClientC()
+c8 = ClientC()
+c9 = ClientC()
+c10 = ClientC()
+c11 = ClientC()
+c12 = ClientC()
+c13 = ClientC()
+c14 = ClientC()
+c15 = ClientC()
+c16 = ClientC()
+
+c1.start()
+c2.start()
+c3.start()
+c4.start()
+c5.start()
+c6.start()
+c7.start()
+c8.start()
+
+#===============================================================================
+# c9.start()
+# c10.start()
+# c11.start()
+# c12.start()
+# c13.start()
+# c14.start()
+# c15.start()
+# c16.start()
+#===============================================================================
+
+c1.join()
+c2.join()
+c3.join()
+c4.join()
+c5.join()
+c6.join()
+c7.join()
+
+#===============================================================================
+# c8.join()
+# c9.join()
+# c10.join()
+# c11.join()
+# c12.join()
+# c13.join()
+# c14.join()
+# c15.join()
+# c16.join()
+#===============================================================================
+
+
+ #==============================================================================
+ # db = DataBase()
+ # db.getLFNSequence( 'A' )
+ #==============================================================================
+
+#===============================================================================
+# test = FileCatalog()
+# test.isFile( ['lfn4', 'lfn5'], 'titi' )
+#===============================================================================
