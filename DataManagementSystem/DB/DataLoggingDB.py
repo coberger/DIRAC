@@ -109,7 +109,7 @@ class DataLoggingDB( object ):
 
 
 
-    self.engine = create_engine( 'mysql://Dirac:corent@127.0.0.1/testDiracDB', echo = False )
+    self.engine = create_engine( 'mysql://Dirac:corent@127.0.0.1/testDiracDB', echo = True )
     metadata.bind = self.engine
     self.DBSession = sessionmaker( bind = self.engine )
 
@@ -131,28 +131,28 @@ class DataLoggingDB( object ):
     # print sequence
     caller = self.putCaller( sequence.caller, session )
     sequence.caller = caller['Value']
-
-    for mc in sequence.methodCalls:
-
-      res = self.putMethodName( mc.name, session )
-      mc.name = res['Value']
-
-      for action in mc.actions :
-        # putfile
-        res = self.putFile( action.file , session )
-        action.file = res['Value']
-
-        # putStatus
-        res = self.putStatus( action.status, session )
-        action.status = res['Value']
-
-        # put storage element
-        res = self.putStorageElement( action.srcSE, session )
-        action.srcSE = res['Value']
-        res = self.putStorageElement( action.targetSE, session )
-        action.targetSE = res['Value']
-
     try:
+      for mc in sequence.methodCalls:
+
+        res = self.putMethodName( mc.name, session )
+        mc.name = res['Value']
+
+        for action in mc.actions :
+          # putfile
+          res = self.putFile( action.file , session )
+          action.file = res['Value']
+
+          # putStatus
+          res = self.putStatus( action.status, session )
+          action.status = res['Value']
+
+          # put storage element
+          res = self.putStorageElement( action.srcSE, session )
+          action.srcSE = res['Value']
+          res = self.putStorageElement( action.targetSE, session )
+          action.targetSE = res['Value']
+
+
       session.add( sequence )
       session.commit()
       return S_OK()
@@ -173,6 +173,7 @@ class DataLoggingDB( object ):
         else we insert a new MethodName
     """
     try:
+      session.begin( subtransactions = True )
       instance = session.query( DataLoggingMethodName ).filter_by( name = mn.name ).first()
       if not instance:
         instance = DataLoggingMethodName( mn.name )
@@ -196,6 +197,7 @@ class DataLoggingDB( object ):
       if se.name is None :
         return S_OK( None )
       else :
+        session.begin( subtransactions = True )
         instance = session.query( DataLoggingStorageElement ).filter_by( name = se.name ).first()
         if not instance:
           instance = DataLoggingStorageElement( se.name )
@@ -215,6 +217,7 @@ class DataLoggingDB( object ):
         else we insert a new file
     """
     try:
+      session.begin( subtransactions = True )
       instance = session.query( DataLoggingFile ).filter_by( name = file.name ).first()
       if not instance:
         instance = DataLoggingFile( file.name )
@@ -236,6 +239,7 @@ class DataLoggingDB( object ):
         else we insert a new status
     """
     try:
+      session.begin( subtransactions = True )
       instance = session.query( DataLoggingStatus ).filter_by( name = status.name ).first()
       if not instance:
         # print 'no instance of %s' % status.name
@@ -257,6 +261,7 @@ class DataLoggingDB( object ):
         else we insert a new caller
     """
     try:
+      session.begin( subtransactions = True )
       instance = session.query( DataLoggingCaller ).filter_by( name = caller.name ).first()
       if not instance:
         instance = DataLoggingCaller( caller.name )
