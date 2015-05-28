@@ -18,7 +18,7 @@ from DIRAC.DataManagementSystem.Client.DataLoggingMethodName import DataLoggingM
 
 # from sqlalchemy
 from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, BLOB
-from sqlalchemy.orm     import mapper, sessionmaker, relationship, backref
+from sqlalchemy.orm     import mapper, sessionmaker, relationship, backref, scoped_session
 
 
 
@@ -72,10 +72,11 @@ dataLoggingActionTable = Table( 'DataLoggingAction', metadata,
                    Column( 'blob', String( 2048 ) ),
                    mysql_engine = 'InnoDB' )
 
-mapper( DataLoggingAction, dataLoggingActionTable, properties = { 'file' : relationship( DataLoggingFile ),
-                                                                 'status' : relationship( DataLoggingStatus ),
-                                                                 'srcSE' : relationship( DataLoggingStorageElement, foreign_keys = dataLoggingActionTable.c.IDsrcSE ),
-                                                                 'targetSE' : relationship( DataLoggingStorageElement, foreign_keys = dataLoggingActionTable.c.IDtargetSE )} )
+mapper( DataLoggingAction, dataLoggingActionTable,
+        properties = { 'file' : relationship( DataLoggingFile ),
+                      'status' : relationship( DataLoggingStatus ),
+                      'srcSE' : relationship( DataLoggingStorageElement, foreign_keys = dataLoggingActionTable.c.IDsrcSE ),
+                      'targetSE' : relationship( DataLoggingStorageElement, foreign_keys = dataLoggingActionTable.c.IDtargetSE )} )
 
 
 
@@ -112,6 +113,7 @@ class DataLoggingDB( object ):
     self.engine = create_engine( 'mysql://Dirac:corent@127.0.0.1/testDiracDB', echo = True )
     metadata.bind = self.engine
     self.DBSession = sessionmaker( bind = self.engine )
+    # self.DBSession = scoped_session(self.session_factory )
 
 
 
@@ -127,125 +129,135 @@ class DataLoggingDB( object ):
 
   def putSequence( self, sequence ):
     """ put a sequence into database"""
-    session = self.DBSession()
     # print sequence
-    caller = self.putCaller( sequence.caller, session )
-    sequence.caller = caller['Value']
+    session = None
     try:
+      caller = self.putCaller( sequence.caller )
+      sequence.caller = caller['Value']
       for mc in sequence.methodCalls:
 
-        res = self.putMethodName( mc.name, session )
+        res = self.putMethodName( mc.name )
         mc.name = res['Value']
 
         for action in mc.actions :
           # putfile
-          res = self.putFile( action.file , session )
+          res = self.putFile( action.file )
           action.file = res['Value']
 
           # putStatus
-          res = self.putStatus( action.status, session )
+          res = self.putStatus( action.status )
           action.status = res['Value']
 
           # put storage element
-          res = self.putStorageElement( action.srcSE, session )
+          res = self.putStorageElement( action.srcSE )
           action.srcSE = res['Value']
-          res = self.putStorageElement( action.targetSE, session )
+          res = self.putStorageElement( action.targetSE )
           action.targetSE = res['Value']
-
-
+      session = self.DBSession()
       session.add( sequence )
       session.commit()
       return S_OK()
 
     except Exception, e:
-      session.rollback()
+      gLogger.error( "Rollback putSequence" )
+      if session :
+        session.rollback()
       gLogger.error( "putSequence: unexpected exception %s" % e )
       return S_ERROR( "putSequence: unexpected exception %s" % e )
     finally:
-      session.close()
+      if session :
+        session.close()
 
-    return S_OK()
 
-
-  def putMethodName( self, mn, session ):
+  def putMethodName( self, mn ):
     """ put a MethodName into datbase
         if the MethodName's name is already in data base, we just return the object
         else we insert a new MethodName
     """
+    session = self.DBSession()
     try:
-      session.begin( subtransactions = True )
       instance = session.query( DataLoggingMethodName ).filter_by( name = mn.name ).first()
       if not instance:
         instance = DataLoggingMethodName( mn.name )
         session.add( instance )
         session.commit()
-
       return S_OK( instance )
 
     except Exception, e:
       session.rollback()
+      gLogger.error( "Rollback putMethodName" )
       gLogger.error( "putMethodName: unexpected exception %s" % e )
       return S_ERROR( "putMethodName: unexpected exception %s" % e )
+    finally:
+      session.close()
 
 
-  def putStorageElement( self, se, session ):
+  def putStorageElement( self, se ):
     """ put a lfn into datbase
         if the lfn's name is already in data base, we just return the object
         else we insert a new lfn
     """
+    session = self.DBSession()
     try:
       if se.name is None :
         return S_OK( None )
       else :
-        session.begin( subtransactions = True )
         instance = session.query( DataLoggingStorageElement ).filter_by( name = se.name ).first()
         if not instance:
           instance = DataLoggingStorageElement( se.name )
           session.add( instance )
           session.commit()
+          gLogger.verbose( "commit putStorageElement" )
         return S_OK( instance )
 
     except Exception, e:
       session.rollback()
+      gLogger.error( "Rollback putStorageElement" )
       gLogger.error( "putStorageElement: unexpected exception %s" % e )
       return S_ERROR( "putStorageElement: unexpected exception %s" % e )
+    finally:
+      session.close()
 
 
-  def putFile( self, file, session ):
+  def putFile( self, file ):
     """ put a file into datbase
         if the file's name is already in data base, we just return the object
         else we insert a new file
     """
+    session = self.DBSession()
     try:
-      session.begin( subtransactions = True )
       instance = session.query( DataLoggingFile ).filter_by( name = file.name ).first()
       if not instance:
         instance = DataLoggingFile( file.name )
         session.add( instance )
         session.commit()
+        gLogger.verbose( "commit putFile" )
 
       return S_OK( instance )
 
     except Exception, e:
       session.rollback()
+      gLogger.error( "Rollback putFile" )
       gLogger.error( "putFile: unexpected exception %s" % e )
       return S_ERROR( "putFile: unexpected exception %s" % e )
+    finally:
+      session.close()
 
 
-
-  def putStatus( self, status, session ):
+  def putStatus( self, status ):
     """ put a status into datbase
         if the status is already in data base, we just return the object
         else we insert a new status
     """
+    session = self.DBSession()
     try:
-      session.begin( subtransactions = True )
       instance = session.query( DataLoggingStatus ).filter_by( name = status.name ).first()
       if not instance:
         # print 'no instance of %s' % status.name
         instance = DataLoggingStatus( status.name )
         session.add( instance )
         session.commit()
+        gLogger.verbose( "commit putStatus" )
 
       return S_OK( instance )
 
@@ -253,28 +265,33 @@ class DataLoggingDB( object ):
       session.rollback()
       gLogger.error( "putStatus: unexpected exception %s" % e )
       return S_ERROR( "putStatus: unexpected exception %s" % e )
+    finally:
+      session.close()
 
 
-  def putCaller( self, caller, session ):
+  def putCaller( self, caller ):
     """ put a caller into datbase
         if the caller's name is already in data base, we just return the object
         else we insert a new caller
     """
+    session = self.DBSession()
     try:
-      session.begin( subtransactions = True )
       instance = session.query( DataLoggingCaller ).filter_by( name = caller.name ).first()
       if not instance:
         instance = DataLoggingCaller( caller.name )
         session.add( instance )
         session.commit()
+        gLogger.verbose( "commit putCaller" )
 
       return S_OK( instance )
 
     except Exception, e:
       session.rollback()
+      gLogger.error( "Rollback putCaller" )
       gLogger.error( "putCaller: unexpected exception %s" % e )
       return S_ERROR( "putCaller: unexpected exception %s" % e )
-
+    finally:
+      session.close()
 
 
   def getSequenceOnFile( self, lfn ):
