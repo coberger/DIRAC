@@ -17,7 +17,7 @@ class DataLoggingAction ( object ):
     self.targetSE = targetSE
     self.blob = blob
     self.ID = None
-    self.IDOp = None
+    self.IDMethodCall = None
     self.IDFile = None
     self.IDStatus = None
 
@@ -34,12 +34,10 @@ class DataLoggingAction ( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['ID', 'IDOp', 'IDFile', 'IDStatus']
+    attrNames = ['ID', 'IDMethodCall', 'IDFile', 'IDStatus']
     jsonData = {}
 
     for attrName in attrNames :
-
-      # RequestID and OperationID might not be set since they are managed by SQLAlchemy
       if not hasattr( self, attrName ):
         continue
 
