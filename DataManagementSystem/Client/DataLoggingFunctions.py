@@ -49,7 +49,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
   """
 
   try :
-    wantedArgs = ['files', 'srcSE', 'targetSE']
+    wantedArgs = ['datalogging_files', 'srcSE', 'targetSE']
 
     argsPosition = argsDecorator['argsPosition']
     # print 'argsPosition %s  args %s kwargs %s ' % ( argsPosition, args, kwargs )
@@ -60,8 +60,8 @@ def extractArgs( argsDecorator, *args, **kwargs ):
       a = argsPosition[i]
       ainwanted = a in wantedArgs
       if ainwanted:
-        if a is 'files':
-          opArgs[a] = getFilesArgs( args[i] )
+        if a is 'datalogging_files':
+          opArgs['files'] = getFilesArgs( args[i] )
         else :
           opArgs[a] = args[i]
       else:
@@ -78,8 +78,8 @@ def extractArgs( argsDecorator, *args, **kwargs ):
 
 
     actionArgs = []
-    if 'files' in opArgs:
-      for f in opArgs['files'] :
+    if 'datalogging_files' in opArgs:
+      for f in opArgs['datalogging_files'] :
         d = dict( opArgs )
         d['files'] = f
         actionArgs.append( d )
@@ -102,7 +102,7 @@ def getArgsExecute( argsDecorator, *args, **kwargs ):
   try :
     funcName = argsDecorator['call']
     if funcName in argsDecorator['methods_to_log']:
-      argsDecorator['argsPosition'] = argsDecorator['methods_to_log_arguments'][funcName]['Required']
+      argsDecorator['argsPosition'] = argsDecorator['methods_to_log_arguments'][funcName]['Arguments']
       args = extractArgs( argsDecorator , *args, **kwargs )
     else:
       raise DataLoggingException( 'Method is not into the list of method to log' )
@@ -116,7 +116,7 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
     when the decorate function has tuple in arguments like 'registerFile' in the data manager
   """
   try :
-    wantedArgs = ['files', 'srcSE', 'targetSE']
+    wantedArgs = ['datalogging_files', 'srcSE', 'targetSE']
     funcArgs = list()
     opArgs = dict.fromkeys( wantedArgs, None )
 
@@ -128,7 +128,7 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
       a = argsPosition[i]
       ainwanted = a in wantedArgs
       if ainwanted:
-        if a is 'lfns':
+        if a is 'datalogging_files':
           opArgs['files'] = getFilesArgs( args[i] )
         else :
           opArgs[a] = tuple[i]

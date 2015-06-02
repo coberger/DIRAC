@@ -37,3 +37,11 @@ class DataLoggingClient( Client ):
     res = self.testManager.getSequenceOnFile( fileName )
     return res
 
+  def getMethodCallOnFile(self, fileName):
+    res = self.testManager.getMethodCallOnFile( fileName )
+    return res
+
+  def dropTables( self ):
+    res = self.testManager.dropTables()
+    return res
+

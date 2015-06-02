@@ -23,10 +23,9 @@ class DataLoggingHandler( RequestHandler ):
     # print "After receiving %s" % sequenceJSON
     sequence = json.loads( sequenceJSON, cls = DataLoggingDecoder )
     db = DataLoggingDB()
-    db.createTables()
     res = db.putSequence( sequence )
     if not res["OK"]:
-      gLogger.error( ' error export_insertSequence', res['Message'] )
+      gLogger.error( 'error export_insertSequence', res['Message'] )
       DIRAC.exit( -1 )
     return res
 
@@ -42,9 +41,25 @@ class DataLoggingHandler( RequestHandler ):
   def export_getMethodCallOnFile( self, fileName ):
     db = DataLoggingDB()
     res = db.getMethodCallOnFile( fileName )
+    if not res["OK"]:
+      gLogger.error( 'error export_insertSequence', res['Message'] )
+      DIRAC.exit( -1 )
     return res
 
+  types_createTables = []
   def export_createTables( self ):
     db = DataLoggingDB()
     res = db.createTables()
+    if not res["OK"]:
+      gLogger.error( 'error export_insertSequence', res['Message'] )
+      DIRAC.exit( -1 )
+    return res
+
+  types_dropTables = []
+  def export_dropTables( self ):
+    db = DataLoggingDB()
+    res = db.dropTables()
+    if not res["OK"]:
+      gLogger.error( 'error export_insertSequence', res['Message'] )
+      DIRAC.exit( -1 )
     return res

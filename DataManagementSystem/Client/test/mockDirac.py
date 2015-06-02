@@ -167,9 +167,9 @@ class ClientB( Thread ):
     Thread.__init__( self )
 
 
-  def doSomethingElse( self ):
+  def doSomething( self ):
     dm = TestDataManager()
-    res = dm.putAndRegister( [18, 19, 20], '/local/path/', 'destSE' )
+    res = dm.putAndRegister( ['A', 'B', 'C', 'D'], '/local/path/', 'destSE' )
     s = res['Value']['Successful']
     f = res['Value']['Failed']
     #===========================================================================
@@ -180,7 +180,7 @@ class ClientB( Thread ):
     res = TestFileCatalog().getFileSize( s )
 
   def run( self ):
-    self.doSomethingElse()
+    self.doSomething()
 
 
 
