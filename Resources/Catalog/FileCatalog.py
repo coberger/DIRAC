@@ -33,100 +33,50 @@ class FileCatalog( object ):
   write_meta_methods = ['addMetadataField', 'deleteMetadataField', 'setMetadata', 'setMetadataBulk',
                         'removeMetadata', 'addMetadataSet']
 
-  method_to_log = ['isDirectory', 'isFile', 'createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica',
-                   'removeReplica', 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
-                   'setDirectoryStatus', 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset',
-                   'changePathMode', 'changePathOwner', 'changePathGroup', 'addMetadataField', 'setMetadata',
-                   'setMetadataBulk', 'removeMetadata', 'addMetadataSet']
+  write_methods += write_meta_methods
 
   methods_to_log_arguments = {
-              'isFile' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
-              'isDirectory' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
-              'exists' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
               'createLink' :
-                {'Required' : ['self', 'link'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'link'] },
               'removeLink' :
-                {'Required' : ['self', 'link'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'link']},
               'addFile' :
-                {'Required' : ['self', 'files', ],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files', ] },
               'setFileStatus' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files'] },
               'addReplica' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files']},
               'removeReplica' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files'] },
               'removeFile' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files'] },
               'setReplicaStatus' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files'] },
               'setReplicaHost' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files'] },
               'setReplicaProblematic' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {'revert' : False} },
+                {'Arguments' : ['self', 'files'] },
               'createDirectory' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files'] },
               'setDirectoryStatus' :
-                {'Required' : ['self', 'path', 'status'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'path', 'status']},
               'removeDirectory' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files'] },
               'removeDataset' :
-                {'Required' : ['self', 'dataset'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'dataset'] },
               'removeFileFromDataset' :
-                {'Required' : ['self', 'dataset'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'dataset']},
               'createDataset' :
-                {'Required' : ['self', 'dataset'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'dataset']},
               'changePathMode' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {'recursive' : False} },
+                {'Arguments' : ['self', 'files'] },
               'changePathOwner' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {'recursive' : False} },
+                {'Arguments' : ['self', 'files'] },
               'changePathGroup' :
-                {'Required' : ['self', 'files'],
-                  'Default' : {'recursive' : False} },
-              'addMetadataField' :
-                {'Required' : ['self', 'fieldName', 'fieldType'],
-                  'Default' : {'metaType' : '-d'} },
-              'addMetadataField' :
-                {'Required' : ['self', 'fieldName'],
-                  'Default' : {} },
-              'setMetadata' :
-                {'Required' : ['self', 'path', 'metadatadict'],
-                  'Default' : {} },
-              'setMetadataBulk' :
-                {'Required' : ['self', 'pathMetadataDict'],
-                  'Default' : {} },
-              'removeMetadata' :
-                {'Required' : ['self', 'pathMetadataDict'],
-                  'Default' : {} },
-              'addMetadataSet' :
-                {'Required' : ['self', 'setName', 'setDict'],
-                  'Default' : {} },
+                {'Arguments' : ['self', 'files']},
               }
 
-  write_methods += write_meta_methods
+
 
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
@@ -183,7 +133,7 @@ class FileCatalog( object ):
       raise AttributeError
 
   @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute',
-                          attributesToGet = ['call' ], methods_to_log = methods_to_log,
+                          attributesToGet = ['call' ], methods_to_log = write_methods,
                            methods_to_log_arguments = methods_to_log_arguments )
   def w_execute( self, *parms, **kws ):
     """ Write method executor.
@@ -242,9 +192,6 @@ class FileCatalog( object ):
     else:
       return res
 
-  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute',
-                          attributesToGet = ['call' ], methods_to_log = methods_to_log,
-                           methods_to_log_arguments = methods_to_log_arguments )
   def r_execute( self, *parms, **kws ):
     """ Read method executor.
     """
