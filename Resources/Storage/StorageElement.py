@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 import re
 # # from DIRAC
 from DIRAC import gLogger, gConfig
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult 
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -16,6 +16,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog import FileCatalog
+from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
 
 class StorageElementCache( object ):
 
@@ -113,6 +114,56 @@ class StorageElementItem( object ):
                          "getDirectory" : { "localPath" : False },
                          }
 
+  dataLoggingMethodToLog = [ 'retransferOnlineFile',
+                          'putFile',
+                          'replicateFile',
+                          'pinFile',
+                          'releaseFile',
+                          'createDirectory',
+                          'putDirectory' ]
+
+  dataLoggingMethodsToLogArguments = {
+              'createLink' :
+                {'Arguments' : ['self', 'link'] },
+              'removeLink' :
+                {'Arguments' : ['self', 'link']},
+              'addFile' :
+                {'Arguments' : ['self', 'datalogging_files', ] },
+              'setFileStatus' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'addReplica' :
+                {'Arguments' : ['self', 'datalogging_files']},
+              'removeReplica' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'removeFile' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'setReplicaStatus' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'setReplicaHost' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'setReplicaProblematic' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'createDirectory' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'setDirectoryStatus' :
+                {'Arguments' : ['self', 'path', 'status']},
+              'removeDirectory' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'removeDataset' :
+                {'Arguments' : ['self', 'dataset'] },
+              'removeFileFromDataset' :
+                {'Arguments' : ['self', 'dataset']},
+              'createDataset' :
+                {'Arguments' : ['self', 'dataset']},
+              'changePathMode' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'changePathOwner' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'changePathGroup' :
+                {'Arguments' : ['self', 'datalogging_files']},
+              }
+
+
   def __init__( self, name, plugins = None, vo = None ):
     """ c'tor
 
@@ -131,7 +182,7 @@ class StorageElementItem( object ):
         return
       self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
-    
+
     proxiedProtocols = gConfig.getValue( '/LocalSite/StorageElements/ProxyProtocols', "" ).split( ',' )
     useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
                 in proxiedProtocols )
@@ -198,7 +249,7 @@ class StorageElementItem( object ):
                        'getStorageElementName',
                        'getStorageParameters',
                        'isLocalSE' ]
-    
+
     self.__fileCatalog = None
 
   def dump( self ):
@@ -306,16 +357,16 @@ class StorageElementItem( object ):
     if not self.valid:
       self.log.debug( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
       return S_ERROR( self.errorReason )
-    
+
     # Check if the Storage Element is eligible for the user's VO
     if 'VO' in self.options and not self.vo in self.options['VO']:
       self.log.debug( "StorageElementisValid: StorageElement is not allowed for VO %s" % self.vo )
-      return S_ERROR( "StorageElement.isValid: StorageElement is not allowed for VO" ) 
+      return S_ERROR( "StorageElement.isValid: StorageElement is not allowed for VO" )
     self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for %s" % ( self.name,
                                                                                                          operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
-    
+
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
     # Determine whether the StorageElement is valid for checking, reading, writing
@@ -417,10 +468,10 @@ class StorageElementItem( object ):
     """ Negotiate what protocol could be used for a third party transfer
         between the sourceSE and ourselves. If protocols is given,
         the chosen protocol has to be among those
-        
+
         :param sourceSE : storageElement instance of the sourceSE
         :param protocols: protocol restriction list
-        
+
         :return a list protocols that fits the needs, or None
 
     """
@@ -486,7 +537,7 @@ class StorageElementItem( object ):
     result = checkArgumentFormat( urls )
     if result['OK']:
       urlDict = result['Value']
-    else:  
+    else:
       errStr = "StorageElement.getLFNFromURL: Supplied urls must be string, list of strings or a dictionary."
       self.log.debug( errStr )
       return S_ERROR( errStr )
@@ -513,7 +564,7 @@ class StorageElementItem( object ):
     """
 
     self.log.verbose( "StorageElement.getURL: Getting accessUrl %s for lfn in %s." % ( "(%s)" % protocol if protocol else "", self.name ) )
-    
+
     if not protocol:
       protocols = self.turlProtocols
     elif type( protocol ) is ListType:
@@ -522,7 +573,7 @@ class StorageElementItem( object ):
       protocols = [protocol]
 
     self.methodName = "getTransportURL"
-    result = self.__executeMethod( lfn, protocols = protocols )    
+    result = self.__executeMethod( lfn, protocols = protocols )
     return result
 
   def __isLocalSE( self ):
@@ -536,12 +587,12 @@ class StorageElementItem( object ):
       return S_OK( True )
     else:
       return S_OK( False )
-    
+
   def __getFileCatalog( self ):
-    
+
     if not self.__fileCatalog:
       self.__fileCatalog = FileCatalog( vo = self.vo )
-    return self.__fileCatalog  
+    return self.__fileCatalog
 
   def __generateURLDict( self, lfns, storage, replicaDict = {} ):
     """ Generates a dictionary (url : lfn ), where the url are constructed
@@ -566,7 +617,7 @@ class StorageElementItem( object ):
           if not result['OK']:
             failed[lfn] = result['Message']
           url = result['Value']['Successful'].get( lfn, {} ).get( self.name, '' )
-        
+
         if not url:
           failed[lfn] = 'Failed to get catalog replica'
         else:
@@ -575,8 +626,8 @@ class StorageElementItem( object ):
           if not result['OK']:
             failed[lfn] = result['Message']
           else:
-            urlDict[result['Value']] = lfn          
-      else:  
+            urlDict[result['Value']] = lfn
+      else:
         result = storage.constructURLFromLFN( lfn, withWSUrl = True )
         if not result['OK']:
           errStr = "StorageElement.__generateURLDict %s." % result['Message']
@@ -584,11 +635,13 @@ class StorageElementItem( object ):
           failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if lfn in failed else errStr
         else:
           urlDict[result['Value']] = lfn
-          
+
     res = S_OK( {'Successful': urlDict, 'Failed' : failed} )
 #     res['Failed'] = failed
     return res
 
+  @DataLoggingDecorator( argsPosition = ['self', 'datalogging_files'], getActionArgsFunction = 'executeSE',
+                          attributesToGet = ['methodName' ], methods_to_log = dataLoggingMethodToLog )
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
@@ -717,7 +770,7 @@ class StorageElementItem( object ):
               lfnDict.pop( lfn )
 
     return S_OK( { 'Failed': failed, 'Successful': successful } )
-  
+
 
   def __getattr__( self, name ):
     """ Forwards the equivalent Storage calls to StorageElement.__executeMethod"""

@@ -21,9 +21,10 @@ nb = 20
 
 clients = []
 for i in range( 1, nb ):
-  clients.append( ClientA( ['A', 'B', 'C', 'D'] ) )
+  clients.append( ClientC() )
 
 for i in range( 1, nb ):
+  print "start %s" % i
   clients[i - 1].start()
 
 for i in range( 1, nb ):
@@ -122,8 +123,10 @@ for i in range( 1, nb ):
 # c16.join()
 #===============================================================================
 
-res = dlc.getSequenceOnFile( 'A' )
-print res['Value']
+#===============================================================================
+# res = dlc.getSequenceOnFile( 'A' )
+# print res['Value']
+#===============================================================================
 
 #===============================================================================
 # res = dlc.getSequenceOnFile( 'lfn4' )

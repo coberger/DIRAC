@@ -6,7 +6,7 @@ Created on May 22, 2015
 import unittest
 
 
-from DIRAC.DataManagementSystem.Client.test.mockDirac import ClientA, ClientB, ClientC
+from DIRAC.DataManagementSystem.Client.test.mockDirac import ClientA, ClientB
 from DIRAC.DataManagementSystem.Client.DataLoggingClient   import DataLoggingClient
 
 class DataLoggingArgumentsTestCase( unittest.TestCase ):
@@ -25,13 +25,13 @@ class ClientACase ( DataLoggingArgumentsTestCase ):
     client.doSomething()
 
     res = dlc.getSequenceOnFile( 'A' )['Value']
-    self.assert_( res, A )
+    self.assertEqual( res, A )
     res = dlc.getSequenceOnFile( 'B' )['Value']
-    self.assert_( res, B )
+    self.assertEqual( res, B )
     res = dlc.getSequenceOnFile( 'C' )['Value']
-    self.assert_( res, C )
+    self.assertEqual( res, C )
     res = dlc.getSequenceOnFile( 'D' )['Value']
-    self.assert_( res, D)
+    self.assertEqual( res, D )
 
 
 class ClientBCase ( DataLoggingArgumentsTestCase ):
@@ -47,35 +47,14 @@ class ClientBCase ( DataLoggingArgumentsTestCase ):
     client.doSomething()
 
     res = dlc.getSequenceOnFile( 'A' )['Value']
-    self.assert_( res, A )
+    self.assertEqual( res, A )
     res = dlc.getSequenceOnFile( 'B' )['Value']
-    self.assert_( res, B )
+    self.assertEqual( res, B )
     res = dlc.getSequenceOnFile( 'C' )['Value']
-    self.assert_( res, C )
+    self.assertEqual( res, C )
     res = dlc.getSequenceOnFile( 'D' )['Value']
-    self.assert_( res, D )
+    self.assertEqual( res, D )
 
-
-class ClientCCase ( DataLoggingArgumentsTestCase ):
-  def test_insertion_equal( self ):
-    dlc = DataLoggingClient()
-    dlc.dropTables()
-    dlc.createTables()
-    A = '1 putAndRegister A Successful ,1 addFile A Successful ,1 putFile A Successful ,2 getFileSize A Successful'
-    B = '1 putAndRegister B Failed ,1 putFile B Failed'
-    C = '1 putFile C Successful ,1 putAndRegister C Failed ,1 addFile C Failed'
-    D = '1 putAndRegister D Failed ,1 putFile D Failed'
-    client = ClientC()
-    client.doSomething()
-
-    res = dlc.getSequenceOnFile( 'A' )['Value']
-    self.assert_( res, A )
-    res = dlc.getSequenceOnFile( 'B' )['Value']
-    self.assert_( res, B )
-    res = dlc.getSequenceOnFile( 'C' )['Value']
-    self.assert_( res, C )
-    res = dlc.getSequenceOnFile( 'D' )['Value']
-    self.assert_( res, D )
 
 
 if __name__ == "__main__":
