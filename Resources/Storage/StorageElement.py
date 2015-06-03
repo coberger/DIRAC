@@ -16,6 +16,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
 
 class StorageElementCache( object ):
 
@@ -112,6 +113,56 @@ class StorageElementItem( object ):
                          "removeDirectory" : { "recursive" : False },
                          "getDirectory" : { "localPath" : False },
                          }
+
+  dataLoggingMethodToLog = [ 'retransferOnlineFile',
+                          'putFile',
+                          'replicateFile',
+                          'pinFile',
+                          'releaseFile',
+                          'createDirectory',
+                          'putDirectory' ]
+
+  dataLoggingMethodsToLogArguments = {
+              'createLink' :
+                {'Arguments' : ['self', 'link'] },
+              'removeLink' :
+                {'Arguments' : ['self', 'link']},
+              'addFile' :
+                {'Arguments' : ['self', 'datalogging_files', ] },
+              'setFileStatus' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'addReplica' :
+                {'Arguments' : ['self', 'datalogging_files']},
+              'removeReplica' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'removeFile' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'setReplicaStatus' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'setReplicaHost' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'setReplicaProblematic' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'createDirectory' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'setDirectoryStatus' :
+                {'Arguments' : ['self', 'path', 'status']},
+              'removeDirectory' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'removeDataset' :
+                {'Arguments' : ['self', 'dataset'] },
+              'removeFileFromDataset' :
+                {'Arguments' : ['self', 'dataset']},
+              'createDataset' :
+                {'Arguments' : ['self', 'dataset']},
+              'changePathMode' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'changePathOwner' :
+                {'Arguments' : ['self', 'datalogging_files'] },
+              'changePathGroup' :
+                {'Arguments' : ['self', 'datalogging_files']},
+              }
+
 
   def __init__( self, name, plugins = None, vo = None ):
     """ c'tor
@@ -590,6 +641,8 @@ class StorageElementItem( object ):
 #     res['Failed'] = failed
     return res
 
+  @DataLoggingDecorator( argsPosition = ['self', 'datalogging_files'], getActionArgsFunction = 'executeSE',
+                          attributesToGet = ['methodName' ], methods_to_log = dataLoggingMethodToLog )
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName

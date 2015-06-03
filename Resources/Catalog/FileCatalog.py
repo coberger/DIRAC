@@ -36,44 +36,57 @@ class FileCatalog( object ):
   write_methods += write_meta_methods
 
   methods_to_log_arguments = {
-              'createLink' :
-                {'Arguments' : ['self', 'link'] },
-              'removeLink' :
-                {'Arguments' : ['self', 'link']},
               'addFile' :
-                {'Arguments' : ['self', 'files', ] },
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'dict',
+                 'dictKeys' : { 'PFN':'PFN', 'Size':'Size', 'targetSE':'SE', 'GUID':'GUID', 'Checksum':'Checksum'} },
               'setFileStatus' :
-                {'Arguments' : ['self', 'files'] },
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'str',
+                 'valueName' : 'Status'},
               'addReplica' :
-                {'Arguments' : ['self', 'files']},
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'dict',
+                 'dictKeys' : { 'PFN':'PFN', 'targetSE':'SE'} },
               'removeReplica' :
-                {'Arguments' : ['self', 'files'] },
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'dict',
+                 'dictKeys' : { 'PFN':'PFN', 'targetSE':'SE'} },
               'removeFile' :
-                {'Arguments' : ['self', 'files'] },
+                {'Arguments' : ['self', 'files'],
+                 'type':'unknown' },
               'setReplicaStatus' :
-                {'Arguments' : ['self', 'files'] },
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'dict',
+                 'dictKeys' : { 'PFN':'PFN', 'targetSE':'SE', 'Status':'Status'} },
               'setReplicaHost' :
-                {'Arguments' : ['self', 'files'] },
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'dict',
+                 'dictKeys' : { 'PFN':'PFN', 'targetSE':'NewSE', 'srcSE':'SE', 'Status':'Status'} },
               'setReplicaProblematic' :
-                {'Arguments' : ['self', 'files'] },
+                {'Arguments' : ['self', 'files'],
+                 'specialFunction' : 'setReplicaProblematic' },
               'createDirectory' :
-                {'Arguments' : ['self', 'files'] },
-              'setDirectoryStatus' :
-                {'Arguments' : ['self', 'path', 'status']},
+                {'Arguments' : ['self', 'files'],
+                 'type':'unknown' },
               'removeDirectory' :
-                {'Arguments' : ['self', 'files'] },
-              'removeDataset' :
-                {'Arguments' : ['self', 'dataset'] },
-              'removeFileFromDataset' :
-                {'Arguments' : ['self', 'dataset']},
-              'createDataset' :
-                {'Arguments' : ['self', 'dataset']},
+                {'Arguments' : ['self', 'files'],
+                 'type':'unknown' },
               'changePathMode' :
-                {'Arguments' : ['self', 'files'] },
+                {'Arguments' : ['self', 'files'],
+                 'type':'unknown' },
               'changePathOwner' :
-                {'Arguments' : ['self', 'files'] },
+                {'Arguments' : ['self', 'files'],
+                 'type':'unknown' },
               'changePathGroup' :
-                {'Arguments' : ['self', 'files']},
+                {'Arguments' : ['self', 'files'],
+                 'type':'unknown' },
               }
 
 
@@ -132,7 +145,7 @@ class FileCatalog( object ):
     else:
       raise AttributeError
 
-  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute',
+  @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'executeFC',
                           attributesToGet = ['call' ], methods_to_log = write_methods,
                            methods_to_log_arguments = methods_to_log_arguments )
   def w_execute( self, *parms, **kws ):

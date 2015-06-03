@@ -49,10 +49,10 @@ def extractArgs( argsDecorator, *args, **kwargs ):
   """
 
   try :
-    wantedArgs = ['datalogging_files', 'srcSE', 'targetSE']
+    wantedArgs = ['files', 'srcSE', 'targetSE']
 
     argsPosition = argsDecorator['argsPosition']
-    # print 'argsPosition %s  args %s kwargs %s ' % ( argsPosition, args, kwargs )
+    #print 'argsPosition %s  args %s kwargs %s ' % ( argsPosition, args, kwargs )
 
     opArgs = dict.fromkeys( wantedArgs, None )
     blobList = []
@@ -60,7 +60,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
       a = argsPosition[i]
       ainwanted = a in wantedArgs
       if ainwanted:
-        if a is 'datalogging_files':
+        if a is 'files':
           opArgs['files'] = getFilesArgs( args[i] )
         else :
           opArgs[a] = args[i]
@@ -68,33 +68,113 @@ def extractArgs( argsDecorator, *args, **kwargs ):
         if a is not 'self':
           blobList.append( "%s = %s" % ( a, args[i] ) )
 
-    for key in kwargs:
-      blobList.append( "%s = %s" % ( key, kwargs[key] ) )
+    if kwargs:
+      for key in kwargs:
+        blobList.append( "%s = %s" % ( key, kwargs[key] ) )
+
 
     if blobList:
       opArgs['blob'] = ','.join( blobList )
     else:
       opArgs['blob'] = None
-
-
     actionArgs = []
-    if 'datalogging_files' in opArgs:
-      for f in opArgs['datalogging_files'] :
+    if 'files' in opArgs:
+      for f in opArgs['files'] :
         d = dict( opArgs )
         d['files'] = f
         actionArgs.append( d )
     else :
       opArgs['files'] = None
-
   except Exception as e:
-    raise DataLoggingException( repr( e ) )
+    raise DataLoggingException( e )
+  if len(actionArgs) == 0 :
+    return opArgs
+  else:
+    return actionArgs
 
+
+def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
+  try :
+    wantedArgs = ['files', 'srcSE', 'targetSE']
+    argsPosition = argsDecorator['argsPosition']
+    opArgs = dict.fromkeys( wantedArgs, None )
+    blobList = []
+    actionArgs = []
+
+    if kwargs:
+      for key in kwargs:
+        blobList.append( "%s = %s" % ( key, kwargs[key] ) )
+    for i in range( len( argsPosition ) ):
+      if argsPosition[i] is 'files':
+        for key, dictInfo in args[i].items():
+          for key2, value in dictInfo.items():
+            d = dict( opArgs )
+            d['files'] = key
+            d['targetSE'] = key2
+            dBlob = list( blobList )
+            dBlob.append( 'PFN = %s' % value )
+            d['blob'] = ','.join( dBlob )
+            actionArgs.append( d )
+  except Exception as e:
+    raise DataLoggingException( e )
   return actionArgs
 
 
-def getArgsExecute( argsDecorator, *args, **kwargs ):
+def extractArgsFromDict( info , *args, **kwargs ):
+  try :
+    wantedArgs = ['files', 'srcSE', 'targetSE']
+
+    # print 'getArgsExecuteFC,argsDecorator = %s\n, args = %s\n, kwargs = %s\n' % ( info, args, kwargs )
+
+    argsPosition = info['Arguments']
+    opArgs = dict.fromkeys( wantedArgs, None )
+    blobList = []
+
+    actionArgs = []
+
+    if kwargs:
+      for key in kwargs:
+        blobList.append( "%s = %s" % ( key, kwargs[key] ) )
+
+    for i in range( len( argsPosition ) ):
+      if argsPosition[i] is 'files':
+        if info['valueType'] is 'str':
+          for key, value in args[i].items():
+            dBlob = list(blobList)
+            d = dict( opArgs )
+            valueName = info['valueName']
+            valueNameInWanted = valueName in wantedArgs
+            if valueNameInWanted:
+              d[valueName] = value
+            else:
+              dBlob.append("%s = %s" % ( valueName, value ))
+            d['files'] = key
+            d['blob'] = ','.join( dBlob )
+            actionArgs.append( d )
+
+        elif info['valueType'] is 'dict':
+          keysToGet = info['dictKeys']
+          for key, dictInfo in args[i].items():
+            dBlob = list(blobList)
+            d = dict( opArgs )
+            d['files'] = key
+            for keyToget in keysToGet:
+              keyinwanted = keyToget in wantedArgs
+              if keyinwanted:
+                d[keyToget] = dictInfo.get( keysToGet[keyToget], None )
+              else :
+                dBlob.append( "%s = %s" % ( keysToGet[keyToget], dictInfo.get( keysToGet[keyToget], None ) ) )
+            d['blob'] = ','.join( dBlob )
+            actionArgs.append( d )
+        else :
+          raise DataLoggingException( 'problem extractArgsFromDict, valueType should be dict or str' )
+  except Exception as e:
+    raise DataLoggingException( e )
+  return actionArgs
+
+def getArgsExecuteFC( argsDecorator, *args, **kwargs ):
   """ this is the special function to extract arguments from a decorate function
-      when the decorate function is 'execute' as in the file catalog
+      when the decorate function is 'execute' from the file catalog
       this is a special function because we need to get some information which
       are not passed in the decorate function like the function's name called
       to get the argument's position of the function that we really want to call
@@ -102,12 +182,18 @@ def getArgsExecute( argsDecorator, *args, **kwargs ):
   try :
     funcName = argsDecorator['call']
     if funcName in argsDecorator['methods_to_log']:
+      info = argsDecorator['methods_to_log_arguments'][funcName]
       argsDecorator['argsPosition'] = argsDecorator['methods_to_log_arguments'][funcName]['Arguments']
-      args = extractArgs( argsDecorator , *args, **kwargs )
+      if 'specialFunction' in info :
+        args = extractArgsSetReplicaProblematic( argsDecorator , *args, **kwargs )
+      elif info['type'] is 'unknown':
+        args = extractArgs( argsDecorator , *args, **kwargs )
+      elif info['type'] is 'dict' :
+        args = extractArgsFromDict( info , *args, **kwargs )
     else:
       raise DataLoggingException( 'Method is not into the list of method to log' )
   except Exception as e:
-    raise DataLoggingException( repr( e ) )
+    raise DataLoggingException( e )
   return args
 
 
@@ -116,7 +202,7 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
     when the decorate function has tuple in arguments like 'registerFile' in the data manager
   """
   try :
-    wantedArgs = ['datalogging_files', 'srcSE', 'targetSE']
+    wantedArgs = ['files', 'srcSE', 'targetSE']
     funcArgs = list()
     opArgs = dict.fromkeys( wantedArgs, None )
 
@@ -128,7 +214,7 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
       a = argsPosition[i]
       ainwanted = a in wantedArgs
       if ainwanted:
-        if a is 'datalogging_files':
+        if a is 'files':
           opArgs['files'] = getFilesArgs( args[i] )
         else :
           opArgs[a] = tuple[i]
@@ -143,14 +229,29 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
         elif a is not 'self':
           blobList.append( "%s = %s" % ( a, args[i] ) )
 
-    # print tupleArgs
     for arg in tupleArgs:
       funcArgs.append( mergeDict( opArgs, arg, blobList ) )
   except Exception as e:
-    raise DataLoggingException( repr( e ) )
+    raise DataLoggingException( e )
 
   return funcArgs
 
+
+def getArgsExecuteSE( argsDecorator, *args, **kwargs ):
+  """ this is the special function to extract arguments from a decorate function
+      when the decorate function is 'execute' from the Storage Element
+      this is a special function because we need to get some information which
+      are not passed in the decorate function like the function's name
+  """
+  try :
+    funcName = argsDecorator['methodName']
+    if funcName in argsDecorator['methods_to_log']:
+      args = extractArgs( argsDecorator , *args, **kwargs )
+    else:
+      raise DataLoggingException( 'Method is not into the list of method to log' )
+  except Exception as e:
+    raise DataLoggingException( e )
+  return args
 
 
 def getFilesArgs( args ):
@@ -171,10 +272,9 @@ def getFilesArgs( args ):
     else :
       files = [args]
   except Exception as e:
-    raise DataLoggingException( repr( e ) )
+    raise DataLoggingException( e )
 
   return files
-
 
 def mergeDict( opArgs, tupleArgs, blobList ):
   """merge of the two dict wich contains arguments needed to create actions"""

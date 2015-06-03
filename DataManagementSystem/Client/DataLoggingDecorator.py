@@ -25,8 +25,9 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 funcDict = {
   'normal':extractArgs,
   'default':extractArgs,
-  'execute': getArgsExecute,
+  'executeFC': getArgsExecuteFC,
   'tuple': getTupleArgs,
+  'executeSE': getArgsExecuteSE
 }
 
 
@@ -54,11 +55,11 @@ class _DataLoggingDecorator( object ):
 
       for this to work, you have to pass some arguments to the decorator
       the first arguments to pass is a list with the arguments positions in the decorate method
-      for example for the putAndRegister method you have to pass argsPosition = ['self', 'files', 'localPath', 'targetSE' ]
+      for example for the putAndRegister method you have to pass argsPosition = ['self', 'datalogging_files', 'localPath', 'targetSE' ]
       in the decorator
       some keywords are very important like files, targetSE and srcSE
       so if the parameter of the decorate Function is 'sourceSE' you have to write 'srcSE' in the argsPosition's list
-      if the parameter of the decorate Function is 'lfns' you have to write 'files' in the argsPosition's list
+      if the parameter of the decorate Function is 'lfns' you have to write 'datalogging_files' in the argsPosition's list
 
       next you have to tell to the decorator which function you want to called to extract arguments
       for example getActionArgsFunction = 'tuple', there is a dictionary to map keywords with functions to extract arguments
@@ -99,11 +100,9 @@ class _DataLoggingDecorator( object ):
 
     try:
 
-      # we test here if we have to use the data logging system for this method
-      # toLog = self.isMethodToLog( *args )
+
       # we set the caller
       self.setCaller()
-
       # sometime we need an attribute into the object who called the decorate method
       # we will get it here and add it in the local argsDecorator dictionary
       # we need a local dictionary because of the different called from different thread
@@ -121,7 +120,6 @@ class _DataLoggingDecorator( object ):
 
       # initialization of the DataLoggingActions with the different arguments, set theirs status to 'unknown'
       self.initializeAction( methodCall, actionArgs )
-
       try :
       # call of the func, result is the return of the decorate function
         result = self.func( *args, **kwargs )
@@ -133,14 +131,11 @@ class _DataLoggingDecorator( object ):
 
       # now we get the status ( failed or successful) of methodCall's actions
       self.getActionStatus( result, methodCall, exception )
-
       # pop of the methodCall corresponding to the decorate method
       isSequenceComplete = self.popMethodCall()
-
       # if the sequence is complete we insert it into DB
       if isSequenceComplete :
         self.insertSequence()
-
     except DataLoggingException as e:
       if not result :
         result = self.func( *args, **kwargs )
@@ -188,7 +183,7 @@ class _DataLoggingDecorator( object ):
           for action in methodCall.actions :
             action.status.name = 'Failed'
     except Exception as e:
-      raise DataLoggingException( repr( e ) )
+      raise DataLoggingException( e )
 
 
   def initializeAction( self, methodCall, actionArgs ):
@@ -201,7 +196,7 @@ class _DataLoggingDecorator( object ):
           methodCall.addAction( DataLoggingAction( DataLoggingFile( arg['files'] ), DataLoggingStatus( 'Unknown' ) ,
                                 DataLoggingStorageElement( arg['srcSE'] ), DataLoggingStorageElement( arg['targetSE'] ), arg['blob'] ) )
     except Exception as e:
-      raise DataLoggingException( repr( e ) )
+      raise DataLoggingException( e )
 
 
   def createMethodCall( self, args ):
@@ -211,7 +206,7 @@ class _DataLoggingDecorator( object ):
     try :
       methodCall = DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).appendMethodCall( args )
     except Exception as e:
-      raise DataLoggingException( repr( e ) )
+      raise DataLoggingException( e )
     return methodCall
 
 
@@ -220,7 +215,7 @@ class _DataLoggingDecorator( object ):
     try :
       res = DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).popMethodCall()
     except Exception as e:
-      raise DataLoggingException( repr( e ) )
+      raise DataLoggingException( e )
 
     return res
 
@@ -235,7 +230,7 @@ class _DataLoggingDecorator( object ):
       if not res["OK"]:
         DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).setCaller( caller_name( 3 ) )
     except Exception as e:
-      raise DataLoggingException( repr( e ) )
+      raise DataLoggingException( e )
 
 
 
@@ -246,12 +241,15 @@ class _DataLoggingDecorator( object ):
     try :
       methodCallDict = {}
       if self.name is 'execute':
-        argsDecorator['funcName'] = args[0].call
+        argsDecorator['funcName'] = argsDecorator['call']
         methodCallDict['name'] = DataLoggingMethodName( args[0].call )
+      if self.name is 'executeSE':
+        argsDecorator['funcName'] = argsDecorator['methodName']
+        methodCallDict['name'] = DataLoggingMethodName( args[0].methodName )
       else:
         methodCallDict['name'] = DataLoggingMethodName( self.name )
     except Exception as e:
-      raise DataLoggingException( repr( e ) )
+      raise DataLoggingException( e )
     return methodCallDict
 
 
@@ -266,7 +264,7 @@ class _DataLoggingDecorator( object ):
           attr = getattr( obj, attrName, None )
           d[attrName] = attr
     except Exception as e:
-      raise DataLoggingException( repr( e ) )
+      raise DataLoggingException( e )
 
     return d
 
@@ -277,7 +275,8 @@ class _DataLoggingDecorator( object ):
     try :
       ret = self.getActionArgsFunction( argsDecorator, *args, **kwargs )
     except Exception as e:
-      raise DataLoggingException( repr( e ) )
+      gLogger.error( e )
+      raise DataLoggingException( e )
 
     return ret
 
