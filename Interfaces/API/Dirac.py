@@ -15,8 +15,18 @@
 """
 __RCSID__ = "$Id$"
 
-import re, os, sys, time, shutil, tempfile, glob, tarfile, urllib
+import re
+import os
+import sys
+import time
+import shutil
+import tempfile
+import glob
+import tarfile
+import urllib
+
 import DIRAC
+from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 from DIRAC.Core.Base.API                                 import API
 from DIRAC.Interfaces.API.JobRepository                  import JobRepository
@@ -25,7 +35,6 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient     import SandboxStoreClient
-# from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataManager       import DataManager
 from DIRAC.Resources.Storage.StorageElement              import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                 import FileCatalog
@@ -40,7 +49,6 @@ from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
-from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PrettyPrint                    import printTable
 
 
@@ -83,7 +91,7 @@ class Dirac( API ):
   def __checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
       prefix = 'LFN'
-    if isinstance( fnList, str ):
+    if isinstance( fnList, basestring ):
       otherPrefix = 'LFN:' if prefix == 'PFN' else 'PFN:'
       if otherPrefix in fnList:
         return self._errorReport( 'Expected %s string, not %s' ) % ( prefix, otherPrefix )
@@ -1292,7 +1300,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self.__checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']

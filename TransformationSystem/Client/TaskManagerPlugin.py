@@ -106,19 +106,22 @@ class TaskManagerPlugin( PluginBase ):
     destSites = set( res['Value'] )
 
     # 2. get JobTypeMapping "Exclude" value (and add autoAddedSites)
+    gLogger.debug( "Getting JobTypeMapping 'Exclude' value (and add autoAddedSites)" )
     jobType = self.params['JobType']
     if not jobType:
       raise RuntimeError( "No jobType specified" )
-    excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, '' )
-    excludedSites = excludedSites + ',' + ','.join( fromChar( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', '' ) ) )
+    excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, [] )
+    gLogger.debug( "Explicitly excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
+    excludedSites += self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
+    gLogger.debug( "Full list of excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
 
     # 3. removing sites in Exclude
     if not excludedSites:
       pass
-    elif excludedSites == 'ALL' or 'ALL' in excludedSites:
+    elif 'ALL' in excludedSites:
       destSites = set()
     else:
-      destSites = destSites.difference( set( fromChar( excludedSites ) ) )
+      destSites = destSites.difference( set( excludedSites ) )
 
     # 4. get JobTypeMapping "Allow" section
     res = self.opsH.getOptionsDict( 'JobTypeMapping/%s/Allow' % jobType )
@@ -131,11 +134,15 @@ class TaskManagerPlugin( PluginBase ):
         allowed[site] = fromChar( allowed[site] )
 
     # 5. add autoAddedSites, if requested
-    autoAddedSites = fromChar( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', '' ) )
+    autoAddedSites = self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
     if autoAddedSites:
       for autoAddedSite in autoAddedSites:
+        allowed.setdefault( autoAddedSite, [autoAddedSite] )
         if autoAddedSite not in allowed:
           allowed[autoAddedSite] = [autoAddedSite]
+        else:
+          allowed[autoAddedSite] = [autoAddedSite] + allowed[autoAddedSite]
+    gLogger.debug( "Allowed sites for %s task: %s" % ( jobType, ','.join( allowed ) ) )
 
     # 6. Allowing sites that should be allowed
     taskSiteDestination = self._BySE()
@@ -148,4 +155,7 @@ class TaskManagerPlugin( PluginBase ):
         else:
           destSites.add( destSite )
 
+    gLogger.verbose( "Computed list of destination sites for %s task with TargetSE %s: %s" % ( jobType,
+                                                                                               self.params['TargetSE'],
+                                                                                               ','.join( destSites ) ) )
     return destSites
