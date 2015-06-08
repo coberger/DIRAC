@@ -71,18 +71,16 @@ class _DataLoggingDecorator( object ):
     self.func = func
     self.name = func.__name__
     self.argsDecorator = {}
-    # set the different attribute from dictionary 'fromDict'
+    # set the different attribute from kwargs
     for key, value in kwargs.items():
       if type( value ) in StringTypes:
         value = value.encode()
       if value is not None:
         self.argsDecorator[key] = value
-
     if 'getActionArgsFunction' in self.argsDecorator:
       self.getActionArgsFunction = funcDict[self.argsDecorator['getActionArgsFunction']]
     else :
       self.getActionArgsFunction = funcDict['default']
-
     functools.wraps( func )( self )
 
   def __get__( self, inst, owner = None ):
@@ -112,22 +110,21 @@ class _DataLoggingDecorator( object ):
       # we get the arguments from the call of the decorate method to create the DataLoggingMethodCall object
       methodCallArgsDict = self.getMethodCallArgs( localArgsDecorator, *args )
 
-      # create and append methodCall into the sequence of the thread
-      methodCall = self.createMethodCall( methodCallArgsDict )
-
       # get args for the DataLoggingAction objects
       actionArgs = self.getActionArgs( localArgsDecorator, *args, **kwargs )
 
+      # create and append methodCall into the sequence of the thread
+      methodCall = self.createMethodCall( methodCallArgsDict )
+
       # initialization of the DataLoggingActions with the different arguments, set theirs status to 'unknown'
       self.initializeAction( methodCall, actionArgs )
+
       try :
       # call of the func, result is the return of the decorate function
         result = self.func( *args, **kwargs )
       except Exception as e:
         exception = e
-        print self.func.__name__
-        gLogger.error( 'Decorate function %s' % e )
-        raise e
+        raise
 
       # now we get the status ( failed or successful) of methodCall's actions
       self.getActionStatus( result, methodCall, exception )
@@ -139,8 +136,7 @@ class _DataLoggingDecorator( object ):
     except DataLoggingException as e:
       if not result :
         result = self.func( *args, **kwargs )
-
-      gLogger.error( 'DataLoggingException %s' % e )
+      # gLogger.error( 'unexpected Execption in DataLoggingDecorator.call %s' % e )
     return result
 
 
@@ -168,21 +164,26 @@ class _DataLoggingDecorator( object ):
                   if successful:
                     if action.file.name in successful :
                       action.status.name = 'Successful'
-
                   if failed:
                     if action.file.name in failed :
                       action.status.name = 'Failed'
+                      action.messageError = foncResult['Value']['Failed'][action.file.name]
 
             else :  # if ok not in foncResult
               for action in methodCall.actions :
                 action.status.name = 'Failed'
+                action.messageError = foncResult['Message']
           else :  # if not a dict
             gLogger.error( 'the result of a fonction is not a dict, you have to use S_OK et S_ERROR' )
 
         else :  # foncResult is None, maybe caused by an exception
           for action in methodCall.actions :
             action.status.name = 'Failed'
+      else :
+        for action in methodCall.actions :
+          action.exception = exception
     except Exception as e:
+      # gLogger.error( 'unexpected Execption in DataLoggingDecorator.getActionStatus %s' % e )
       raise DataLoggingException( e )
 
 
@@ -194,8 +195,9 @@ class _DataLoggingDecorator( object ):
     try :
       for arg in actionArgs :
           methodCall.addAction( DataLoggingAction( DataLoggingFile( arg['files'] ), DataLoggingStatus( 'Unknown' ) ,
-                                DataLoggingStorageElement( arg['srcSE'] ), DataLoggingStorageElement( arg['targetSE'] ), arg['blob'] ) )
+                                DataLoggingStorageElement( arg['srcSE'] ), DataLoggingStorageElement( arg['targetSE'] ), arg['blob'], None ) )
     except Exception as e:
+      gLogger.error( 'unexpected Execption in DataLoggingDecorator.initializeAction %s' % e )
       raise DataLoggingException( e )
 
 
@@ -206,6 +208,7 @@ class _DataLoggingDecorator( object ):
     try :
       methodCall = DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).appendMethodCall( args )
     except Exception as e:
+      gLogger.error( 'unexpected Execption in DataLoggingDecorator.createMethodCall %s' % e )
       raise DataLoggingException( e )
     return methodCall
 
@@ -215,8 +218,8 @@ class _DataLoggingDecorator( object ):
     try :
       res = DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).popMethodCall()
     except Exception as e:
+      gLogger.error( 'unexpected Execption in DataLoggingDecorator.popMethodCall %s' % e )
       raise DataLoggingException( e )
-
     return res
 
 
@@ -230,6 +233,7 @@ class _DataLoggingDecorator( object ):
       if not res["OK"]:
         DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).setCaller( caller_name( 3 ) )
     except Exception as e:
+      gLogger.error( 'unexpected Execption in DataLoggingDecorator.setCaller %s' % e )
       raise DataLoggingException( e )
 
 
@@ -240,15 +244,16 @@ class _DataLoggingDecorator( object ):
     """
     try :
       methodCallDict = {}
-      if self.name is 'execute':
+      if argsDecorator['getActionArgsFunction'] == 'executeFC':
         argsDecorator['funcName'] = argsDecorator['call']
         methodCallDict['name'] = DataLoggingMethodName( args[0].call )
-      if self.name is 'executeSE':
+      elif argsDecorator['getActionArgsFunction'] == 'executeSE':
         argsDecorator['funcName'] = argsDecorator['methodName']
         methodCallDict['name'] = DataLoggingMethodName( args[0].methodName )
       else:
         methodCallDict['name'] = DataLoggingMethodName( self.name )
     except Exception as e:
+      # gLogger.error( 'unexpected Execption in DataLoggingDecorator.getMethodCallArgs %s' % e )
       raise DataLoggingException( e )
     return methodCallDict
 
@@ -264,6 +269,7 @@ class _DataLoggingDecorator( object ):
           attr = getattr( obj, attrName, None )
           d[attrName] = attr
     except Exception as e:
+      gLogger.error( 'unexpected Execption in DataLoggingDecorator.getAttribute %s' % e )
       raise DataLoggingException( e )
 
     return d
@@ -275,13 +281,20 @@ class _DataLoggingDecorator( object ):
     try :
       ret = self.getActionArgsFunction( argsDecorator, *args, **kwargs )
     except Exception as e:
-      gLogger.error( e )
-      raise DataLoggingException( e )
+      # gLogger.error( 'unexpected Execption in DataLoggingDecorator.getActionArgs %s' % e )
+      raise e
 
     return ret
 
 
   def insertSequence( self ):
-    client = DataLoggingClient()
-    client.insertSequence( DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ) )
-    DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).methodCalls = list()
+    """ this method call method named getDataLoggingSequence from DataLoggingClient
+        to insert a sequence into database
+    """
+    try :
+      client = DataLoggingClient()
+      client.insertSequence( DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ) )
+      DataLoggingBuffer.getDataLoggingSequence( current_thread().ident ).methodCalls = list()
+    except Exception as e:
+      gLogger.error( 'unexpected Execption in DataLoggingDecorator.insertSequence %s' % e )
+      raise e

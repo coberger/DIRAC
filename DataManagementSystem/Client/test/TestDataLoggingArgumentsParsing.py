@@ -46,6 +46,21 @@ argsDictSetReplicaProblematic['methods_to_log_arguments'] = {
               }
 
 
+argsDictExecuteSE = {}
+lfnsSE = {'lfn1':'src_file1', 'lfn2':'src_file2', 'lfn3':'src_file3' }
+argumentsExecuteSE = ( 'self', lfnsSE )
+argsDictExecuteSE['methodName'] = 'putFile'
+argsDictExecuteSE['name'] = 'targetSE1'
+argsDictExecuteSE['methods_to_log'] = ['putFile']
+argsDictExecuteSE['methods_to_log_arguments'] = {
+              'putFile' :
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'str',
+                 'valueName' : 'src_file'},
+              }
+
+
 def callFunction( function , argsDict, *args, **kwargs ):
   try :
     ret = function( argsDict, *args, **kwargs )
@@ -93,7 +108,7 @@ class TupleCase ( DataLoggingArgumentsParsingTestCase ):
     self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictTuple ), [None] )
 
 
-class ExecuteSECase ( DataLoggingArgumentsParsingTestCase ):
+class ExecuteFCCase ( DataLoggingArgumentsParsingTestCase ):
   def test_DictEqual( self ):
     ok = [{'files': 'lfn1', 'targetSE': 'se1', 'blob': 'Size = 1,GUID = 1,Checksum = 1,PFN = PFN1', 'srcSE': None}, {'files': 'lfn2', 'targetSE': 'se2', 'blob': 'Size = 2,GUID = 2,Checksum = 2,PFN = PFN2', 'srcSE': None}, {'files': 'lfn3', 'targetSE': 'se3', 'blob': 'Size = 3,GUID = 3,Checksum = 3,PFN = PFN3', 'srcSE': None}]
     getArgs = funcDict['executeFC']
@@ -116,12 +131,29 @@ class SetReplicaProblematicCase( DataLoggingArgumentsParsingTestCase ):
     ret = callFunction( getArgs, dict( argsDictSetReplicaProblematic ), *argumentsSetReplicaProblematic )
     self.assertEqual( ret, ok )
 
+
+class ExecuteSECase ( DataLoggingArgumentsParsingTestCase ):
+  def test_DictEqual( self ):
+    ok = [{'files': 'lfn1', 'targetSE': 'targetSE1', 'blob': 'src_file = src_file1', 'srcSE': None}, {'files': 'lfn2', 'targetSE': 'targetSE1', 'blob': 'src_file = src_file2', 'srcSE': None}, {'files': 'lfn3', 'targetSE': 'targetSE1', 'blob': 'src_file = src_file3', 'srcSE': None}]
+    getArgs = funcDict['executeSE']
+    ret = callFunction( getArgs, dict( argsDictExecuteSE ), *argumentsExecuteSE )
+    self.assertEqual( ret, ok )
+
+  def test_ExceptionRaise( self ):
+    getArgs = funcDict['tuple']
+    self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictExecuteSE ), *argumentsExecuteSE )
+    getArgs = funcDict['default']
+    self.assertRaises( DataLoggingException, callFunction, getArgs, dict( argsDictExecuteSE ), *argumentsExecuteSE )
+
+
+
 if __name__ == "__main__":
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( DefaultCase )
 
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TupleCase ) )
-  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ExecuteSECase ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SetReplicaProblematicCase ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ExecuteFCCase ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SetReplicaProblematicCase ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ExecuteSECase ) )
 
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

@@ -4,7 +4,7 @@ Created on May 26, 2015
 @author: Corentin Berger
 '''
 
-from DIRAC.DataManagementSystem.Client.test.mockDirac import ClientA, ClientB, ClientC
+from DIRAC.DataManagementSystem.Client.test.mockDirac import ClientA, ClientB
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 
@@ -13,15 +13,12 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 # client.getSequenceOnFile( 'lfn3' )
 #===============================================================================
 dlc = DataLoggingClient()
-res = dlc.dropTables()
 
-dlc.createTables()
-
-nb = 20
+nb = 2
 
 clients = []
 for i in range( 1, nb ):
-  clients.append( ClientC() )
+  clients.append( ClientA( ['B', 'A'] ) )
 
 for i in range( 1, nb ):
   print "start %s" % i
@@ -123,10 +120,8 @@ for i in range( 1, nb ):
 # c16.join()
 #===============================================================================
 
-#===============================================================================
-# res = dlc.getSequenceOnFile( 'A' )
-# print res['Value']
-#===============================================================================
+res = dlc.getSequenceOnFile( 'A' )
+print res['Value']
 
 #===============================================================================
 # res = dlc.getSequenceOnFile( 'lfn4' )
