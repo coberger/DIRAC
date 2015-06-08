@@ -31,7 +31,7 @@ class DataLoggingDecoder( json.JSONDecoder ):
         typeObj = d.pop( '__type__' )
         try:
             if typeObj == 'DataLoggingAction':
-              obj = DataLoggingAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['blob'] )
+              obj = DataLoggingAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['blob'], d['messageError'] )
               return obj
 
             if typeObj == 'DataLoggingSequence':

@@ -35,6 +35,7 @@ class StorageFactory:
         self.vo = result['Value']
       else:
         RuntimeError( "Can not get the current VO context" )
+    print "VO %s" % self.vo
     self.remotePlugins = []
     self.localPlugins = []
     self.name = ''

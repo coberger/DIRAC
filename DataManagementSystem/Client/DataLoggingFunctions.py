@@ -5,9 +5,10 @@ Created on May 7, 2015
 '''
 
 import inspect
-
+import traceback
 
 from DIRAC.DataManagementSystem.Client.DataLoggingException import DataLoggingException
+from DIRAC.Resources.Utilities import checkArgumentFormat
 
 def caller_name( skip = 2 ):
   """Get a name of a caller in the format module.class.method
@@ -35,8 +36,12 @@ def caller_name( skip = 2 ):
   codename = parentframe.f_code.co_name
   if codename != '<module>':  # top level usually
       name.append( codename )  # function or a method
+  ret = ".".join( name )
+  if ret == '__main__' :
+    ( filename, lineno, function, code_context, index ) = inspect.getframeinfo( parentframe )
+    ret = filename
   del parentframe
-  return ".".join( name )
+  return ret
 
 
 def extractArgs( argsDecorator, *args, **kwargs ):
@@ -52,7 +57,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     wantedArgs = ['files', 'srcSE', 'targetSE']
 
     argsPosition = argsDecorator['argsPosition']
-    #print 'argsPosition %s  args %s kwargs %s ' % ( argsPosition, args, kwargs )
+    # print 'extractArgs argsPosition %s  args %s kwargs %s ' % ( argsPosition, args, kwargs )
 
     opArgs = dict.fromkeys( wantedArgs, None )
     blobList = []
@@ -85,8 +90,11 @@ def extractArgs( argsDecorator, *args, **kwargs ):
         actionArgs.append( d )
     else :
       opArgs['files'] = None
+
+
   except Exception as e:
     raise DataLoggingException( e )
+
   if len(actionArgs) == 0 :
     return opArgs
   else:
@@ -94,6 +102,9 @@ def extractArgs( argsDecorator, *args, **kwargs ):
 
 
 def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
+  """ this is the special function to extract args for the SetReplicaProblematic method from StorageElement
+      the structure of args is { 'lfn':{'targetse' : 'PFN',....} , ...}
+  """
   try :
     wantedArgs = ['files', 'srcSE', 'targetSE']
     argsPosition = argsDecorator['argsPosition']
@@ -121,10 +132,15 @@ def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
 
 
 def extractArgsFromDict( info , *args, **kwargs ):
+  """ this is a method to excrat args from a dictionary
+      we check the type of the value associated of a key in the dictionary, values can be:
+      -None, there is no value,
+      -srt, we need to get the name of this value,
+      -dictionary, we need the keys that we need to get in this dictionary
+  """
   try :
     wantedArgs = ['files', 'srcSE', 'targetSE']
-
-    # print 'getArgsExecuteFC,argsDecorator = %s\n, args = %s\n, kwargs = %s\n' % ( info, args, kwargs )
+    # print 'getArgsExecuteSE,argsDecorator = %s\n, args = %s\n, kwargs = %s\n' % ( info, args, kwargs )
 
     argsPosition = info['Arguments']
     opArgs = dict.fromkeys( wantedArgs, None )
@@ -138,7 +154,8 @@ def extractArgsFromDict( info , *args, **kwargs ):
 
     for i in range( len( argsPosition ) ):
       if argsPosition[i] is 'files':
-        if info['valueType'] is 'str':
+
+        if info['valueType'] == 'str':
           for key, value in args[i].items():
             dBlob = list(blobList)
             d = dict( opArgs )
@@ -152,7 +169,15 @@ def extractArgsFromDict( info , *args, **kwargs ):
             d['blob'] = ','.join( dBlob )
             actionArgs.append( d )
 
-        elif info['valueType'] is 'dict':
+        elif info['valueType'] == 'None':
+          for key in args[i]:
+            dBlob = list( blobList )
+            d = dict( opArgs )
+            d['files'] = key
+            d['blob'] = ','.join( dBlob )
+            actionArgs.append( d )
+
+        elif info['valueType'] == 'dict':
           keysToGet = info['dictKeys']
           for key, dictInfo in args[i].items():
             dBlob = list(blobList)
@@ -184,14 +209,14 @@ def getArgsExecuteFC( argsDecorator, *args, **kwargs ):
     if funcName in argsDecorator['methods_to_log']:
       info = argsDecorator['methods_to_log_arguments'][funcName]
       argsDecorator['argsPosition'] = argsDecorator['methods_to_log_arguments'][funcName]['Arguments']
-      if 'specialFunction' in info :
+      if 'specialFunction' == info :
         args = extractArgsSetReplicaProblematic( argsDecorator , *args, **kwargs )
-      elif info['type'] is 'unknown':
+      elif info['type'] == 'unknown':
         args = extractArgs( argsDecorator , *args, **kwargs )
-      elif info['type'] is 'dict' :
+      elif info['type'] == 'dict' :
         args = extractArgsFromDict( info , *args, **kwargs )
     else:
-      raise DataLoggingException( 'Method is not into the list of method to log' )
+      raise DataLoggingException( 'Method %s  is not into the list of method to log' % funcName )
   except Exception as e:
     raise DataLoggingException( e )
   return args
@@ -223,8 +248,12 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
           tupleArgs = list()
           dictExtract = dict( argsDecorator )
           dictExtract['argsPosition'] = tupleArgsPosition
-          for t in args[i]:
-            a = extractArgs( dictExtract, *t )
+          if isinstance( args[i], list ):
+            for t in args[i]:
+              a = extractArgs( dictExtract, *t )
+              tupleArgs.append( a[0] )
+          else :
+            a = extractArgs( dictExtract, *args[i] )
             tupleArgs.append( a[0] )
         elif a is not 'self':
           blobList.append( "%s = %s" % ( a, args[i] ) )
@@ -246,12 +275,20 @@ def getArgsExecuteSE( argsDecorator, *args, **kwargs ):
   try :
     funcName = argsDecorator['methodName']
     if funcName in argsDecorator['methods_to_log']:
-      args = extractArgs( argsDecorator , *args, **kwargs )
+      info = argsDecorator['methods_to_log_arguments'][funcName]
+      # type 'unknown' means that args could be a list, a str or a dictionnary, all elements will be a file
+      if info['type'] == 'unknown':
+        args = extractArgs( argsDecorator , *args, **kwargs )
+      elif info['type'] == 'dict' :
+        args = extractArgsFromDict( info , *args, **kwargs )
     else:
-      raise DataLoggingException( 'Method is not into the list of method to log' )
+      raise DataLoggingException( 'Method %s is not into the list of method to log' % funcName )
   except Exception as e:
     raise DataLoggingException( e )
+  for arg in args :
+    arg['targetSE'] = argsDecorator['name']
   return args
+
 
 
 def getFilesArgs( args ):

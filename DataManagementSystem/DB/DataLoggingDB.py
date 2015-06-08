@@ -15,13 +15,12 @@ from DIRAC.DataManagementSystem.Client.DataLoggingMethodCall import DataLoggingM
 from DIRAC.DataManagementSystem.Client.DataLoggingStatus import DataLoggingStatus
 from DIRAC.DataManagementSystem.Client.DataLoggingStorageElement import DataLoggingStorageElement
 from DIRAC.DataManagementSystem.Client.DataLoggingMethodName import DataLoggingMethodName
+from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 # from sqlalchemy
 from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, BLOB, exc
-from sqlalchemy.orm     import mapper, sessionmaker, relationship, backref, scoped_session
+from sqlalchemy.orm     import mapper, sessionmaker, relationship, backref, scoped_session, aliased
 from DIRAC.DataManagementSystem.Client.DataLoggingException import DataLoggingException
-
-
 
 
 # Metadata instance that is used to bind the engine, Object and tables
@@ -71,6 +70,7 @@ dataLoggingActionTable = Table( 'DataLoggingAction', metadata,
                    Column( 'IDsrcSE', Integer, ForeignKey( 'DataLoggingStorageElement.ID', ondelete = 'CASCADE' ) ),
                    Column( 'IDtargetSE', Integer, ForeignKey( 'DataLoggingStorageElement.ID', ondelete = 'CASCADE' ) ),
                    Column( 'blob', String( 2048 ) ),
+                   Column( 'messageError', String( 2048 ) ),
                    mysql_engine = 'InnoDB' )
 
 mapper( DataLoggingAction, dataLoggingActionTable,
@@ -107,15 +107,49 @@ mapper( DataLoggingMethodCall, dataLoggingMethodCallTable  , properties = { 'chi
 
 class DataLoggingDB( object ):
 
+  #=============================================================================
+  # def __init__( self, systemInstance = 'Default' ):
+  #   self.engine = create_engine( 'mysql://Dirac:corent@127.0.0.1/testDiracDB', echo = False )
+  #   metadata.bind = self.engine
+  #   self.DBSession = sessionmaker( bind = self.engine )
+  #   # self.DBSession = scoped_session(self.session_factory )
+  #=============================================================================
+
+  def __getDBConnectionInfo( self, fullname ):
+    """ Collect from the CS all the info needed to connect to the DB.
+        This should be in a base class eventually
+    """
+
+    result = getDBParameters( fullname )
+    if not result[ 'OK' ]:
+      raise Exception( 'Cannot get database parameters: %s' % result[ 'Message' ] )
+
+    dbParameters = result[ 'Value' ]
+    self.dbHost = dbParameters[ 'Host' ]
+    self.dbPort = dbParameters[ 'Port' ]
+    self.dbUser = dbParameters[ 'User' ]
+    self.dbPass = dbParameters[ 'Password' ]
+    self.dbName = dbParameters[ 'DBName' ]
+
+
   def __init__( self, systemInstance = 'Default' ):
+    """c'tor
+    :param self: self reference
+    """
+
+    self.log = gLogger.getSubLogger( 'DataLoggingDB' )
+    # Initialize the connection info
+    self.__getDBConnectionInfo( 'DataManagement/DataLoggingDB' )
 
 
 
-    self.engine = create_engine( 'mysql://Dirac:corent@127.0.0.1/testDiracDB', echo = False )
+    runDebug = ( gLogger.getLevel() == 'DEBUG' )
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
+                                 echo = runDebug )
+
     metadata.bind = self.engine
-    self.DBSession = sessionmaker( bind = self.engine )
-    # self.DBSession = scoped_session(self.session_factory )
 
+    self.DBSession = sessionmaker( bind = self.engine )
 
 
   def createTables( self ):
@@ -149,7 +183,6 @@ class DataLoggingDB( object ):
           # putStatus
           res = self.putStatus( action.status, session )
           action.status = res['Value']
-
           # put storage element
           res = self.putStorageElement( action.srcSE , session )
           action.srcSE = res['Value']
@@ -291,17 +324,21 @@ class DataLoggingDB( object ):
     """
     listresult = []
     session = self.DBSession()
-    try:
-      result = session.query( DataLoggingSequence, DataLoggingCaller, DataLoggingMethodCall, DataLoggingMethodName,
-                                  DataLoggingAction, DataLoggingStatus, DataLoggingFile )\
-                                  .join( DataLoggingMethodCall ).join( DataLoggingMethodName ).join( DataLoggingAction )\
-                                  .join( DataLoggingStatus ).join( DataLoggingFile )\
-                                  .filter( DataLoggingFile.name == lfn ).all()
-      for row in result :
-        listresult.append( "%s %s %s %s " % ( row.DataLoggingSequence.ID, row.DataLoggingMethodName.name,
-                                       row.DataLoggingFile.name, row.DataLoggingStatus.name ) )
+    aliasSe1 = aliased( DataLoggingStorageElement )
+    aliasSe2 = aliased( DataLoggingStorageElement )
 
-      listresult = ','.join( listresult )
+    try:
+      listresult.append( "%s\t%s\t%s\t%s\t%s\t%s\t%s" % ( 'callerName', 'methodName', 'status', 'fileName', 'srcSE', 'targetSE', 'blob' ) )
+      for callerName, methodName, status, fileName, srcSE, targetSE, blob in \
+       session.query( DataLoggingCaller.name, DataLoggingMethodName.name, DataLoggingStatus.name,
+                            DataLoggingFile.name, aliasSe1.name, aliasSe2.name , DataLoggingAction.blob )\
+                            .join( DataLoggingSequence ).join( DataLoggingMethodCall ).join( DataLoggingMethodName )\
+                            .join( DataLoggingAction ).join( DataLoggingStatus ).join( DataLoggingFile ).\
+                            join( aliasSe1, DataLoggingAction.srcSE ).join( aliasSe2, DataLoggingAction.targetSE )\
+                            .filter( DataLoggingFile.name == lfn ).all() :
+        listresult.append( "%s\t%s\t%s\t%s\t%s\t%s\t%s" % ( callerName, methodName, status, fileName, srcSE, targetSE, blob ) )
+
+      listresult = '\n'.join( listresult )
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -319,11 +356,14 @@ class DataLoggingDB( object ):
     listresult = []
     session = self.DBSession()
     try:
-      operations = session.query( DataLoggingMethodCall, DataLoggingAction ).join( DataLoggingAction )\
-      .join( DataLoggingFile ).filter( DataLoggingFile.name == lfn ).all()
-      for row in operations :
-        listresult.append( "%s %s %s %s %s %s" % ( row.DataLoggingMethodCall.ID, row.OperationFile.creationTime,
-                                       row.OperationFile.name, lfn, row.OperationFile.caller, row.StatusOperation.status ) )
+      result = session.query( DataLoggingCaller, DataLoggingMethodCall, DataLoggingMethodName,
+                                DataLoggingAction, DataLoggingStatus, DataLoggingFile )\
+                                .join( DataLoggingMethodCall ).join( DataLoggingMethodName ).join( DataLoggingAction )\
+                                .join( DataLoggingStatus ).join( DataLoggingFile )\
+                                .filter( DataLoggingFile.name == lfn ).all()
+      for row in result :
+        listresult.append( "%s %s %s %s %s %s" % ( row.DataLoggingMethodName.name,
+                                       row.DataLoggingFile.name, row.DataLoggingStatus.name ) )
       listresult = ','.join( listresult )
 
     except Exception, e:

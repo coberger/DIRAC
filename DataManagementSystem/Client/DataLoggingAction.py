@@ -10,7 +10,7 @@ from DIRAC import S_ERROR, S_OK
 class DataLoggingAction ( object ):
 
 
-  def __init__( self, file, status, srcSE, targetSE, blob ):
+  def __init__( self, file, status, srcSE, targetSE, blob, messageError ):
     self.file = file
     self.status = status
     self.srcSE = srcSE
@@ -20,6 +20,7 @@ class DataLoggingAction ( object ):
     self.IDMethodCall = None
     self.IDFile = None
     self.IDStatus = None
+    self.messageError = messageError
 
 
   def toJSON( self ):
@@ -49,6 +50,7 @@ class DataLoggingAction ( object ):
     jsonData['srcSE'] = self.srcSE
     jsonData['targetSE'] = self.targetSE
     jsonData['blob'] = self.blob
+    jsonData['messageError'] = self.messageError
 
     jsonData['__type__'] = self.__class__.__name__
 

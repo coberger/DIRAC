@@ -35,7 +35,7 @@ class FileCatalog( object ):
 
   write_methods += write_meta_methods
 
-  methods_to_log_arguments = {
+  dataLoggingMethodsToLogArguments = {
               'addFile' :
                 {'Arguments' : ['self', 'files'],
                  'type' : 'dict',
@@ -147,7 +147,7 @@ class FileCatalog( object ):
 
   @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'executeFC',
                           attributesToGet = ['call' ], methods_to_log = write_methods,
-                           methods_to_log_arguments = methods_to_log_arguments )
+                           methods_to_log_arguments = dataLoggingMethodsToLogArguments )
   def w_execute( self, *parms, **kws ):
     """ Write method executor.
     """

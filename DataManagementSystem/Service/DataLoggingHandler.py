@@ -8,7 +8,7 @@ import DIRAC
 from types import StringTypes
 import json
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC      import gLogger
+from DIRAC      import gLogger, S_ERROR
 
 from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
 from DIRAC.DataManagementSystem.private.DataLoggingDecoder import DataLoggingDecoder
@@ -18,48 +18,46 @@ from DIRAC.DataManagementSystem.private.DataLoggingDecoder import DataLoggingDec
 
 class DataLoggingHandler( RequestHandler ):
 
+  @classmethod
+  def initializeHandler( cls, serviceInfoDict ):
+    """ initialize handler """
+    try:
+      cls.__dataLoggingDB = DataLoggingDB()
+    except RuntimeError, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+
+    # create tables for empty db
+    return cls.__dataLoggingDB.createTables()
+
+
   types_insertSequence = [StringTypes]
-  def export_insertSequence( self, sequenceJSON ):
-    # print "After receiving %s" % sequenceJSON
-    sequence = json.loads( sequenceJSON, cls = DataLoggingDecoder )
-    db = DataLoggingDB()
-    res = db.putSequence( sequence )
-    if not res["OK"]:
-      gLogger.error( 'error export_insertSequence', res['Message'] )
-      DIRAC.exit( -1 )
+  @classmethod
+  def export_insertSequence( cls, sequenceJSON ):
+    print "After receiving %s" % sequenceJSON
+    try :
+      sequence = json.loads( sequenceJSON, cls = DataLoggingDecoder )
+      res = cls.__dataLoggingDB.putSequence( sequence )
+    except :
+      raise
     return res
 
 
   types_getSequenceOnFile = [StringTypes]
-  def export_getSequenceOnFile( self, fileName ):
-    db = DataLoggingDB()
-    res = db.getSequenceOnFile( fileName )
+  @classmethod
+  def export_getSequenceOnFile( cls, fileName ):
+    try :
+      res = cls.__dataLoggingDB.getSequenceOnFile( fileName )
+    except :
+      raise
     return res
 
 
   types_getMethodCallOnFile = [StringTypes]
-  def export_getMethodCallOnFile( self, fileName ):
-    db = DataLoggingDB()
-    res = db.getMethodCallOnFile( fileName )
-    if not res["OK"]:
-      gLogger.error( 'error export_insertSequence', res['Message'] )
-      DIRAC.exit( -1 )
-    return res
-
-  types_createTables = []
-  def export_createTables( self ):
-    db = DataLoggingDB()
-    res = db.createTables()
-    if not res["OK"]:
-      gLogger.error( 'error export_insertSequence', res['Message'] )
-      DIRAC.exit( -1 )
-    return res
-
-  types_dropTables = []
-  def export_dropTables( self ):
-    db = DataLoggingDB()
-    res = db.dropTables()
-    if not res["OK"]:
-      gLogger.error( 'error export_insertSequence', res['Message'] )
-      DIRAC.exit( -1 )
+  @classmethod
+  def export_getMethodCallOnFile( cls, fileName ):
+    try :
+      res = cls.__dataLoggingDB.getMethodCallOnFile( fileName )
+    except :
+      raise
     return res

@@ -114,53 +114,79 @@ class StorageElementItem( object ):
                          "getDirectory" : { "localPath" : False },
                          }
 
-  dataLoggingMethodToLog = [ 'retransferOnlineFile',
-                          'putFile',
-                          'replicateFile',
-                          'pinFile',
-                          'releaseFile',
-                          'createDirectory',
-                          'putDirectory' ]
+  readMethods = [ 'getFile',
+                 'getTransportURL',
+                 'prestageFile',
+                 'prestageFileStatus',
+                 'getDirectory']
+
+  writeMethods = [ 'retransferOnlineFile',
+                  'putFile',
+                  'replicateFile',
+                  'pinFile',
+                  'releaseFile',
+                  'createDirectory',
+                  'putDirectory' ]
+
+  removeMethods = [ 'removeFile', 'removeDirectory' ]
+
+  checkMethods = [ 'exists',
+                  'getDirectoryMetadata',
+                  'getDirectorySize',
+                  'getFileSize',
+                  'getFileMetadata',
+                  'listDirectory',
+                  'isDirectory',
+                  'isFile',
+                   ]
+
+  okMethods = [ 'getLocalProtocols',
+               'getProtocols',
+               'getRemoteProtocols',
+               'getStorageElementName',
+               'getStorageParameters',
+               'isLocalSE' ]
 
   dataLoggingMethodsToLogArguments = {
-              'createLink' :
+              'retransferOnlineFile' :
                 {'Arguments' : ['self', 'link'] },
-              'removeLink' :
-                {'Arguments' : ['self', 'link']},
-              'addFile' :
-                {'Arguments' : ['self', 'datalogging_files', ] },
-              'setFileStatus' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'addReplica' :
-                {'Arguments' : ['self', 'datalogging_files']},
-              'removeReplica' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'removeFile' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'setReplicaStatus' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'setReplicaHost' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'setReplicaProblematic' :
-                {'Arguments' : ['self', 'datalogging_files'] },
+              'putFile' :
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'str',
+                 'valueName' : 'src_file'},
+              'replicateFile' :
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'str',
+                 'valueName' : 'src_file'},
+              'pinFile' :
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'str',
+                 'valueName' : 'srmRequestID'},
+              'releaseFile' :
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'str',
+                 'valueName' : 'srmRequestID'},
               'createDirectory' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'setDirectoryStatus' :
-                {'Arguments' : ['self', 'path', 'status']},
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'None'},
+              'putDirectory' :
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'str',
+                 'valueName' : 'sourceDir'},
+              'removeFile' :
+                {'Arguments' : ['self', 'files'],
+                 'type' : 'dict',
+                 'valueType' : 'None'},
               'removeDirectory' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'removeDataset' :
-                {'Arguments' : ['self', 'dataset'] },
-              'removeFileFromDataset' :
-                {'Arguments' : ['self', 'dataset']},
-              'createDataset' :
-                {'Arguments' : ['self', 'dataset']},
-              'changePathMode' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'changePathOwner' :
-                {'Arguments' : ['self', 'datalogging_files'] },
-              'changePathGroup' :
-                {'Arguments' : ['self', 'datalogging_files']},
+                {'Arguments' : ['self', 'files'],
+                   'type' : 'dict',
+                   'valueType' : 'None'},
               }
 
 
@@ -216,39 +242,6 @@ class StorageElementItem( object ):
 
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
     self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
-
-    self.readMethods = [ 'getFile',
-                         'getTransportURL',
-                         'prestageFile',
-                         'prestageFileStatus',
-                         'getDirectory']
-
-    self.writeMethods = [ 'retransferOnlineFile',
-                          'putFile',
-                          'replicateFile',
-                          'pinFile',
-                          'releaseFile',
-                          'createDirectory',
-                          'putDirectory' ]
-
-    self.removeMethods = [ 'removeFile', 'removeDirectory' ]
-
-    self.checkMethods = [ 'exists',
-                          'getDirectoryMetadata',
-                          'getDirectorySize',
-                          'getFileSize',
-                          'getFileMetadata',
-                          'listDirectory',
-                          'isDirectory',
-                          'isFile',
-                           ]
-
-    self.okMethods = [ 'getLocalProtocols',
-                       'getProtocols',
-                       'getRemoteProtocols',
-                       'getStorageElementName',
-                       'getStorageParameters',
-                       'isLocalSE' ]
 
     self.__fileCatalog = None
 
@@ -641,7 +634,8 @@ class StorageElementItem( object ):
     return res
 
   @DataLoggingDecorator( argsPosition = ['self', 'datalogging_files'], getActionArgsFunction = 'executeSE',
-                          attributesToGet = ['methodName' ], methods_to_log = dataLoggingMethodToLog )
+                          attributesToGet = ['methodName', 'name' ], methods_to_log = writeMethods + removeMethods,
+                          methods_to_log_arguments = dataLoggingMethodsToLogArguments )
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
