@@ -133,6 +133,8 @@ class DataLoggingDB( object ):
     # Initialize the connection info
     self.__getDBConnectionInfo( 'DataManagement/DataLoggingDB' )
 
+
+
     runDebug = ( gLogger.getLevel() == 'DEBUG' )
     self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
                                  echo = runDebug )
@@ -140,11 +142,6 @@ class DataLoggingDB( object ):
     metadata.bind = self.engine
 
     self.DBSession = sessionmaker( bind = self.engine )
-
-    self.dictStorageElement = {}
-    self.dictFile = {}
-    self.dictMethodName = {}
-    self.dictStatus = {}
 
 
   def createTables( self ):
@@ -160,44 +157,36 @@ class DataLoggingDB( object ):
   def putSequence( self, sequence ):
     """ put a sequence into database"""
     session = None
+    stack = []
+    stack.append( sequence.methodCalls[0] )
+    while len( stack ) != 0 :
+      mc = stack.pop()
+      print '%s actions, %s children' % ( len( mc.actions ), len( mc.children ) )
+      for child in mc.children :
+        stack.append( child )
+
+
     try:
       session = self.DBSession()
       caller = self.putCaller( sequence.caller, session )
       sequence.caller = caller['Value']
       for mc in sequence.methodCalls:
-        if mc.name.name not in self.dictMethodName :
-          res = self.putMethodName( mc.name, session )
-          mc.name = res['Value']
-        else :
-          mc.name = self.dictMethodName[mc.name.name]
+
+        res = self.putMethodName( mc.name, session )
+        mc.name = res['Value']
         for action in mc.actions :
           # putfile
-          if action.file.name not in self.dictFile :
-            res = self.putFile( action.file, session )
-            action.file = res['Value']
-          else :
-            action.file = self.dictFile[action.file.name]
+          res = self.putFile( action.file, session )
+          action.file = res['Value']
 
           # putStatus
-          if action.status.name not in self.dictStatus :
-            res = self.putStatus( action.status, session )
-            action.status = res['Value']
-          else :
-            action.status = self.dictStatus[action.status.name]
-
+          res = self.putStatus( action.status, session )
+          action.status = res['Value']
           # put storage element
-          if action.srcSE.name not in self.dictStorageElement :
-            res = self.putStorageElement( action.srcSE , session )
-            action.srcSE = res['Value']
-          else :
-            action.srcSE = self.dictStorageElement[action.srcSE.name]
-
-          if action.targetSE.name not in self.dictStorageElement :
-            res = self.putStorageElement( action.targetSE , session )
-            action.targetSE = res['Value']
-          else :
-            action.targetSE = self.dictStorageElement[action.targetSE.name]
-
+          res = self.putStorageElement( action.srcSE , session )
+          action.srcSE = res['Value']
+          res = self.putStorageElement( action.targetSE, session )
+          action.targetSE = res['Value']
       session.add( sequence )
       session.commit()
     except Exception, e:
@@ -221,7 +210,6 @@ class DataLoggingDB( object ):
         instance = DLMethodName( mn.name )
         session.add( instance )
         session.commit()
-      self.dictMethodName[mn.name] = instance
       return S_OK( instance )
     except exc.IntegrityError as e:
       session.rollback()
@@ -247,7 +235,6 @@ class DataLoggingDB( object ):
           instance = DLStorageElement( se.name )
           session.add( instance )
           session.commit()
-        self.dictStorageElement[se.name] = instance
         return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()
@@ -259,18 +246,17 @@ class DataLoggingDB( object ):
       return S_ERROR( "putStorageElement: unexpected exception %s" % e )
 
 
-  def putFile( self, dlFile, session ):
+  def putFile( self, file, session ):
     """ put a file into datbase
         if the file's name is already in data base, we just return the object
         else we insert a new file
     """
     try:
-      instance = session.query( DLFile ).filter_by( name = dlFile.name ).first()
+      instance = session.query( DLFile ).filter_by( name = file.name ).first()
       if not instance:
         instance = DLFile( file.name )
         session.add( instance )
         session.commit()
-      self.dictFile[dlFile.name] = instance
       return S_OK( instance )
 
     except exc.IntegrityError :
@@ -295,7 +281,6 @@ class DataLoggingDB( object ):
         instance = DLStatus( status.name )
         session.add( instance )
         session.commit()
-      self.dictStatus[status.name] = instance
       return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()

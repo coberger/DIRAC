@@ -23,7 +23,7 @@ class DLSequence( object ) :
   def toJSON( self ):
     """ Returns the JSON description string of the Sequence """
     try:
-      jsonStr = json.dumps( self, cls = DLEncoder , indent = 4 )
+      jsonStr = json.dumps( self, cls = DLEncoder )
       return S_OK( jsonStr )
     except Exception, e:
       return S_ERROR( e )
@@ -144,7 +144,6 @@ class DLSequence( object ) :
       line += '%s %s ' % \
       ( mc.creationTime, mc.name.name )
       seqLines.append( line )
-      print mc.actions
       for action in mc.actions :
         line = ''
         for x in range( cpt+1 ):
@@ -163,7 +162,7 @@ class DLSequence( object ) :
                   ',file %s ' % action.file.name if action.file else '',
                   ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
                   ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
-      seqLines.append( line )
+        seqLines.append( line )
       for child in mc.children :
         stack.append( child )
       if mc.children :
@@ -181,7 +180,6 @@ class DLSequence( object ) :
     stack.append( self.methodCalls[0] )
     while len( stack ) != 0 :
       mc = stack.pop()
-      print 'old parent %s new %s' % ( previousParent, mc.parentID )
       if mc.parentID != previousParent :
         if previousParent > mc.parentID :
           cpt -= 1

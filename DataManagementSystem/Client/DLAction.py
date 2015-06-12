@@ -25,7 +25,7 @@ class DLAction ( object ):
   def toJSON( self ):
     """ Returns the JSON description string """
     try:
-      jsonStr = json.dumps( self, cls = DLEncoder, indent = 1 )
+      jsonStr = json.dumps( self, cls = DLEncoder )
       return S_OK( jsonStr )
     except Exception, e:
       return S_ERROR( str( e ) )
