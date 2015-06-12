@@ -193,7 +193,9 @@ class DLSequence( object ) :
       ( mc.creationTime, mc.name.name )
       for action in mc.actions :
         if action.file.name == lfn:
-          line = base
+          line = ''
+          for x in range( cpt ):
+            line += '\t'
           if full :
             line += '%s%s%s%s%s'\
                 % ( '%s ' % action.status.name,
