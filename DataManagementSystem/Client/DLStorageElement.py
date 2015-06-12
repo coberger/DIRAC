@@ -5,18 +5,18 @@ Created on May 18, 2015
 '''
 
 import json
-from DIRAC.DataManagementSystem.private.DataLoggingEncoder import DataLoggingEncoder
+from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
 from DIRAC import S_ERROR, S_OK
 
-class DataLoggingStorageElement( object ):
+class DLStorageElement( object ):
 
   def __init__( self, name ):
     self.name = name
 
   def toJSON( self ):
-    """ Returns the JSON description string of the DataLoggingStorageElement """
+    """ Returns the JSON description string of the DLStorageElement """
     try:
-      jsonStr = json.dumps( self, cls = DataLoggingEncoder )
+      jsonStr = json.dumps( self, cls = DLEncoder )
       return S_OK( jsonStr )
     except Exception, e:
       return S_ERROR( str( e ) )

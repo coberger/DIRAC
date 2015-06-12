@@ -5,10 +5,9 @@ Created on May 7, 2015
 '''
 
 import inspect
-import traceback
+import os
 
-from DIRAC.DataManagementSystem.Client.DataLoggingException import DataLoggingException
-from DIRAC.Resources.Utilities import checkArgumentFormat
+from DIRAC.DataManagementSystem.Client.DLException import DLException, NoLogException
 
 def caller_name( skip = 2 ):
   """Get a name of a caller in the format module.class.method
@@ -39,7 +38,7 @@ def caller_name( skip = 2 ):
   ret = ".".join( name )
   if ret == '__main__' :
     ( filename, lineno, function, code_context, index ) = inspect.getframeinfo( parentframe )
-    ret = filename
+    ret = os.path.basename( filename )
   del parentframe
   return ret
 
@@ -93,7 +92,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
 
 
   except Exception as e:
-    raise DataLoggingException( e )
+    raise DLException( e )
 
   if len(actionArgs) == 0 :
     return opArgs
@@ -127,7 +126,7 @@ def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
             d['blob'] = ','.join( dBlob )
             actionArgs.append( d )
   except Exception as e:
-    raise DataLoggingException( e )
+    raise DLException( e )
   return actionArgs
 
 
@@ -192,9 +191,9 @@ def extractArgsFromDict( info , *args, **kwargs ):
             d['blob'] = ','.join( dBlob )
             actionArgs.append( d )
         else :
-          raise DataLoggingException( 'problem extractArgsFromDict, valueType should be dict or str' )
+          raise DLException( 'problem extractArgsFromDict, valueType should be dict or str' )
   except Exception as e:
-    raise DataLoggingException( e )
+    raise DLException( e )
   return actionArgs
 
 def getArgsExecuteFC( argsDecorator, *args, **kwargs ):
@@ -216,9 +215,9 @@ def getArgsExecuteFC( argsDecorator, *args, **kwargs ):
       elif info['type'] == 'dict' :
         args = extractArgsFromDict( info , *args, **kwargs )
     else:
-      raise DataLoggingException( 'Method %s  is not into the list of method to log' % funcName )
+      raise NoLogException( 'Method %s  is not into the list of method to log' % funcName )
   except Exception as e:
-    raise DataLoggingException( e )
+    raise DLException( e )
   return args
 
 
@@ -261,7 +260,7 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
     for arg in tupleArgs:
       funcArgs.append( mergeDict( opArgs, arg, blobList ) )
   except Exception as e:
-    raise DataLoggingException( e )
+    raise DLException( e )
 
   return funcArgs
 
@@ -282,9 +281,11 @@ def getArgsExecuteSE( argsDecorator, *args, **kwargs ):
       elif info['type'] == 'dict' :
         args = extractArgsFromDict( info , *args, **kwargs )
     else:
-      raise DataLoggingException( 'Method %s is not into the list of method to log' % funcName )
+      raise NoLogException( 'Method %s is not into the list of method to log' % funcName )
+  except NoLogException :
+     raise
   except Exception as e:
-    raise DataLoggingException( e )
+    raise DLException( e )
   for arg in args :
     arg['targetSE'] = argsDecorator['name']
   return args
@@ -309,7 +310,7 @@ def getFilesArgs( args ):
     else :
       files = [args]
   except Exception as e:
-    raise DataLoggingException( e )
+    raise DLException( e )
 
   return files
 

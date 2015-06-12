@@ -30,7 +30,7 @@ class TestFileCatalog:
   @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE' ], getActionArgsFunction = 'normal', specialList = listFC )
   def addReplica( self, lfns, seName ):
     """Adding new replica, registering them into seName"""
-
+    self.getFileSize( lfns )
     s, f = splitIntoSuccFailed( lfns )
     return S_OK( {'Successful' : s, 'Failed' : f} )
 
@@ -49,7 +49,7 @@ class TestStorageElement:
   @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE' ], getActionArgsFunction = 'normal' )
   def putFile( self, lfns, src ):
     """Physicaly copying one file from src"""
-
+    self.getFileSize( lfns )
     s, f = splitIntoSuccFailed( lfns )
 
     return S_OK( {'Successful' : s, 'Failed' : f} )
@@ -152,11 +152,6 @@ class ClientA( Thread ):
     #===========================================================================
     # print res
     #===========================================================================
-
-
-    fileTuple = [( 'M', 'destUrl', 150, 'destinationSE', 40, 108524789 ),
-                 ( 'TITI', 'targetURL', 7855, 'TargetSE', 14, 155 )]
-    dm.registerFile( fileTuple )
 
   def run( self ):
     self.doSomething()

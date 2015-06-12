@@ -1,22 +1,22 @@
 '''
-Created on May 11, 2015
+Created on May 18, 2015
 
 @author: Corentin Berger
 '''
 
 import json
-from DIRAC.DataManagementSystem.private.DataLoggingEncoder import DataLoggingEncoder
+from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
 from DIRAC import S_ERROR, S_OK
 
-class DataLoggingStatus( object ):
+class DLMethodName( object ):
 
   def __init__( self, name ):
     self.name = name
 
   def toJSON( self ):
-    """ Returns the JSON description string of the Operation """
+    """ Returns the JSON description string of the DLMethodName """
     try:
-      jsonStr = json.dumps( self, cls = DataLoggingEncoder )
+      jsonStr = json.dumps( self, cls = DLEncoder )
       return S_OK( jsonStr )
     except Exception, e:
       return S_ERROR( str( e ) )
@@ -30,7 +30,7 @@ class DataLoggingStatus( object ):
 
     for attrName in attrNames :
 
-      # ID  might not be set since it is managed by SQLAlchemy
+      # ID might not be set since it is managed by SQLAlchemy
       if not hasattr( self, attrName ):
         continue
 
