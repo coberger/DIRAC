@@ -28,10 +28,7 @@ class DataLoggingClient( Client ):
       raise Exception( 'Client.insertSequence bad sequenceJSON' )
     sequenceJSON = sequenceJSON["Value"]
     # print "Before sending %s" % sequenceJSON
-    try:
-      res = self.dataLoggingManager.insertSequence( sequenceJSON )
-    except :
-      raise
+    res = self.dataLoggingManager.insertSequence( sequenceJSON )
     return res
 
   def getSequenceOnFile( self, fileName ):

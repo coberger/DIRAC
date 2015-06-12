@@ -132,7 +132,7 @@ class _DataLoggingDecorator( object ):
     except DLException as e:
       if not result :
         result = self.func( *args, **kwargs )
-      # gLogger.error( 'unexpected Exception in DLDecorator.call %s' % e )
+      gLogger.error( 'unexpected Exception in DLDecorator.call %s' % e )
     return result
 
 
@@ -179,7 +179,7 @@ class _DataLoggingDecorator( object ):
         for action in methodCall.actions :
           action.exception = exception
     except Exception as e:
-      # gLogger.error( 'unexpected Exception in DLDecorator.getActionStatus %s' % e )
+      gLogger.error( 'unexpected Exception in DLDecorator.getActionStatus %s' % e )
       raise DLException( e )
 
 

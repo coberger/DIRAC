@@ -38,16 +38,16 @@ def makeSequenceB():
   sequence = DLSequence()
   sequence.setCaller( 'longCallerName' )
   calls = []
-  for x in range( 5 ):
+  for x in range( 10 ):
     calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName2' + str( x ) )} ) )
 
-  for x in range( 5 ):
+  for x in range( 10 ):
     sequence.popMethodCall()
 
   for call in calls :
-    for x in range( 2000 ):
+    for x in range( 5000 ):
       call.addAction( DLAction( DLFile( dictLong['files'] ), DLStatus( 'Successful' ) ,
-              DLStorageElement( dictLong['srcSE'] + str( x ) ), DLStorageElement( dictLong['targetSE'] + str( x ) ),
+              DLStorageElement( dictLong['srcSE'] + str( x % 20 ) ), DLStorageElement( dictLong['targetSE'] + str( x % 20 ) ),
               dictLong['blob'], 'errorMessage' ) )
   return sequence
 
@@ -59,17 +59,22 @@ client = DataLoggingClient()
 #   seqs.append( makeSequenceA() )
 #   client.insertSequence( seqs[x] )
 #===============================================================================
-
+print time.strftime( '%H :%M : %S', time.localtime( time.time() ) )
 begin = time.time()
 seqs = []
 for x in range( 1 ) :
-  seqs.append( makeSequenceB() )
-  print ' begin insertion'
+  seq = makeSequenceB()
+  print 'begin insertion'
   begin = time.time()
-  client.insertSequence( seqs[x] )
+  res = client.insertSequence( seq )
+  if not res['OK']:
+    print 'res %s' % res['Message']
+  else :
+    print 'res %s' % res['Value']
   t = time.time() - begin
   print 'end of insertion, time : %s' % time.strftime( '%M : %S', time.localtime( t ) )
 
+print time.strftime( '%H : %M : %S', time.localtime( time.time() ) )
 
 #===============================================================================
 # begin = time.time()
