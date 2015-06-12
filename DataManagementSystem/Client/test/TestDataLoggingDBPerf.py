@@ -45,7 +45,7 @@ def makeSequenceB():
     sequence.popMethodCall()
 
   for call in calls :
-    for x in range( 5000 ):
+    for x in range( 2000 ):
       call.addAction( DLAction( DLFile( dictLong['files'] ), DLStatus( 'Successful' ) ,
               DLStorageElement( dictLong['srcSE'] + str( x ) ), DLStorageElement( dictLong['targetSE'] + str( x ) ),
               dictLong['blob'], 'errorMessage' ) )
@@ -64,15 +64,16 @@ begin = time.time()
 seqs = []
 for x in range( 1 ) :
   seqs.append( makeSequenceB() )
+  print ' begin insertion'
   begin = time.time()
   client.insertSequence( seqs[x] )
   t = time.time() - begin
   print 'end of insertion, time : %s' % time.strftime( '%M : %S', time.localtime( t ) )
 
 
-dlc = DataLoggingClient()
-
-begin = time.time()
-res = dlc.getSequenceOnFile( 'first' )
-t = time.time() - begin
-print 'end of selection, time : %s' % time.strftime( '%M : %S', time.localtime( t ) )
+#===============================================================================
+# begin = time.time()
+# res = dlc.getSequenceOnFile( 'first' )
+# t = time.time() - begin
+# print 'end of selection, time : %s' % time.strftime( '%M : %S', time.localtime( t ) )
+#===============================================================================

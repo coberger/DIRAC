@@ -156,8 +156,16 @@ class DataLoggingDB( object ):
 
   def putSequence( self, sequence ):
     """ put a sequence into database"""
-    # print sequence
     session = None
+    stack = []
+    stack.append( sequence.methodCalls[0] )
+    while len( stack ) != 0 :
+      mc = stack.pop()
+      print '%s actions, %s children' % ( len( mc.actions ), len( mc.children ) )
+      for child in mc.children :
+        stack.append( child )
+
+
     try:
       session = self.DBSession()
       caller = self.putCaller( sequence.caller, session )
@@ -166,7 +174,6 @@ class DataLoggingDB( object ):
 
         res = self.putMethodName( mc.name, session )
         mc.name = res['Value']
-
         for action in mc.actions :
           # putfile
           res = self.putFile( action.file, session )
@@ -201,7 +208,6 @@ class DataLoggingDB( object ):
     """
     try:
       instance = session.query( DLMethodName ).filter_by( name = mn.name ).first()
-      session.commit()
       if not instance:
         instance = DLMethodName( mn.name )
         session.add( instance )
