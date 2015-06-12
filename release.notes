@@ -1,4 +1,4 @@
-[v6r13-pre34]
+[v6r13]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -14,6 +14,7 @@ CHANGE: InnerRPCClient - retry 3 times in case of exception in the transport lay
 CHANGE: SocketInfo - retry 3 times in case of handshaking error
 CHANGE: MySQL - possibility to specify charset in the table definition
 FIX: dirac-install, dirac-distribution - removed obsoleted defaults     
+NEW: Proxy utility module with executeWithUserProxy decorator function
 
 *Configuration
 NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifying a 
@@ -31,6 +32,7 @@ CHANGE: multiple commands updated to use the new Dirac API method names
 NEW: Native use of the FTS3 services
 CHANGE: Removed the use of current DataLogging service
 CHANGE: DataManager - changes to manage URLs inside StorageElement objects only
+FIX: DataManager - define SEGroup as accessible at a site
 CHANGE: DirectoryListing - extracted from FileCatalogClientCLI as an independent utility
 CHANGE: MetaQuery - extracted from FileCatalogClientCLI as an independent utility
 CHANGE: FileCatalogClientCLI uses external DirectoryListing, MetaQuery utilities
@@ -43,6 +45,9 @@ NEW: dirac-dms-find-lfns command
 
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
+CHANGE: JobScheduling executor uses the job owner proxy to evaluate which files to stage
+FIX: DownloadInputData - localFile was not defined properly
+FIX: DownloadInputData - could not find cached files (missing [lfn])
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
@@ -50,6 +55,8 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: ReqClient - added options to putRequest(): useFailoverProxy and retryMainServer
 CHANGE: DMSRequestOperationsBase - delay execution or cancel request based on SE statuses 
         from RSS/CS
+FIX: Fixes to make use of RequestID as a unique identifier. RequestName can be used in
+     commands in case of its uniqueness        
 
 *Resources
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
@@ -62,6 +69,10 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p42]
+
+FIX: added fixes from v6r11p34 patch release
 
 [v6r12p41]
 
@@ -548,6 +559,11 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p34]
+
+*Resources
+NEW: GlobusComputingElement class
 
 [v6r11p33]
 

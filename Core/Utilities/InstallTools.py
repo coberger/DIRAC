@@ -97,7 +97,7 @@ def loadDiracCfg( verbose = False ):
   Read again defaults from dirac.cfg
   """
   global localCfg, cfgFile, setup, instance, logLevel, linkedRootPath, host
-  global basePath, instancePath, runitDir, startDir
+  global basePath, instancePath, runitDir, startDir, controlDir
   global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
   global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode
   global mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
@@ -140,6 +140,11 @@ def loadDiracCfg( verbose = False ):
   startDir = localCfg.getOption( cfgInstallPath( 'StartupDir' ), startDir )
   if verbose:
     gLogger.notice( 'Using Startup Dir at', startDir )
+
+  controlDir = os.path.join( instancePath, 'control' )
+  controlDir = localCfg.getOption( cfgInstallPath( 'ControlDir' ), controlDir )
+  if verbose:
+    gLogger.notice( 'Using Control Dir at', controlDir )
 
   # Now some MySQL default values
   db = {}
@@ -1870,7 +1875,7 @@ exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(co
 """#!/bin/bash
 echo %(controlDir)s/%(system)s/%(component)s/stop_agent
 touch %(controlDir)s/%(system)s/%(component)s/stop_agent
-""" % {'controlDir': runitDir,
+""" % {'controlDir': controlDir,
        'system' : system,
        'component': component } )
       fd.close()
@@ -2559,7 +2564,8 @@ def installDatabase( dbName, monitorFlag = True ):
       DIRAC.exit( -1 )
     return result
 
-  perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW,INDEX"
+  perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER," \
+          "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
   for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                               mysqlPassword ),
               "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,

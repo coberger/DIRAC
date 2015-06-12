@@ -909,14 +909,17 @@ class DataManager( object ):
     :param tuple fileTuple: (lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum )
     :param str catalog: catalog name
     """
-    if isinstance( fileTuple, list ):
+    if isinstance( fileTuple, ( list, set ) ):
       fileTuples = fileTuple
     elif isinstance( fileTuple, tuple ):
       fileTuples = [fileTuple]
-    else:
-      errStr = "registerFile: Supplied file info must be tuple of list of tuples."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
+    for fileTuple in fileTuples:
+      if not isinstance( fileTuple, tuple ):
+        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
+        self.log.debug( errStr )
+        return S_ERROR( errStr )
+    if not fileTuples:
+      return S_OK( {'Successful':[], 'Failed':{}} )
     self.log.debug( "registerFile: Attempting to register %s files." % len( fileTuples ) )
     res = self.__registerFile( fileTuples, catalog )
     if not res['OK']:
@@ -953,14 +956,17 @@ class DataManager( object ):
 
         'replicaTuple' is a tuple or list of tuples of the form (lfn,pfn,se)
     """
-    if isinstance( replicaTuple, list ):
+    if isinstance( replicaTuple, ( list, set ) ):
       replicaTuples = replicaTuple
     elif isinstance( replicaTuple, tuple ):
       replicaTuples = [ replicaTuple ]
-    else:
-      errStr = "registerReplica: Supplied file info must be tuple of list of tuples."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
+    for replicaTuple in replicaTuples:
+      if not isinstance( replicaTuple, tuple ):
+        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
+        self.log.debug( errStr )
+        return S_ERROR( errStr )
+    if not replicaTuples:
+      return S_OK( {'Successful':[], 'Failed':{}} )
     self.log.debug( "registerReplica: Attempting to register %s replicas." % len( replicaTuples ) )
     res = self.__registerReplica( replicaTuples, catalog )
     if not res['OK']:
@@ -1025,14 +1031,19 @@ class DataManager( object ):
     """
     if force == None:
       force = self.ignoreMissingInFC
-    if isinstance( lfn, list ):
-      lfns = lfn
-    elif isinstance( lfn, basestring ):
-      lfns = [lfn]
+    if isinstance( lfn, ( list, dict, set, tuple ) ):
+      lfns = list( lfn )
     else:
-      errStr = "removeFile: Supplied lfns must be string or list of strings."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
+      lfns = [lfn]
+    for lfn in lfns:
+      if not isinstance( lfn, basestring ):
+        errStr = "removeReplica: Supplied lfns must be string or list of strings."
+        self.log.debug( errStr )
+        return S_ERROR( errStr )
+    successful = {}
+    failed = {}
+    if not lfns:
+      return S_OK( {'Successful':successful, 'Failed':failed} )
     # First check if the file exists in the FC
     res = self.fc.exists( lfns )
     if not res['OK']:
@@ -1042,9 +1053,7 @@ class DataManager( object ):
     if force:
       # Files that don't exist are removed successfully
       successful = dict.fromkeys( [lfn for lfn in success if not success[lfn] ], True )
-      failed = {}
     else:
-      successful = {}
       failed = dict.fromkeys( [lfn for lfn in success if not success[lfn] ], 'No such file or directory' )
     # Check that we have write permissions to this directory and to the file.
     if lfns:
@@ -1130,16 +1139,19 @@ class DataManager( object ):
        'storageElementName' is the storage where the file is to be removed
        'lfn' is the file to be removed
     """
-    if isinstance( lfn, list ):
-      lfns = lfn
-    elif isinstance( lfn, basestring ):
-      lfns = [lfn]
+    if isinstance( lfn, ( list, dict, set, tuple ) ):
+      lfns = list( lfn )
     else:
-      errStr = "removeReplica: Supplied lfns must be string or list of strings."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
+      lfns = [lfn]
+    for lfn in lfns:
+      if not isinstance( lfn, basestring ):
+        errStr = "removeReplica: Supplied lfns must be string or list of strings."
+        self.log.debug( errStr )
+        return S_ERROR( errStr )
     successful = {}
     failed = {}
+    if not lfns:
+      return S_OK( {'Successful':successful, 'Failed':failed} )
     # Check that we have write permissions to this file.
     res = self.__verifyWritePermission( lfns )
     if not res['OK']:
@@ -1246,14 +1258,19 @@ class DataManager( object ):
 
     # Remove replica from the file catalog 'lfn' are the file
     # to be removed 'storageElementName' is the storage where the file is to be removed
-    if isinstance( lfn, list ):
-      lfns = lfn
-    elif isinstance( lfn, basestring ):
-      lfns = [lfn]
+    if isinstance( lfn, ( list, dict, set, tuple ) ):
+      lfns = list( lfn )
     else:
-      errStr = "removeReplicaFromCatalog: Supplied lfns must be string or list of strings."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
+      lfns = [lfn]
+    for lfn in lfns:
+      if not isinstance( lfn, basestring ):
+        errStr = "removeReplica: Supplied lfns must be string or list of strings."
+        self.log.debug( errStr )
+        return S_ERROR( errStr )
+    successful = {}
+    failed = {}
+    if not lfns:
+      return S_OK( {'Successful':successful, 'Failed':failed} )
     self.log.debug( "removeReplicaFromCatalog: Will remove catalogue entry for %s lfns at %s." % \
                         ( len( lfns ), storageElementName ) )
     res = self.fc.getReplicas( lfns, allStatus = True )
@@ -1290,14 +1307,17 @@ class DataManager( object ):
 
        'replicaTuple' is a tuple containing the replica to be removed and is of the form ( lfn, pfn, se )
     """
-    if isinstance( replicaTuple, list ):
-      replicaTuples = replicaTuple
-    elif isinstance( replicaTuple, tuple ):
-      replicaTuples = [replicaTuple]
+    if isinstance( replicaTuple, ( list, dict, set, tuple ) ):
+      replicaTuples = list( replicaTuple )
     else:
-      errStr = "removeCatalogPhysicalFileNames: Supplied info must be tuple or list of tuples."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
+      replicaTuples = [replicaTuple]
+    for replicaTuple in replicaTuples:
+      if not isinstance( replicaTuple, tuple ):
+        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
+        self.log.debug( errStr )
+        return S_ERROR( errStr )
+    if not replicaTuples:
+      return S_OK( {'Successful':[], 'Failed':{}} )
     return self.__removeCatalogReplica( replicaTuples )
 
   def __removeCatalogReplica( self, replicaTuples ):

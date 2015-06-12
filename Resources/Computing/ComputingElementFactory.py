@@ -46,7 +46,7 @@ class ComputingElementFactory( object ):
     objectLoader = ObjectLoader.ObjectLoader()
     result = objectLoader.loadObject( 'Resources.Computing.%s' % subClassName, subClassName )
     if not result['OK']:
-      gLogger.error( 'Failed to load catalog object: %s' % result['Message'] )
+      gLogger.error( 'Failed to load object', '%s: %s' % ( subClassName, result['Message'] ) )
       return result
 
     ceClass = result['Value']
@@ -54,13 +54,14 @@ class ComputingElementFactory( object ):
       computingElement = ceClass( ceNameLocal )
       if ceParametersDict:
         computingElement.setParameters( ceParametersDict )
+      else:
+        computingElement._reset()
     except Exception, x:
       msg = 'ComputingElementFactory could not instantiate %s object: %s' % ( subClassName, str( x ) )
       self.log.exception()
       self.log.warn( msg )
       return S_ERROR( msg )    
 
-    computingElement._reset()
     return S_OK( computingElement )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
