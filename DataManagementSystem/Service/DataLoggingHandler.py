@@ -4,17 +4,13 @@ Created on May 5, 2015
 @author: Corentin Berger
 '''
 
-import DIRAC
-from types import StringTypes
+from types import StringTypes, NoneType, StringType, UnicodeType
 import json
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC      import gLogger, S_ERROR
+from DIRAC      import gLogger, S_ERROR, S_OK
 
 from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
-from DIRAC.DataManagementSystem.private.DataLoggingDecoder import DataLoggingDecoder
-
-
-
+from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 
 class DataLoggingHandler( RequestHandler ):
 
@@ -34,9 +30,8 @@ class DataLoggingHandler( RequestHandler ):
   types_insertSequence = [StringTypes]
   @classmethod
   def export_insertSequence( cls, sequenceJSON ):
-    print "After receiving %s" % sequenceJSON
     try :
-      sequence = json.loads( sequenceJSON, cls = DataLoggingDecoder )
+      sequence = json.loads( sequenceJSON, cls = DLDecoder )
       res = cls.__dataLoggingDB.putSequence( sequence )
     except :
       raise
@@ -48,16 +43,55 @@ class DataLoggingHandler( RequestHandler ):
   def export_getSequenceOnFile( cls, fileName ):
     try :
       res = cls.__dataLoggingDB.getSequenceOnFile( fileName )
+      sequences = []
+      if res["OK"]:
+        seqs = res["Value"]
+        for seq in seqs :
+          sequences.append( seq.toJSON()["Value"] )
     except :
       raise
-    return res
+    return S_OK( sequences )
 
-
-  types_getMethodCallOnFile = [StringTypes]
+  types_getSequenceByID = [StringTypes]
   @classmethod
-  def export_getMethodCallOnFile( cls, fileName ):
+  def export_getSequenceByID( cls, IDSeq ):
     try :
-      res = cls.__dataLoggingDB.getMethodCallOnFile( fileName )
+      res = cls.__dataLoggingDB.getSequenceByID( IDSeq )
+      sequences = []
+      if res["OK"]:
+        seqs = res["Value"]
+        for seq in seqs :
+          sequences.append( seq.toJSON()["Value"] )
     except :
       raise
-    return res
+    return S_OK( sequences )
+
+
+  types_getMethodCallOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  @classmethod
+  def export_getMethodCallOnFile( cls, fileName, before, after ):
+    try :
+      res = cls.__dataLoggingDB.getMethodCallOnFile( fileName, before, after )
+      methodCalls = []
+      if res["OK"]:
+        calls = res["Value"]
+        for call in calls :
+          methodCalls.append( call.toJSON()["Value"] )
+    except :
+      raise
+    return S_OK( methodCalls )
+
+
+  types_getMethodCallByName = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  @classmethod
+  def export_getMethodCallByName( cls, methodName, before, after ):
+    try :
+      res = cls.__dataLoggingDB.getMethodCallByName( methodName, before, after )
+      methodCalls = []
+      if res["OK"]:
+        calls = res["Value"]
+        for call in calls :
+          methodCalls.append( call.toJSON()["Value"] )
+    except :
+      raise
+    return S_OK( methodCalls )

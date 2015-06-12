@@ -4,29 +4,28 @@ Created on May 4, 2015
 @author: Corentin Berger
 '''
 import json
-from DIRAC.DataManagementSystem.private.DataLoggingEncoder import DataLoggingEncoder
+from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
 from DIRAC import S_ERROR, S_OK
 
-class DataLoggingAction ( object ):
+class DLAction ( object ):
 
 
-  def __init__( self, file, status, srcSE, targetSE, blob, messageError ):
+  def __init__( self, file, status, srcSE, targetSE, blob, messageError, ID = None ):
     self.file = file
     self.status = status
     self.srcSE = srcSE
     self.targetSE = targetSE
     self.blob = blob
-    self.ID = None
+    self.ID = ID
     self.IDMethodCall = None
     self.IDFile = None
     self.IDStatus = None
     self.messageError = messageError
 
-
   def toJSON( self ):
-    """ Returns the JSON description string of the Operation """
+    """ Returns the JSON description string """
     try:
-      jsonStr = json.dumps( self, cls = DataLoggingEncoder, indent = 1 )
+      jsonStr = json.dumps( self, cls = DLEncoder, indent = 1 )
       return S_OK( jsonStr )
     except Exception, e:
       return S_ERROR( str( e ) )
@@ -50,6 +49,8 @@ class DataLoggingAction ( object ):
     jsonData['srcSE'] = self.srcSE
     jsonData['targetSE'] = self.targetSE
     jsonData['blob'] = self.blob
+    if isinstance( self.messageError, dict ):
+      print 'is dict'
     jsonData['messageError'] = self.messageError
 
     jsonData['__type__'] = self.__class__.__name__

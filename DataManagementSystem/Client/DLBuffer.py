@@ -6,11 +6,11 @@ Created on May 4, 2015
 
 from threading          import Lock
 
-from DIRAC.DataManagementSystem.Client.DataLoggingSequence import DataLoggingSequence
+from DIRAC.DataManagementSystem.Client.DLSequence import DLSequence
 
 
-class DataLoggingBuffer :
-  """ contains all DataLoggingSequence needed by different thread"""
+class DLBuffer :
+  """ contains all DLSequence needed by different thread"""
 
   dict = dict()
   # lock for multi-threading
@@ -23,12 +23,12 @@ class DataLoggingBuffer :
 
   @classmethod
   def getDataLoggingSequence( cls, threadID ):
-    """ return the DataLoggingSequence associated to the threadID
+    """ return the DLSequence associated to the threadID
         :param threadID: id of the thread
     """
     cls.lock.acquire()
     if threadID not in cls.dict:
-      cls.dict[threadID] = DataLoggingSequence()
+      cls.dict[threadID] = DLSequence()
     res = cls.dict[threadID]
     cls.lock.release()
     return res

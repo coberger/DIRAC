@@ -6,7 +6,7 @@ Created on May 6, 2015
 
 import json
 
-class DataLoggingEncoder( json.JSONEncoder ):
+class DLEncoder( json.JSONEncoder ):
   """ This class is an encoder for the Sequence, OperationFile, LFN and OperationStatus.
   """
 

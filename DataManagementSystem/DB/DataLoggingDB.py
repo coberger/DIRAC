@@ -7,113 +7,105 @@ Created on May 4, 2015
 # from DIRAC
 from DIRAC              import S_OK, gLogger, S_ERROR
 
-from DIRAC.DataManagementSystem.Client.DataLoggingAction import DataLoggingAction
-from DIRAC.DataManagementSystem.Client.DataLoggingFile import DataLoggingFile
-from DIRAC.DataManagementSystem.Client.DataLoggingSequence import DataLoggingSequence
-from DIRAC.DataManagementSystem.Client.DataLoggingCaller import DataLoggingCaller
-from DIRAC.DataManagementSystem.Client.DataLoggingMethodCall import DataLoggingMethodCall
-from DIRAC.DataManagementSystem.Client.DataLoggingStatus import DataLoggingStatus
-from DIRAC.DataManagementSystem.Client.DataLoggingStorageElement import DataLoggingStorageElement
-from DIRAC.DataManagementSystem.Client.DataLoggingMethodName import DataLoggingMethodName
+from DIRAC.DataManagementSystem.Client.DLAction import DLAction
+from DIRAC.DataManagementSystem.Client.DLFile import DLFile
+from DIRAC.DataManagementSystem.Client.DLSequence import DLSequence
+from DIRAC.DataManagementSystem.Client.DLCaller import DLCaller
+from DIRAC.DataManagementSystem.Client.DLMethodCall import DLMethodCall
+from DIRAC.DataManagementSystem.Client.DLStatus import DLStatus
+from DIRAC.DataManagementSystem.Client.DLStorageElement import DLStorageElement
+from DIRAC.DataManagementSystem.Client.DLMethodName import DLMethodName
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 # from sqlalchemy
-from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, BLOB, exc
+from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, BLOB, exc, between
 from sqlalchemy.orm     import mapper, sessionmaker, relationship, backref, scoped_session, aliased
-from DIRAC.DataManagementSystem.Client.DataLoggingException import DataLoggingException
+from DIRAC.DataManagementSystem.Client.DLException import DLException
 
 
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
 
-dataLoggingFileTable = Table( 'DataLoggingFile', metadata,
+dataLoggingFileTable = Table( 'DLFile', metadata,
                    Column( 'ID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 
-mapper( DataLoggingFile, dataLoggingFileTable )
+mapper( DLFile, dataLoggingFileTable )
 
-dataLoggingMethodNameTable = Table( 'DataLoggingMethodName', metadata,
+dataLoggingMethodNameTable = Table( 'DLMethodName', metadata,
                    Column( 'ID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 
-mapper( DataLoggingMethodName, dataLoggingMethodNameTable )
+mapper( DLMethodName, dataLoggingMethodNameTable )
 
-dataLoggingStorageElementTable = Table( 'DataLoggingStorageElement', metadata,
+dataLoggingStorageElementTable = Table( 'DLStorageElement', metadata,
                    Column( 'ID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 
-mapper( DataLoggingStorageElement, dataLoggingStorageElementTable )
+mapper( DLStorageElement, dataLoggingStorageElementTable )
 
-dataLoggingStatusTable = Table( 'DataLoggingStatus', metadata,
+dataLoggingStatusTable = Table( 'DLStatus', metadata,
                    Column( 'ID', Integer, primary_key = True, index = True ),
                    Column( 'name' , Enum( 'Successful', 'Failed', 'Unknown' ), server_default = 'Unknown' , unique = True ),
                    mysql_engine = 'InnoDB' )
 
-mapper( DataLoggingStatus, dataLoggingStatusTable )
+mapper( DLStatus, dataLoggingStatusTable )
 
-dataLoggingCallerTable = Table( 'DataLoggingCaller', metadata,
+dataLoggingCallerTable = Table( 'DLCaller', metadata,
                    Column( 'ID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 
-mapper( DataLoggingCaller, dataLoggingCallerTable )
+mapper( DLCaller, dataLoggingCallerTable )
 
 
-dataLoggingActionTable = Table( 'DataLoggingAction', metadata,
+dataLoggingActionTable = Table( 'DLAction', metadata,
                    Column( 'ID', Integer, primary_key = True ),
-                   Column( 'IDMethodCall', Integer, ForeignKey( 'DataLoggingMethodCall.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'IDFile', Integer, ForeignKey( 'DataLoggingFile.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'IDStatus', Integer, ForeignKey( 'DataLoggingStatus.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'IDsrcSE', Integer, ForeignKey( 'DataLoggingStorageElement.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'IDtargetSE', Integer, ForeignKey( 'DataLoggingStorageElement.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'IDMethodCall', Integer, ForeignKey( 'DLMethodCall.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'IDFile', Integer, ForeignKey( 'DLFile.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'IDStatus', Integer, ForeignKey( 'DLStatus.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'IDsrcSE', Integer, ForeignKey( 'DLStorageElement.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'IDtargetSE', Integer, ForeignKey( 'DLStorageElement.ID', ondelete = 'CASCADE' ) ),
                    Column( 'blob', String( 2048 ) ),
                    Column( 'messageError', String( 2048 ) ),
                    mysql_engine = 'InnoDB' )
 
-mapper( DataLoggingAction, dataLoggingActionTable,
-        properties = { 'file' : relationship( DataLoggingFile ),
-                      'status' : relationship( DataLoggingStatus ),
-                      'srcSE' : relationship( DataLoggingStorageElement, foreign_keys = dataLoggingActionTable.c.IDsrcSE ),
-                      'targetSE' : relationship( DataLoggingStorageElement, foreign_keys = dataLoggingActionTable.c.IDtargetSE )} )
+mapper( DLAction, dataLoggingActionTable,
+        properties = { 'file' : relationship( DLFile ),
+                      'status' : relationship( DLStatus ),
+                      'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.IDsrcSE ),
+                      'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.IDtargetSE )} )
 
 
 
-dataLoggingSequenceTable = Table( 'DataLoggingSequence', metadata,
+dataLoggingSequenceTable = Table( 'DLSequence', metadata,
                    Column( 'ID', Integer, primary_key = True ),
-                   Column( 'caller_id', Integer, ForeignKey( 'DataLoggingCaller.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'caller_id', Integer, ForeignKey( 'DLCaller.ID', ondelete = 'CASCADE' ) ),
                    mysql_engine = 'InnoDB' )
 
 
-mapper( DataLoggingSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DataLoggingMethodCall ),
-                                                                     'caller' : relationship( DataLoggingCaller ) } )
+mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DLMethodCall ),
+                                                                     'caller' : relationship( DLCaller ) } )
 
 
-dataLoggingMethodCallTable = Table( 'DataLoggingMethodCall', metadata,
+dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
                    Column( 'ID', Integer, primary_key = True ),
                    Column( 'creationTime', DateTime ),
-                   Column( 'methodName', Integer, ForeignKey( 'DataLoggingMethodName.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'parentID', Integer, ForeignKey( 'DataLoggingMethodCall.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'sequenceID', Integer, ForeignKey( 'DataLoggingSequence.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'methodName', Integer, ForeignKey( 'DLMethodName.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'parentID', Integer, ForeignKey( 'DLMethodCall.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.ID', ondelete = 'CASCADE' ) ),
                    Column( 'order', Integer ),
                    mysql_engine = 'InnoDB' )
 
-mapper( DataLoggingMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : relationship( DataLoggingMethodCall ),
-                                                                           'name': relationship( DataLoggingMethodName ),
-                                                                           'actions': relationship( DataLoggingAction ) } )
+mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : relationship( DLMethodCall ),
+                                                                           'name': relationship( DLMethodName ),
+                                                                           'actions': relationship( DLAction ) } )
 
 
 class DataLoggingDB( object ):
-
-  #=============================================================================
-  # def __init__( self, systemInstance = 'Default' ):
-  #   self.engine = create_engine( 'mysql://Dirac:corent@127.0.0.1/testDiracDB', echo = False )
-  #   metadata.bind = self.engine
-  #   self.DBSession = sessionmaker( bind = self.engine )
-  #   # self.DBSession = scoped_session(self.session_factory )
-  #=============================================================================
 
   def __getDBConnectionInfo( self, fullname ):
     """ Collect from the CS all the info needed to connect to the DB.
@@ -196,7 +188,7 @@ class DataLoggingDB( object ):
       if session :
         session.rollback()
       gLogger.error( "putSequence: unexpected exception %s" % e )
-      raise DataLoggingException( "putSequence: unexpected exception %s" % e )
+      raise DLException( "putSequence: unexpected exception %s" % e )
     finally:
       if session :
         session.close()
@@ -208,16 +200,16 @@ class DataLoggingDB( object ):
         else we insert a new MethodName
     """
     try:
-      instance = session.query( DataLoggingMethodName ).filter_by( name = mn.name ).first()
+      instance = session.query( DLMethodName ).filter_by( name = mn.name ).first()
       session.commit()
       if not instance:
-        instance = DataLoggingMethodName( mn.name )
+        instance = DLMethodName( mn.name )
         session.add( instance )
       session.commit()
       return S_OK( instance )
     except exc.IntegrityError as e:
       session.rollback()
-      instance = session.query( DataLoggingMethodName ).filter_by( name = mn.name ).first()
+      instance = session.query( DLMethodName ).filter_by( name = mn.name ).first()
       return S_OK( instance )
     except Exception, e:
       session.rollback()
@@ -234,15 +226,15 @@ class DataLoggingDB( object ):
       if se.name is None :
         return S_OK( None )
       else :
-        instance = session.query( DataLoggingStorageElement ).filter_by( name = se.name ).first()
+        instance = session.query( DLStorageElement ).filter_by( name = se.name ).first()
         if not instance:
-          instance = DataLoggingStorageElement( se.name )
+          instance = DLStorageElement( se.name )
           session.add( instance )
         session.commit()
         return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()
-      instance = session.query( DataLoggingStorageElement ).filter_by( name = se.name ).first()
+      instance = session.query( DLStorageElement ).filter_by( name = se.name ).first()
       return S_OK( instance )
     except Exception, e:
       session.rollback()
@@ -256,16 +248,16 @@ class DataLoggingDB( object ):
         else we insert a new file
     """
     try:
-      instance = session.query( DataLoggingFile ).filter_by( name = file.name ).first()
+      instance = session.query( DLFile ).filter_by( name = file.name ).first()
       if not instance:
-        instance = DataLoggingFile( file.name )
+        instance = DLFile( file.name )
         session.add( instance )
       session.commit()
       return S_OK( instance )
 
     except exc.IntegrityError :
       session.rollback()
-      instance = session.query( DataLoggingFile ).filter_by( name = file.name ).first()
+      instance = session.query( DLFile ).filter_by( name = file.name ).first()
       return S_OK( instance )
     except Exception, e:
       session.rollback()
@@ -279,16 +271,16 @@ class DataLoggingDB( object ):
         else we insert a new status
     """
     try:
-      instance = session.query( DataLoggingStatus ).filter_by( name = status.name ).first()
+      instance = session.query( DLStatus ).filter_by( name = status.name ).first()
       if not instance:
         # print 'no instance of %s' % status.name
-        instance = DataLoggingStatus( status.name )
+        instance = DLStatus( status.name )
         session.add( instance )
       session.commit()
       return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()
-      instance = session.query( DataLoggingStatus ).filter_by( name = status.name ).first()
+      instance = session.query( DLStatus ).filter_by( name = status.name ).first()
       return S_OK( instance )
     except Exception, e:
       session.rollback()
@@ -302,15 +294,15 @@ class DataLoggingDB( object ):
         else we insert a new caller
     """
     try:
-      instance = session.query( DataLoggingCaller ).filter_by( name = caller.name ).first()
+      instance = session.query( DLCaller ).filter_by( name = caller.name ).first()
       if not instance:
-        instance = DataLoggingCaller( caller.name )
+        instance = DLCaller( caller.name )
         session.add( instance )
       session.commit()
       return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()
-      instance = session.query( DataLoggingCaller ).filter_by( name = caller.name ).first()
+      instance = session.query( DLCaller ).filter_by( name = caller.name ).first()
       return S_OK( instance )
     except Exception, e:
       session.rollback()
@@ -322,50 +314,65 @@ class DataLoggingDB( object ):
     """
       get all sequence about a lfn's name
     """
-    listresult = []
     session = self.DBSession()
-    aliasSe1 = aliased( DataLoggingStorageElement )
-    aliasSe2 = aliased( DataLoggingStorageElement )
 
     try:
-      listresult.append( "%s\t%s\t%s\t%s\t%s\t%s\t%s" % ( 'callerName', 'methodName', 'status', 'fileName', 'srcSE', 'targetSE', 'blob' ) )
-      for callerName, methodName, status, fileName, srcSE, targetSE, blob in \
-       session.query( DataLoggingCaller.name, DataLoggingMethodName.name, DataLoggingStatus.name,
-                            DataLoggingFile.name, aliasSe1.name, aliasSe2.name , DataLoggingAction.blob )\
-                            .join( DataLoggingSequence ).join( DataLoggingMethodCall ).join( DataLoggingMethodName )\
-                            .join( DataLoggingAction ).join( DataLoggingStatus ).join( DataLoggingFile ).\
-                            join( aliasSe1, DataLoggingAction.srcSE ).join( aliasSe2, DataLoggingAction.targetSE )\
-                            .filter( DataLoggingFile.name == lfn ).all() :
-        listresult.append( "%s\t%s\t%s\t%s\t%s\t%s\t%s" % ( callerName, methodName, status, fileName, srcSE, targetSE, blob ) )
-
-      listresult = '\n'.join( listresult )
+      seqs = session.query( DLSequence )\
+                  .join( DLMethodCall )\
+                  .join( DLAction )\
+                  .join( DLFile )\
+                  .filter( DLFile.name == lfn ).all()
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
 
     finally:
       session.close
+    return S_OK( seqs )
 
-    return S_OK( listresult )
+  def getSequenceByID( self, IDSeq ):
+    """
+      get the sequence for the id ID
+    """
+    session = self.DBSession()
 
+    try:
+      seqs = session.query( DLSequence )\
+                  .filter( DLSequence.ID == IDSeq ).all()
+    except Exception, e:
+      gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
+      return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
 
-  def getMethodCallOnFile( self, lfn ):
+    finally:
+      session.close
+    return S_OK( seqs )
+
+  def getMethodCallOnFile( self, lfn, before, after ):
     """
       get all operation about a file's name
     """
-    listresult = []
     session = self.DBSession()
     try:
-      result = session.query( DataLoggingCaller, DataLoggingMethodCall, DataLoggingMethodName,
-                                DataLoggingAction, DataLoggingStatus, DataLoggingFile )\
-                                .join( DataLoggingMethodCall ).join( DataLoggingMethodName ).join( DataLoggingAction )\
-                                .join( DataLoggingStatus ).join( DataLoggingFile )\
-                                .filter( DataLoggingFile.name == lfn ).all()
-      for row in result :
-        listresult.append( "%s %s %s %s %s %s" % ( row.DataLoggingMethodName.name,
-                                       row.DataLoggingFile.name, row.DataLoggingStatus.name ) )
-      listresult = ','.join( listresult )
-
+      if before and after :
+        calls = session.query( DLMethodCall )\
+                .join( DLAction )\
+                .join( DLFile )\
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime.between( after, before ) ).all()
+      elif before :
+        calls = session.query( DLMethodCall )\
+                .join( DLAction )\
+                .join( DLFile )\
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime <= before ).all()
+      elif after :
+        calls = session.query( DLMethodCall )\
+                .join( DLAction )\
+                .join( DLFile )\
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime >= after ).all()
+      else :
+        calls = session.query( DLMethodCall )\
+                  .join( DLAction )\
+                  .join( DLFile )\
+                  .filter( DLFile.name == lfn ).all()
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
@@ -373,14 +380,37 @@ class DataLoggingDB( object ):
     finally:
       session.close
 
-    return S_OK( listresult )
+    return S_OK( calls )
 
+  def getMethodCallByName( self, name, before, after ):
+    """
+      get all operation about a method call name
+    """
+    print before, after
+    session = self.DBSession()
+    try:
+      if before and after :
+        calls = session.query( DLMethodCall )\
+                .join( DLMethodName )\
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime.between( after, before ) ).all()
+      elif before :
+        calls = session.query( DLMethodCall )\
+                .join( DLMethodName )\
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime <= before ).all()
+      elif after :
+        calls = session.query( DLMethodCall )\
+                .join( DLMethodName )\
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime >= after ).all()
+      else :
+        calls = session.query( DLMethodCall )\
+                  .join( DLMethodName )\
+                  .filter( DLMethodName.name == name ).all()
+    except Exception, e:
+      gLogger.error( "getLFNOperation: unexpected exception %s" % e )
+      return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
 
-  def dropTables( self ):
-    try :
-      for tbl in reversed( metadata.sorted_tables ):
-        tbl.drop( self.engine )
-    except Exception as e :
-      gLogger.error( 'drop tables, unexpected exception : %s' % e )
+    finally:
+      session.close
 
-    return S_OK()
+    return S_OK( calls )
+
