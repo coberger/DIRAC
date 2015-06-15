@@ -38,10 +38,10 @@ def makeSequenceB():
   sequence = DLSequence()
   sequence.setCaller( 'longCallerName' )
   calls = []
-  for x in range( 10 ):
+  for x in range( 5 ):
     calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName2' + str( x ) )} ) )
 
-  for x in range( 10 ):
+  for x in range( 5 ):
     sequence.popMethodCall()
 
   for call in calls :
