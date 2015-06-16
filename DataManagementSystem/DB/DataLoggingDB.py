@@ -376,22 +376,22 @@ class DataLoggingDB( object ):
         calls = session.query( DLMethodCall )\
                 .join( DLAction )\
                 .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime.between( after, before ) ).all()
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime.between( after, before ) ).distinct()
       elif before :
         calls = session.query( DLMethodCall )\
                 .join( DLAction )\
                 .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime <= before ).all()
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime <= before ).distinct()
       elif after :
         calls = session.query( DLMethodCall )\
                 .join( DLAction )\
                 .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime >= after ).all()
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime >= after ).distinct()
       else :
         calls = session.query( DLMethodCall )\
                   .join( DLAction )\
                   .join( DLFile )\
-                  .filter( DLFile.name == lfn ).all()
+                  .filter( DLFile.name == lfn ).distinct()
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
@@ -411,19 +411,19 @@ class DataLoggingDB( object ):
       if before and after :
         calls = session.query( DLMethodCall )\
                 .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime.between( after, before ) ).all()
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime.between( after, before ) ).distinct()
       elif before :
         calls = session.query( DLMethodCall )\
                 .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime <= before ).all()
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime <= before ).distinct()
       elif after :
         calls = session.query( DLMethodCall )\
                 .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime >= after ).all()
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime >= after ).distinct()
       else :
         calls = session.query( DLMethodCall )\
                   .join( DLMethodName )\
-                  .filter( DLMethodName.name == name ).all()
+                  .filter( DLMethodName.name == name ).distinct()
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
