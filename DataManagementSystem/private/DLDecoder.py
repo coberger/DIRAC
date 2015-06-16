@@ -33,37 +33,29 @@ class DLDecoder( json.JSONDecoder ):
             if typeObj == 'DLAction':
               obj = DLAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['blob'], d['messageError'], ID = d['ID'] )
               return obj
-
-            if typeObj == 'DLSequence':
+            elif typeObj == 'DLSequence':
               obj = DLSequence.fromJSON( d['MethodCalls'][0], d['caller'], d['ID'] )
               return obj
-
-            if typeObj == 'DLFile':
+            elif typeObj == 'DLFile':
               obj = DLFile( d['name'] )
               return obj
-
-            if typeObj == 'DLStatus':
+            elif typeObj == 'DLStatus':
               obj = DLStatus( d['name'] )
               return obj
-
-            if typeObj == 'DLMethodCall':
+            elif typeObj == 'DLMethodCall':
               obj = DLMethodCall( d )
               obj.actions = d['Actions']
               obj.children = d['Children']
               return obj
-
-            if typeObj == 'DLCaller':
+            elif typeObj == 'DLCaller':
               obj = DLCaller( d['name'] )
               return obj
-
-            if typeObj == 'DLMethodName':
+            elif typeObj == 'DLMethodName':
               obj = DLMethodName( d['name'] )
               return obj
-
-            if typeObj == 'DLStorageElement':
+            elif typeObj == 'DLStorageElement':
               obj = DLStorageElement( d['name'] )
               return obj
-
             else:
               return d
 

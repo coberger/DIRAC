@@ -4,7 +4,7 @@ Created on May 5, 2015
 @author: Corentin Berger
 '''
 import json
-
+import zlib
 from DIRAC.Core.Base.Client               import Client
 from DIRAC.ConfigurationSystem.Client     import PathFinder
 from DIRAC.Core.DISET.RPCClient           import RPCClient
@@ -27,8 +27,8 @@ class DataLoggingClient( Client ):
     if not sequenceJSON["OK"]:
       raise Exception( 'Client.insertSequence bad sequenceJSON' )
     sequenceJSON = sequenceJSON["Value"]
-    # print "Before sending %s" % sequenceJSON
-    res = self.dataLoggingManager.insertSequence( sequenceJSON )
+    seq = zlib.compress( sequenceJSON )
+    res = self.dataLoggingManager.insertSequence( seq )
     return res
 
   def getSequenceOnFile( self, fileName ):

@@ -139,7 +139,7 @@ class DataLoggingDB( object ):
 
     metadata.bind = self.engine
 
-    self.DBSession = sessionmaker( bind = self.engine )
+    self.DBSession = sessionmaker( bind = self.engine, autoflush = False )
 
     self.dictStorageElement = {}
     self.dictFile = {}
@@ -267,7 +267,7 @@ class DataLoggingDB( object ):
     try:
       instance = session.query( DLFile ).filter_by( name = dlFile.name ).first()
       if not instance:
-        instance = DLFile( file.name )
+        instance = DLFile( dlFile.name )
         session.add( instance )
         session.commit()
       self.dictFile[dlFile.name] = instance

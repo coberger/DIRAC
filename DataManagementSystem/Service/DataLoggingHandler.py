@@ -3,9 +3,10 @@ Created on May 5, 2015
 
 @author: Corentin Berger
 '''
+import json
+import zlib
 
 from types import StringTypes, NoneType, StringType, UnicodeType
-import json
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC      import gLogger, S_ERROR, S_OK
 
@@ -28,9 +29,9 @@ class DataLoggingHandler( RequestHandler ):
 
   types_insertSequence = [StringTypes]
   @classmethod
-  def export_insertSequence( cls, sequenceJSON ):
-    # print sequenceJSON
-    sequence = json.loads( sequenceJSON, cls = DLDecoder )
+  def export_insertSequence( cls, sequenceCompress ):
+    sequenceJSON = zlib.decompress( sequenceCompress )
+    sequence = json.loads( sequenceJSON , cls = DLDecoder )
     res = cls.__dataLoggingDB.putSequence( sequence )
     return res
 
