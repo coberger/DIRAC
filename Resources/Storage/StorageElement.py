@@ -243,6 +243,41 @@ class StorageElementItem( object ):
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
     self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
 
+
+    self.readMethods = [ 'getFile',
+                         'prestageFile',
+                         'prestageFileStatus',
+                         'getDirectory']
+
+    self.writeMethods = [ 'retransferOnlineFile',
+                          'putFile',
+                          'replicateFile',
+                          'pinFile',
+                          'releaseFile',
+                          'createDirectory',
+                          'putDirectory' ]
+
+    self.removeMethods = [ 'removeFile', 'removeDirectory' ]
+
+    self.checkMethods = [ 'exists',
+                          'getDirectoryMetadata',
+                          'getDirectorySize',
+                          'getFileSize',
+                          'getFileMetadata',
+                          'listDirectory',
+                          'isDirectory',
+                          'isFile',
+                           ]
+
+    self.okMethods = [ 'getLocalProtocols',
+                       'getProtocols',
+                       'getRemoteProtocols',
+                       'getStorageElementName',
+                       'getStorageParameters',
+                       'getTransportURL',
+                       'isLocalSE' ]
+
+
     self.__fileCatalog = None
 
   def dump( self ):
