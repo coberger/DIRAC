@@ -340,7 +340,7 @@ class DataLoggingDB( object ):
                   .join( DLMethodCall )\
                   .join( DLAction )\
                   .join( DLFile )\
-                  .filter( DLFile.name == lfn ).all()
+                  .filter( DLFile.name == lfn ).distinct()
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -357,7 +357,7 @@ class DataLoggingDB( object ):
 
     try:
       seqs = session.query( DLSequence )\
-                  .filter( DLSequence.ID == IDSeq ).all()
+                  .filter( DLSequence.ID == IDSeq ).distinct()
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
