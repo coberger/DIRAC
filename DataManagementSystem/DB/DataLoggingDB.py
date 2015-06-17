@@ -200,8 +200,7 @@ class DataLoggingDB( object ):
             action.targetSE = res['Value']
           else :
             action.targetSE = self.dictStorageElement[action.targetSE.name]
-
-      session.add( sequence )
+      session.merge( sequence )
       session.commit()
     except Exception, e:
       if session :
@@ -224,6 +223,7 @@ class DataLoggingDB( object ):
         instance = DLMethodName( mn.name )
         session.add( instance )
         session.commit()
+      session.expunge( instance )
       self.dictMethodName[mn.name] = instance
       return S_OK( instance )
     except exc.IntegrityError as e:
@@ -251,6 +251,7 @@ class DataLoggingDB( object ):
           session.add( instance )
           session.commit()
         self.dictStorageElement[se.name] = instance
+        session.expunge( instance )
         return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()
@@ -273,6 +274,7 @@ class DataLoggingDB( object ):
         instance = DLFile( dlFile.name )
         session.add( instance )
         session.commit()
+      session.expunge( instance )
       self.dictFile[dlFile.name] = instance
       return S_OK( instance )
 
@@ -298,6 +300,7 @@ class DataLoggingDB( object ):
         instance = DLStatus( status.name )
         session.add( instance )
         session.commit()
+      session.expunge( instance )
       self.dictStatus[status.name] = instance
       return S_OK( instance )
     except exc.IntegrityError :
@@ -321,6 +324,7 @@ class DataLoggingDB( object ):
         instance = DLCaller( caller.name )
         session.add( instance )
         session.commit()
+      session.expunge( instance )
       return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()
