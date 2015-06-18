@@ -27,35 +27,35 @@ from DIRAC.DataManagementSystem.Client.DLException import DLException
 metadata = MetaData()
 
 dataLoggingFileTable = Table( 'DLFile', metadata,
-                   Column( 'ID', Integer, primary_key = True ),
+                   Column( 'fileID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 
 mapper( DLFile, dataLoggingFileTable )
 
 dataLoggingMethodNameTable = Table( 'DLMethodName', metadata,
-                   Column( 'ID', Integer, primary_key = True ),
+                   Column( 'methodNameID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 
 mapper( DLMethodName, dataLoggingMethodNameTable )
 
 dataLoggingStorageElementTable = Table( 'DLStorageElement', metadata,
-                   Column( 'ID', Integer, primary_key = True ),
+                   Column( 'storageElementID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 
 mapper( DLStorageElement, dataLoggingStorageElementTable )
 
 dataLoggingStatusTable = Table( 'DLStatus', metadata,
-                   Column( 'ID', Integer, primary_key = True, index = True ),
+                   Column( 'statusID', Integer, primary_key = True, index = True ),
                    Column( 'name' , Enum( 'Successful', 'Failed', 'Unknown' ), server_default = 'Unknown' , unique = True ),
                    mysql_engine = 'InnoDB' )
 
 mapper( DLStatus, dataLoggingStatusTable )
 
 dataLoggingCallerTable = Table( 'DLCaller', metadata,
-                   Column( 'ID', Integer, primary_key = True ),
+                   Column( 'callerID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 
@@ -63,12 +63,12 @@ mapper( DLCaller, dataLoggingCallerTable )
 
 
 dataLoggingActionTable = Table( 'DLAction', metadata,
-                   Column( 'ID', Integer, primary_key = True ),
-                   Column( 'IDMethodCall', Integer, ForeignKey( 'DLMethodCall.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'IDFile', Integer, ForeignKey( 'DLFile.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'IDStatus', Integer, ForeignKey( 'DLStatus.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'IDsrcSE', Integer, ForeignKey( 'DLStorageElement.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'IDtargetSE', Integer, ForeignKey( 'DLStorageElement.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'actionID', Integer, primary_key = True ),
+                   Column( 'methodCallID', Integer, ForeignKey( 'DLMethodCall.methodCallID', ondelete = 'CASCADE' ) ),
+                   Column( 'fileID', Integer, ForeignKey( 'DLFile.fileID', ondelete = 'CASCADE' ) ),
+                   Column( 'statusID', Integer, ForeignKey( 'DLStatus.statusID', ondelete = 'CASCADE' ) ),
+                   Column( 'srcSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID', ondelete = 'CASCADE' ) ),
+                   Column( 'targetSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID', ondelete = 'CASCADE' ) ),
                    Column( 'blob', String( 2048 ) ),
                    Column( 'messageError', String( 2048 ) ),
                    mysql_engine = 'InnoDB' )
@@ -76,14 +76,14 @@ dataLoggingActionTable = Table( 'DLAction', metadata,
 mapper( DLAction, dataLoggingActionTable,
         properties = { 'file' : relationship( DLFile ),
                       'status' : relationship( DLStatus ),
-                      'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.IDsrcSE ),
-                      'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.IDtargetSE )} )
+                      'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.srcSEID ),
+                      'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.targetSEID )} )
 
 
 
 dataLoggingSequenceTable = Table( 'DLSequence', metadata,
-                   Column( 'ID', Integer, primary_key = True ),
-                   Column( 'caller_id', Integer, ForeignKey( 'DLCaller.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'sequenceID', Integer, primary_key = True ),
+                   Column( 'callerID', Integer, ForeignKey( 'DLCaller.callerID', ondelete = 'CASCADE' ) ),
                    mysql_engine = 'InnoDB' )
 
 
@@ -92,11 +92,11 @@ mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : rel
 
 
 dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
-                   Column( 'ID', Integer, primary_key = True ),
+                   Column( 'methodCallID', Integer, primary_key = True ),
                    Column( 'creationTime', DateTime ),
-                   Column( 'methodName', Integer, ForeignKey( 'DLMethodName.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'parentID', Integer, ForeignKey( 'DLMethodCall.ID', ondelete = 'CASCADE' ) ),
-                   Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.ID', ondelete = 'CASCADE' ) ),
+                   Column( 'methodNameID', Integer, ForeignKey( 'DLMethodName.methodNameID', ondelete = 'CASCADE' ) ),
+                   Column( 'parentID', Integer, ForeignKey( 'DLMethodCall.methodCallID', ondelete = 'CASCADE' ) ),
+                   Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.sequenceID', ondelete = 'CASCADE' ) ),
                    Column( 'order', Integer ),
                    mysql_engine = 'InnoDB' )
 
@@ -165,39 +165,57 @@ class DataLoggingDB( object ):
     session = None
     try:
       session = self.DBSession()
-      caller = self.putCaller( sequence.caller, session )
-      sequence.caller = caller['Value']
+      res = self.putCaller( sequence.caller, session )
+      if res['OK'] :
+        sequence.caller = res['Value']
+      else :
+        return res
       for mc in sequence.methodCalls:
         if mc.name.name not in self.dictMethodName :
           res = self.putMethodName( mc.name, session )
-          mc.name = res['Value']
+          if res['OK'] :
+            mc.name = res['Value']
+          else :
+              return res
         else :
           mc.name = self.dictMethodName[mc.name.name]
         for action in mc.actions :
           # putfile
           if action.file.name not in self.dictFile :
             res = self.putFile( action.file, session )
-            action.file = res['Value']
+            if res['OK'] :
+              action.file = res['Value']
+            else :
+              return res
           else :
             action.file = self.dictFile[action.file.name]
 
           # putStatus
           if action.status.name not in self.dictStatus :
             res = self.putStatus( action.status, session )
-            action.status = res['Value']
+            if res['OK'] :
+              action.status = res['Value']
+            else :
+              return res
           else :
             action.status = self.dictStatus[action.status.name]
 
           # put storage element
           if action.srcSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.srcSE , session )
-            action.srcSE = res['Value']
+            if res['OK'] :
+              action.srcSE = res['Value']
+            else :
+              return res
           else :
             action.srcSE = self.dictStorageElement[action.srcSE.name]
 
           if action.targetSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.targetSE , session )
-            action.targetSE = res['Value']
+            if res['OK'] :
+              action.targetSE = res['Value']
+            else :
+              return res
           else :
             action.targetSE = self.dictStorageElement[action.targetSE.name]
       session.merge( sequence )
@@ -347,7 +365,7 @@ class DataLoggingDB( object ):
                   .join( DLMethodCall )\
                   .join( DLAction )\
                   .join( DLFile )\
-                  .filter( DLFile.name == lfn ).distinct( DLSequence.ID )
+                  .filter( DLFile.name == lfn ).distinct( DLSequence.sequenceID )
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -364,7 +382,7 @@ class DataLoggingDB( object ):
 
     try:
       seqs = session.query( DLSequence )\
-                  .filter( DLSequence.ID == IDSeq ).all()
+                  .filter( DLSequence.sequenceID == IDSeq ).all()
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -383,22 +401,22 @@ class DataLoggingDB( object ):
         calls = session.query( DLMethodCall )\
                 .join( DLAction )\
                 .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime.between( after, before ) ).distinct( DLMethodCall.ID )
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime.between( after, before ) ).distinct( DLMethodCall.methodCallID )
       elif before :
         calls = session.query( DLMethodCall )\
                 .join( DLAction )\
                 .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime <= before ).distinct( DLMethodCall.ID )
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime <= before ).distinct( DLMethodCall.methodCallID )
       elif after :
         calls = session.query( DLMethodCall )\
                 .join( DLAction )\
                 .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime >= after ).distinct( DLMethodCall.ID )
+                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime >= after ).distinct( DLMethodCall.methodCallID )
       else :
         calls = session.query( DLMethodCall )\
                   .join( DLAction )\
                   .join( DLFile )\
-                  .filter( DLFile.name == lfn ).distinct( DLMethodCall.ID )
+                  .filter( DLFile.name == lfn ).distinct( DLMethodCall.methodCallID )
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
@@ -412,25 +430,24 @@ class DataLoggingDB( object ):
     """
       get all operation about a method call name
     """
-    print before, after
     session = self.DBSession()
     try:
       if before and after :
         calls = session.query( DLMethodCall )\
                 .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime.between( after, before ) ).distinct( DLMethodCall.ID )
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime.between( after, before ) ).distinct( DLMethodCall.methodCallID )
       elif before :
         calls = session.query( DLMethodCall )\
                 .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime <= before ).distinct( DLMethodCall.ID )
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime <= before ).distinct( DLMethodCall.methodCallID )
       elif after :
         calls = session.query( DLMethodCall )\
                 .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime >= after ).distinct( DLMethodCall.ID )
+                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime >= after ).distinct( DLMethodCall.methodCallID )
       else :
         calls = session.query( DLMethodCall )\
                   .join( DLMethodName )\
-                  .filter( DLMethodName.name == name ).distinct( DLMethodCall.ID )
+                  .filter( DLMethodName.name == name ).distinct( DLMethodCall.methodCallID )
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
