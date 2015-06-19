@@ -22,7 +22,6 @@ class DLMethodCall( object ):
     :param self: self reference
     :param dict fromDict: attributes dictionary
     """
-
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.creationTime = now
     self.children = []
@@ -31,6 +30,7 @@ class DLMethodCall( object ):
     self.order = 0
     self.sequence = None
     self.parentID = None
+    self.methodCallID = None
     # set the different attribute from dictionary 'fromDict'
     for key, value in fromDict.items():
       if type( value ) in StringTypes:
@@ -64,9 +64,8 @@ class DLMethodCall( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['ID', 'creationTime', 'name', 'caller', 'files', 'parentID', 'sequenceID', 'order']
+    attrNames = ['methodCallID', 'creationTime', 'name', 'caller', 'files', 'parentID', 'sequenceID', 'order']
     jsonData = {}
-
     for attrName in attrNames :
 
       # parent_id, sequence_id and ID might not be set since they are managed by SQLAlchemy

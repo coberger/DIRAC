@@ -4,11 +4,14 @@ Created on May 4, 2015
 @author: Corentin Berger
 '''
 
-# from DIRAC
-from DIRAC              import S_OK, gLogger, S_ERROR
+import zlib, json
+from datetime import datetime
 
+# from DIRAC
+from DIRAC import S_OK, gLogger, S_ERROR
 from DIRAC.DataManagementSystem.Client.DLAction import DLAction
 from DIRAC.DataManagementSystem.Client.DLFile import DLFile
+from DIRAC.DataManagementSystem.Client.DLCompressedSequence import DLCompressedSequence
 from DIRAC.DataManagementSystem.Client.DLSequence import DLSequence
 from DIRAC.DataManagementSystem.Client.DLCaller import DLCaller
 from DIRAC.DataManagementSystem.Client.DLMethodCall import DLMethodCall
@@ -16,15 +19,27 @@ from DIRAC.DataManagementSystem.Client.DLStatus import DLStatus
 from DIRAC.DataManagementSystem.Client.DLStorageElement import DLStorageElement
 from DIRAC.DataManagementSystem.Client.DLMethodName import DLMethodName
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
+
 
 # from sqlalchemy
-from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, BLOB, exc, between
-from sqlalchemy.orm     import mapper, sessionmaker, relationship, backref, scoped_session, aliased
+from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, BLOB, exc, between, desc
+from sqlalchemy.orm     import mapper, sessionmaker, relationship, scoped_session
 from DIRAC.DataManagementSystem.Client.DLException import DLException
 
 
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
+
+
+dataLoggingCompressedSequenceTable = Table( 'DLCompressedSequence', metadata,
+                   Column( 'compressedSequenceID', Integer, primary_key = True ),
+                   Column( 'value', BLOB ),
+                   Column( 'creationTime', DateTime ),
+                   Column( 'insertionTime', DateTime ),
+                   mysql_engine = 'InnoDB' )
+
+mapper( DLCompressedSequence, dataLoggingCompressedSequenceTable )
 
 dataLoggingFileTable = Table( 'DLFile', metadata,
                    Column( 'fileID', Integer, primary_key = True ),
@@ -141,9 +156,6 @@ class DataLoggingDB( object ):
     self.sessionFactory = sessionmaker( bind = self.engine, autoflush = False )
     self.DBSession = scoped_session( self.sessionFactory )
 
-
-
-
     self.dictStorageElement = {}
     self.dictFile = {}
     self.dictMethodName = {}
@@ -160,81 +172,110 @@ class DataLoggingDB( object ):
     return S_OK()
 
 
-  def putSequence( self, sequence ):
-    """ put a sequence into database"""
+  def insertCompressedSequence(self, sequence):
+    session = None
+    sequence = DLCompressedSequence( sequence )
+    try:
+      session = self.DBSession()
+      session.add(sequence)
+      session.commit()
+    except Exception, e:
+      if session :
+        session.rollback()
+      gLogger.error( "insertCompressedSequence: unexpected exception %s" % e )
+      raise DLException( "insertCompressedSequence: unexpected exception %s" % e )
+    finally:
+      if session :
+        session.close()
+    return S_OK( 'insertSequenceForAgent ok' )
+
+
+  def insertSequence( self , nb = 10 ):
     session = None
     try:
-      objects = []
       session = self.DBSession()
+      for x in range( nb ):
+        el = session.query( DLCompressedSequence ).filter_by( insertionTime = None ).order_by( DLCompressedSequence.creationTime ).first()
+        if el:
+          sequenceJSON = zlib.decompress( el.value )
+          sequence = json.loads( sequenceJSON , cls = DLDecoder )
+          self.putSequence( session, sequence )
+          el.insertionTime = datetime.now()
+          session.merge( el )
+          session.commit()
+    except Exception, e:
+      if session :
+        session.rollback()
+      gLogger.error( "insertSequence: unexpected exception %s" % e )
+      raise DLException( "insertSequenceFromAgent: unexpected exception %s" % e )
+    finally:
+      session.close()
+    return S_OK( 'insert sequence ok' )
+
+
+  def putSequence( self, session, sequence ):
+    """ put a sequence into database"""
+    try:
       res = self.putCaller( sequence.caller, session )
       if res['OK'] :
-        sequence.callerID = res['Value'].callerID
+        sequence.caller = res['Value']
       else :
         return res
-      objects.append( sequence )
-
       for mc in sequence.methodCalls:
         if mc.name.name not in self.dictMethodName :
           res = self.putMethodName( mc.name, session )
           if res['OK'] :
-            mc.methodNameID = res['Value'].methodNameID
+            mc.name = res['Value']
           else :
               return res
         else :
-          mc.methodNameID = self.dictMethodName[mc.name.name].methodNameID
-        objects.append( mc )
-
+          mc.name = self.dictMethodName[mc.name.name]
         for action in mc.actions :
           # putfile
           if action.file.name not in self.dictFile :
             res = self.putFile( action.file, session )
             if res['OK'] :
-              action.fileID = res['Value'].fileID
+              action.file = res['Value']
             else :
               return res
           else :
-            action.fileID = self.dictFile[action.file.name].fileID
+            action.file = self.dictFile[action.file.name]
 
           # putStatus
           if action.status.name not in self.dictStatus :
             res = self.putStatus( action.status, session )
             if res['OK'] :
-              action.statusID = res['Value'].statusID
+              action.status = res['Value']
             else :
               return res
           else :
-            action.statusID = self.dictStatus[action.status.name].statusID
+            action.status = self.dictStatus[action.status.name]
 
           # put storage element
           if action.srcSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.srcSE , session )
             if res['OK'] :
-              action.srcSEID = res['Value'].storageElementID
+              action.srcSE = res['Value']
             else :
               return res
           else :
-            action.srcSEID = self.dictStorageElement[action.srcSE.name].storageElementID
+            action.srcSE = self.dictStorageElement[action.srcSE.name]
 
           if action.targetSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.targetSE , session )
             if res['OK'] :
-              action.targetSEID = res['Value'].storageElementID
+              action.targetSE = res['Value']
             else :
               return res
           else :
-            action.targetSEID = self.dictStorageElement[action.targetSE.name].storageElementID
-          objects.append( action )
-
-      session.bulk_save_objects( objects )
+            action.targetSE = self.dictStorageElement[action.targetSE.name]
+      session.merge( sequence )
       session.commit()
     except Exception, e:
       if session :
         session.rollback()
       gLogger.error( "putSequence: unexpected exception %s" % e )
       raise DLException( "putSequence: unexpected exception %s" % e )
-    finally:
-      if session :
-        session.close()
     return S_OK( 'putSequence ended, Successful' )
 
   def putMethodName( self, mn, session ):
@@ -248,6 +289,7 @@ class DataLoggingDB( object ):
         instance = DLMethodName( mn.name )
         session.add( instance )
         session.commit()
+      session.expunge( instance )
       self.dictMethodName[mn.name] = instance
       return S_OK( instance )
     except exc.IntegrityError as e:
@@ -275,6 +317,7 @@ class DataLoggingDB( object ):
           session.add( instance )
           session.commit()
         self.dictStorageElement[se.name] = instance
+        session.expunge( instance )
         return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()
@@ -297,6 +340,7 @@ class DataLoggingDB( object ):
         instance = DLFile( dlFile.name )
         session.add( instance )
         session.commit()
+      session.expunge( instance )
       self.dictFile[dlFile.name] = instance
       return S_OK( instance )
 
@@ -322,6 +366,7 @@ class DataLoggingDB( object ):
         instance = DLStatus( status.name )
         session.add( instance )
         session.commit()
+      session.expunge( instance )
       self.dictStatus[status.name] = instance
       return S_OK( instance )
     except exc.IntegrityError :
@@ -345,6 +390,7 @@ class DataLoggingDB( object ):
         instance = DLCaller( caller.name )
         session.add( instance )
         session.commit()
+      session.expunge( instance )
       return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()

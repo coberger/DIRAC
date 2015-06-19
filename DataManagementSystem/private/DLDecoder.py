@@ -31,10 +31,10 @@ class DLDecoder( json.JSONDecoder ):
         typeObj = d.pop( '__type__' )
         try:
             if typeObj == 'DLAction':
-              obj = DLAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['blob'], d['messageError'], ID = d['ID'] )
+              obj = DLAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['blob'], d['messageError'], ID = d['actionID'] )
               return obj
             elif typeObj == 'DLSequence':
-              obj = DLSequence.fromJSON( d['MethodCalls'][0], d['caller'], d['ID'] )
+              obj = DLSequence.fromJSON( d['MethodCalls'][0], d['caller'], d['sequenceID'] )
               return obj
             elif typeObj == 'DLFile':
               obj = DLFile( d['name'] )

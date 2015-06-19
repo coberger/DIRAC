@@ -3,7 +3,7 @@ Created on May 5, 2015
 
 @author: Corentin Berger
 '''
-import json
+import json, time
 import zlib
 from DIRAC.Core.Base.Client               import Client
 from DIRAC.ConfigurationSystem.Client     import PathFinder
@@ -22,14 +22,15 @@ class DataLoggingClient( Client ):
       raise RuntimeError( "CS option DataManagement/DataLogging URL is not set!" )
     self.dataLoggingManager = RPCClient( url )
 
-  def insertSequence( self, sequence ):
+  def insertCompressedSequence( self, sequence ):
     sequenceJSON = sequence.toJSON()
     if not sequenceJSON["OK"]:
-      raise Exception( 'Client.insertSequence bad sequenceJSON' )
-    sequenceJSON = sequenceJSON["Value"]
+      raise Exception( 'Client.insertCompressedSequence bad sequenceJSON' )
+    sequenceJSON = sequenceJSON['Value']
     seq = zlib.compress( sequenceJSON )
-    res = self.dataLoggingManager.insertSequence( seq )
+    res = self.dataLoggingManager.insertCompressedSequence( seq )
     return res
+
 
   def getSequenceOnFile( self, fileName ):
     res = self.dataLoggingManager.getSequenceOnFile( fileName )

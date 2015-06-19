@@ -16,10 +16,8 @@ class DLAction ( object ):
     self.srcSE = srcSE
     self.targetSE = targetSE
     self.blob = blob
-    self.ID = ID
-    self.IDMethodCall = None
-    self.IDFile = None
-    self.IDStatus = None
+    self.actionID = ID
+    self.methodCallID = None
     self.messageError = messageError
 
   def toJSON( self ):
@@ -34,7 +32,7 @@ class DLAction ( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['ID', 'IDMethodCall', 'IDFile', 'IDStatus']
+    attrNames = ['actionID', 'methodCallID']
     jsonData = {}
 
     for attrName in attrNames :
@@ -49,8 +47,6 @@ class DLAction ( object ):
     jsonData['srcSE'] = self.srcSE
     jsonData['targetSE'] = self.targetSE
     jsonData['blob'] = self.blob
-    if isinstance( self.messageError, dict ):
-      print 'is dict'
     jsonData['messageError'] = self.messageError
 
     jsonData['__type__'] = self.__class__.__name__

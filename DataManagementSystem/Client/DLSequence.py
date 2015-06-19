@@ -5,7 +5,6 @@ Created on May 4, 2015
 '''
 
 import json
-import string
 from DIRAC import S_ERROR, S_OK
 from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
 from DIRAC.DataManagementSystem.Client.DLMethodCall import DLMethodCall
@@ -18,7 +17,7 @@ class DLSequence( object ) :
     self.caller = None
     self.stack = list()
     self.methodCalls = list()
-    self.ID = None
+    self.sequenceID = None
 
   def toJSON( self ):
     """ Returns the JSON description string of the Sequence """
@@ -30,11 +29,11 @@ class DLSequence( object ) :
 
 
   @staticmethod
-  def fromJSON( methodCall, caller, ID ):
+  def fromJSON( methodCall, caller, sequenceID ):
     """ create a sequence from a JSON representation"""
     seq = DLSequence()
     stack = list()
-    seq.ID = ID
+    seq.sequenceID = sequenceID
     seq.caller = caller
     seq.methodCalls = list()
 
@@ -52,12 +51,11 @@ class DLSequence( object ) :
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['ID', 'caller']
+    attrNames = ['sequenceID', 'caller']
     jsonData = {}
 
     for attrName in attrNames :
 
-      # RequestID and OperationID might not be set since they are managed by SQLAlchemy
       if not hasattr( self, attrName ):
         continue
 
@@ -127,15 +125,15 @@ class DLSequence( object ) :
 
   def printSequence(self, full = False ):
     seqLines = []
-    seqLines.append( 'Sequence %s Caller %s' % ( self.ID, self.caller.name ) )
+    seqLines.append( 'Sequence %s Caller %s' % ( self.sequenceID, self.caller.name ) )
     cpt = 1
     stack = list()
     previousParent = None
     stack.append( self.methodCalls[0] )
     while len( stack ) != 0 :
       mc = stack.pop()
-      if mc.parentID != previousParent :
-        if previousParent :
+      if mc.parentID == previousParent :
+        if previousParent > mc.parentID :
           cpt -= 1
         previousParent = mc.parentID
       line = ''
@@ -163,17 +161,19 @@ class DLSequence( object ) :
                   ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
                   ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
         seqLines.append( line )
-      for child in mc.children :
+
+      for child in reversed( mc.children ) :
         stack.append( child )
       if mc.children :
         cpt += 1
+        previousParent = mc.parentID
 
     return '\n'.join( seqLines )
 
 
   def printSequenceLFN( self, lfn, full = False ):
     seqLines = []
-    seqLines.append( 'Sequence %s Caller %s' % ( self.ID, self.caller.name ) )
+    seqLines.append( 'Sequence %s Caller %s' % ( self.sequenceID, self.caller.name ) )
     cpt = 1
     stack = list()
     previousParent = None
@@ -191,9 +191,7 @@ class DLSequence( object ) :
       ( mc.creationTime, mc.name.name )
       for action in mc.actions :
         if action.file.name == lfn:
-          line = ''
-          for x in range( cpt ):
-            line += '\t'
+          line = base
           if full :
             line += '%s%s%s%s%s'\
                 % ( '%s ' % action.status.name,
@@ -211,6 +209,7 @@ class DLSequence( object ) :
       for child in mc.children :
         stack.append( child )
       if mc.children :
+
         cpt += 1
 
     return '\n'.join( seqLines )
