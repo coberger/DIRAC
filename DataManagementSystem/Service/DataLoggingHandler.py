@@ -4,37 +4,43 @@ Created on May 5, 2015
 @author: Corentin Berger
 '''
 import json
-import zlib
 
-from types import StringTypes, NoneType, StringType, UnicodeType
+from types import StringTypes, NoneType, IntType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC      import gLogger, S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC      import S_OK, gConfig, gLogger, S_ERROR
 
 from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
-from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 
 class DataLoggingHandler( RequestHandler ):
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
+    csSection = PathFinder.getServiceSection( 'DataManagement/DataLogging' )
+    cls.number = gConfig.getValue( '%s/SequenceMax' % csSection, 100 )
     try:
       cls.__dataLoggingDB = DataLoggingDB()
+      cls.__dataLoggingDB.createTables()
     except RuntimeError, error:
       gLogger.exception( error )
       return S_ERROR( error )
-    # create tables for empty db
-    return cls.__dataLoggingDB.createTables()
+    gThreadScheduler.setMinValidPeriod( 10 )
+    gThreadScheduler.addPeriodicTask( 10, cls.insertSequence )
+    return S_OK()
 
 
-  types_insertSequence = [StringTypes]
   @classmethod
-  def export_insertSequence( cls, sequenceCompress ):
-    sequenceJSON = zlib.decompress( sequenceCompress )
-    sequence = json.loads( sequenceJSON , cls = DLDecoder )
-    res = cls.__dataLoggingDB.putSequence( sequence )
+  def insertSequence( cls ):
+    res = cls.__dataLoggingDB.insertSequence( cls.number )
     return res
 
+  types_insertCompressedSequence = [StringTypes]
+  @classmethod
+  def export_insertCompressedSequence( cls, sequenceCompress ):
+    res = cls.__dataLoggingDB.insertCompressedSequence( sequenceCompress )
+    return res
 
   types_getSequenceOnFile = [StringTypes]
   @classmethod

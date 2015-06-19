@@ -53,11 +53,11 @@ class _DataLoggingDecorator( object ):
 
       for this to work, you have to pass some arguments to the decorator
       the first arguments to pass is a list with the arguments positions in the decorate method
-      for example for the putAndRegister method you have to pass argsPosition = ['self', 'datalogging_files', 'localPath', 'targetSE' ]
+      for example for the putAndRegister method you have to pass argsPosition = ['self', 'files', 'localPath', 'targetSE' ]
       in the decorator
       some keywords are very important like files, targetSE and srcSE
       so if the parameter of the decorate Function is 'sourceSE' you have to write 'srcSE' in the argsPosition's list
-      if the parameter of the decorate Function is 'lfns' you have to write 'datalogging_files' in the argsPosition's list
+      if the parameter of the decorate Function is 'lfns' you have to write 'files' in the argsPosition's list
 
       next you have to tell to the decorator which function you want to called to extract arguments
       for example getActionArgsFunction = 'tuple', there is a dictionary to map keywords with functions to extract arguments
@@ -291,7 +291,7 @@ class _DataLoggingDecorator( object ):
     """
     try :
       client = DataLoggingClient()
-      client.insertSequence( DLBuffer.getDataLoggingSequence( current_thread().ident ) )
+      client.insertCompressedSequence( DLBuffer.getDataLoggingSequence( current_thread().ident ) )
       DLBuffer.getDataLoggingSequence( current_thread().ident ).methodCalls = list()
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )

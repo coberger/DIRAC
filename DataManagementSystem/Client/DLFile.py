@@ -12,7 +12,6 @@ class DLFile( object ):
 
   def __init__( self, name ):
     self.name = name
-    self.ID = None
 
   def toJSON( self ):
     """ Returns the JSON description string of the DLFile """
@@ -26,7 +25,7 @@ class DLFile( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['ID', 'name']
+    attrNames = ['name']
     jsonData = {}
 
     for attrName in attrNames :
