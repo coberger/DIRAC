@@ -11,3 +11,4 @@ class DLCompressedSequence( object ):
     self.value = value
     self.creationTime = datetime.now()
     self.insertionTime = None
+    self.status = 'Waiting'
