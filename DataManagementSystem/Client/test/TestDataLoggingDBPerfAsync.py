@@ -94,11 +94,11 @@ class SequenceB( Thread ):
 
 begin = time.time()
 insertions = []
-for x in range( 20 ) :
+for x in range( 1 ) :
     insertions.append( SequenceA( x ) )
     insertions[x].start()
 
-for x in range( 20 ) :
+for x in range( 1 ) :
   insertions[x].join()
 
 
