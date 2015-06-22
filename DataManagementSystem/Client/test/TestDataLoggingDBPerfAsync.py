@@ -21,22 +21,30 @@ randomMax = 20
 dictLong = {'files': '/lhcb/data/file', 'targetSE': '/SE/Target/se',
  'blob': 'physicalFile = blablablablablabla ,fileSize = 6536589', 'srcSE': '/SE/SRC/src'}
 
-def makeSequenceA():
+def makeSequenceA( nb ):
   sequence = DLSequence()
-  sequence.setCaller( 'longCallerName' )
+  sequence.setCaller( 'longCallerName' + str( nb ) )
   calls = []
-  for x in range( 2 ):
-    calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
   calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
   sequence.popMethodCall()
   calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
+  sequence.popMethodCall()
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
+  sequence.popMethodCall()
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
   sequence.popMethodCall()
 
-  for x in range( 2 ):
-    sequence.popMethodCall()
 
   for call in calls :
-    for x in range( 2 ):
+    for x in range( 5 ):
       call.addAction( DLAction( DLFile( dictLong['files'] + str( random.randint( 0, randomMax ) ) + '.data' ) , DLStatus( 'Failed' ) ,
               DLStorageElement( dictLong['srcSE'] + str( random.randint( 0, randomMax ) ) ),
                DLStorageElement( dictLong['targetSE'] + str( random.randint( 0, randomMax ) ) ),
@@ -65,9 +73,13 @@ def makeSequenceB():
 
 
 class SequenceA( Thread ):
+  def __init__( self, nb ):
+    super( SequenceA, self ).__init__()
+    self.nb = nb
+
   def run( self ):
     client = DataLoggingClient()
-    seq = makeSequenceA()
+    seq = makeSequenceA( self.nb )
     res = client.insertCompressedSequence( seq )
     if not res['OK']:
       print 'res %s' % res['Message']
@@ -82,17 +94,11 @@ class SequenceB( Thread ):
 
 begin = time.time()
 insertions = []
-for x in range( 10 ) :
-  #=============================================================================
-  # if (x%2) == 0:
-  #   insertions.append( SequenceA() )
-  #   insertions[x].start()
-  # else :
-  #=============================================================================
-    insertions.append( SequenceB() )
+for x in range( 20 ) :
+    insertions.append( SequenceA( x ) )
     insertions[x].start()
 
-for x in range( 1 ) :
+for x in range( 20 ) :
   insertions[x].join()
 
 
