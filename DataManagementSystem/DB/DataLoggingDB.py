@@ -275,7 +275,8 @@ class DataLoggingDB( object ):
             action.targetSE = res['Value']
           else :
             action.targetSE = self.dictStorageElement[action.targetSE.name]
-      session.add( sequence )
+      sequence = session.merge( sequence )
+      print 'sequenceID = %s' % sequence.sequenceID
       session.commit()
     except Exception, e:
       if session :
