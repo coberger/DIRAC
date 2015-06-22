@@ -276,6 +276,7 @@ class DataLoggingDB( object ):
           else :
             action.targetSE = self.dictStorageElement[action.targetSE.name]
       session.merge( sequence )
+      session.add( sequence )
       session.commit()
     except Exception, e:
       if session :
