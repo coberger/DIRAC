@@ -212,11 +212,12 @@ class DataLoggingDB( object ):
         else :
           return S_OK( "no sequence to insert" )
     except Exception, e:
-      sequenceCompressed.status == 'Waiting'
-      session.merge( sequenceCompressed )
-      session.commit()
       if session :
         session.rollback()
+        sequenceCompressed.status == 'Waiting'
+        session.merge( sequenceCompressed )
+        session.commit()
+
       gLogger.error( "insertSequenceFromCompressed: unexpected exception %s" % e )
       raise DLException( "insertSequenceFromCompressed: unexpected exception %s" % e )
     finally:
