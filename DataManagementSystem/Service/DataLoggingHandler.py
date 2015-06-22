@@ -19,7 +19,7 @@ class DataLoggingHandler( RequestHandler ):
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
     csSection = PathFinder.getServiceSection( 'DataManagement/DataLogging' )
-    cls.number = gConfig.getValue( '%s/SequenceMax' % csSection, 100 )
+    cls.maxSequence = gConfig.getValue( '%s/SequenceMax' % csSection, 100 )
     try:
       cls.__dataLoggingDB = DataLoggingDB()
       cls.__dataLoggingDB.createTables()
@@ -27,18 +27,18 @@ class DataLoggingHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
     gThreadScheduler.setMinValidPeriod( 10 )
-    gThreadScheduler.addPeriodicTask( 10, cls.insertSequence )
+    gThreadScheduler.addPeriodicTask( 10, cls.insertSequenceFromCompressed )
     return S_OK()
 
 
   @classmethod
-  def insertSequence( cls ):
-    res = cls.__dataLoggingDB.insertSequence( cls.number )
+  def insertSequenceFromCompressed( cls ):
+    res = cls.__dataLoggingDB.insertSequenceFromCompressed( cls.maxSequence )
     return res
 
-  types_insertCompressedSequence = [StringTypes]
+  types_insertSequence = [StringTypes]
   @classmethod
-  def export_insertCompressedSequence( cls, sequenceCompress ):
+  def export_insertSequence( cls, sequenceCompress ):
     res = cls.__dataLoggingDB.insertCompressedSequence( sequenceCompress )
     return res
 

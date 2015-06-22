@@ -28,7 +28,7 @@ class DataLoggingClient( Client ):
       raise Exception( 'Client.insertCompressedSequence bad sequenceJSON' )
     sequenceJSON = sequenceJSON['Value']
     seq = zlib.compress( sequenceJSON )
-    res = self.dataLoggingManager.insertCompressedSequence( seq )
+    res = self.dataLoggingManager.insertSequence( seq )
     return res
 
 
