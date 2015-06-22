@@ -196,7 +196,7 @@ class DataLoggingDB( object ):
     try:
       session = self.DBSession()
       for x in range( maxSequence ):
-        sequenceCompressed = session.query( DLCompressedSequence ).filter_by( insertionTime = None, Status = 'Waiting' )\
+        sequenceCompressed = session.query( DLCompressedSequence ).filter_by( insertionTime = None, status = 'Waiting' )\
           .order_by( DLCompressedSequence.creationTime ).first()
         if sequenceCompressed:
           sequenceCompressed.Satus = 'Ongoing'
