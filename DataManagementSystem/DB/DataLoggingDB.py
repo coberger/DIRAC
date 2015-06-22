@@ -199,18 +199,20 @@ class DataLoggingDB( object ):
         sequenceCompressed = session.query( DLCompressedSequence ).filter_by( insertionTime = None, status = 'Waiting' )\
           .order_by( DLCompressedSequence.creationTime ).first()
         if sequenceCompressed:
-          sequenceCompressed.Satus = 'Ongoing'
+          sequenceCompressed.status = 'Ongoing'
           session.merge( sequenceCompressed )
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
           self.putSequence( session, sequence )
           sequenceCompressed.insertionTime = datetime.now()
-          sequenceCompressed.Satus = 'Done'
+          sequenceCompressed.status = 'Done'
           session.merge( sequenceCompressed )
           session.commit()
         else :
           return S_OK( "no sequence to insert" )
     except Exception, e:
+      if sequenceCompressed:
+        sequenceCompressed.status == 'Waiting'
       if session :
         session.rollback()
       gLogger.error( "insertSequenceFromCompressed: unexpected exception %s" % e )
