@@ -79,11 +79,11 @@ mapper( DLCaller, dataLoggingCallerTable )
 
 dataLoggingActionTable = Table( 'DLAction', metadata,
                    Column( 'actionID', Integer, primary_key = True ),
-                   Column( 'methodCallID', Integer, ForeignKey( 'DLMethodCall.methodCallID', ondelete = 'CASCADE' ) ),
-                   Column( 'fileID', Integer, ForeignKey( 'DLFile.fileID', ondelete = 'CASCADE' ) ),
-                   Column( 'statusID', Integer, ForeignKey( 'DLStatus.statusID', ondelete = 'CASCADE' ) ),
-                   Column( 'srcSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID', ondelete = 'CASCADE' ) ),
-                   Column( 'targetSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID', ondelete = 'CASCADE' ) ),
+                   Column( 'methodCallID', Integer, ForeignKey( 'DLMethodCall.methodCallID' ) ),
+                   Column( 'fileID', Integer, ForeignKey( 'DLFile.fileID' ) ),
+                   Column( 'statusID', Integer, ForeignKey( 'DLStatus.statusID' ) ),
+                   Column( 'srcSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID' ) ),
+                   Column( 'targetSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID' ) ),
                    Column( 'blob', String( 2048 ) ),
                    Column( 'messageError', String( 2048 ) ),
                    mysql_engine = 'InnoDB' )
@@ -98,7 +98,7 @@ mapper( DLAction, dataLoggingActionTable,
 
 dataLoggingSequenceTable = Table( 'DLSequence', metadata,
                    Column( 'sequenceID', Integer, primary_key = True ),
-                   Column( 'callerID', Integer, ForeignKey( 'DLCaller.callerID', ondelete = 'CASCADE' ) ),
+                   Column( 'callerID', Integer, ForeignKey( 'DLCaller.callerID' ) ),
                    mysql_engine = 'InnoDB' )
 
 
@@ -109,9 +109,9 @@ mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : rel
 dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
                    Column( 'methodCallID', Integer, primary_key = True ),
                    Column( 'creationTime', DateTime ),
-                   Column( 'methodNameID', Integer, ForeignKey( 'DLMethodName.methodNameID', ondelete = 'CASCADE' ) ),
-                   Column( 'parentID', Integer, ForeignKey( 'DLMethodCall.methodCallID', ondelete = 'CASCADE' ) ),
-                   Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.sequenceID', ondelete = 'CASCADE' ) ),
+                   Column( 'methodNameID', Integer, ForeignKey( 'DLMethodName.methodNameID' ) ),
+                   Column( 'parentID', Integer, ForeignKey( 'DLMethodCall.methodCallID' ) ),
+                   Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.sequenceID' ) ),
                    Column( 'order', Integer ),
                    mysql_engine = 'InnoDB' )
 
@@ -190,83 +190,80 @@ class DataLoggingDB( object ):
     return S_OK( 'insertSequenceForAgent ok' )
 
 
-  def insertSequence( self , nb = 10 ):
+  def insertSequenceFromCompressed( self , maxSequence = 10 ):
     session = None
     try:
       session = self.DBSession()
-      for x in range( nb ):
-        el = session.query( DLCompressedSequence ).filter_by( insertionTime = None ).order_by( DLCompressedSequence.creationTime ).first()
-        if el:
-          sequenceJSON = zlib.decompress( el.value )
+      for x in range( maxSequence ):
+        sequenceCompressed = session.query( DLCompressedSequence ).filter_by( insertionTime = None )\
+          .order_by( DLCompressedSequence.creationTime ).first()
+        if sequenceCompressed:
+          sequenceJSON = zlib.decompress( sequenceCompressed.value )
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
           self.putSequence( session, sequence )
-          el.insertionTime = datetime.now()
-          session.merge( el )
+          sequenceCompressed.insertionTime = datetime.now()
+          session.merge( sequenceCompressed )
           session.commit()
+        else :
+          return S_OK( "no sequence to insert" )
     except Exception, e:
       if session :
         session.rollback()
-      gLogger.error( "insertSequence: unexpected exception %s" % e )
-      raise DLException( "insertSequenceFromAgent: unexpected exception %s" % e )
+      gLogger.error( "insertSequenceFromCompressed: unexpected exception %s" % e )
+      raise DLException( "insertSequenceFromCompressed: unexpected exception %s" % e )
     finally:
       session.close()
-    return S_OK( 'insert sequence ok' )
+    return S_OK( 'insertSequenceFromCompressed ok' )
 
 
   def putSequence( self, session, sequence ):
     """ put a sequence into database"""
     try:
       res = self.putCaller( sequence.caller, session )
-      if res['OK'] :
-        sequence.caller = res['Value']
-      else :
+      if not res['OK'] :
         return res
+      sequence.caller = res['Value']
       for mc in sequence.methodCalls:
         if mc.name.name not in self.dictMethodName :
           res = self.putMethodName( mc.name, session )
-          if res['OK'] :
-            mc.name = res['Value']
-          else :
-              return res
+          if not res['OK'] :
+            return res
+          mc.name = res['Value']
         else :
           mc.name = self.dictMethodName[mc.name.name]
         for action in mc.actions :
           # putfile
           if action.file.name not in self.dictFile :
             res = self.putFile( action.file, session )
-            if res['OK'] :
-              action.file = res['Value']
-            else :
+            if not res['OK'] :
               return res
+            action.file = res['Value']
           else :
             action.file = self.dictFile[action.file.name]
 
           # putStatus
           if action.status.name not in self.dictStatus :
             res = self.putStatus( action.status, session )
-            if res['OK'] :
-              action.status = res['Value']
-            else :
+            if not res['OK'] :
               return res
+            action.status = res['Value']
           else :
             action.status = self.dictStatus[action.status.name]
 
           # put storage element
           if action.srcSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.srcSE , session )
-            if res['OK'] :
-              action.srcSE = res['Value']
-            else :
+            if not res['OK'] :
               return res
+            action.srcSE = res['Value']
           else :
             action.srcSE = self.dictStorageElement[action.srcSE.name]
 
           if action.targetSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.targetSE , session )
             if res['OK'] :
-              action.targetSE = res['Value']
-            else :
               return res
+            action.targetSE = res['Value']
           else :
             action.targetSE = self.dictStorageElement[action.targetSE.name]
       session.merge( sequence )
