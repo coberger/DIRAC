@@ -37,6 +37,7 @@ dataLoggingCompressedSequenceTable = Table( 'DLCompressedSequence', metadata,
                    Column( 'value', BLOB ),
                    Column( 'creationTime', DateTime ),
                    Column( 'insertionTime', DateTime ),
+                   Column( 'status', Enum( 'Waiting', 'Ongoing', 'Done' ), server_default = 'Waiting' ),
                    mysql_engine = 'InnoDB' )
 
 mapper( DLCompressedSequence, dataLoggingCompressedSequenceTable )
@@ -195,13 +196,16 @@ class DataLoggingDB( object ):
     try:
       session = self.DBSession()
       for x in range( maxSequence ):
-        sequenceCompressed = session.query( DLCompressedSequence ).filter_by( insertionTime = None )\
+        sequenceCompressed = session.query( DLCompressedSequence ).filter_by( insertionTime = None, Status = 'Waiting' )\
           .order_by( DLCompressedSequence.creationTime ).first()
         if sequenceCompressed:
+          sequenceCompressed.Satus = 'Ongoing'
+          session.merge( sequenceCompressed )
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
           self.putSequence( session, sequence )
           sequenceCompressed.insertionTime = datetime.now()
+          sequenceCompressed.Satus = 'Done'
           session.merge( sequenceCompressed )
           session.commit()
         else :
