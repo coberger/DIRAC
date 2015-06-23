@@ -27,20 +27,21 @@ class DataLoggingHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
     gThreadScheduler.setMinValidPeriod( 10 )
-    gThreadScheduler.addPeriodicTask( 10, cls.insertSequenceFromCompressed )
+    gThreadScheduler.addPeriodicTask( 10, cls.moveSequences )
     return S_OK()
 
 
   @classmethod
-  def insertSequenceFromCompressed( cls ):
-    res = cls.__dataLoggingDB.insertSequenceFromCompressed( cls.maxSequence )
+  def moveSequences( cls ):
+    res = cls.__dataLoggingDB.moveSequences( cls.maxSequence )
     return res
 
-  types_insertSequence = [StringTypes]
+  types_insertCompressedSequence = [StringTypes]
   @classmethod
-  def export_insertSequence( cls, sequenceCompress ):
+  def export_insertCompressedSequence( cls, sequenceCompress ):
     res = cls.__dataLoggingDB.insertCompressedSequence( sequenceCompress )
     return res
+
 
   types_getSequenceOnFile = [StringTypes]
   @classmethod
@@ -52,6 +53,7 @@ class DataLoggingHandler( RequestHandler ):
       for seq in seqs :
         sequences.append( seq.toJSON()["Value"] )
     return S_OK( sequences )
+
 
   types_getSequenceByID = [StringTypes]
   @classmethod

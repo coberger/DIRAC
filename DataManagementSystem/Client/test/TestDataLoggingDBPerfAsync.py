@@ -21,9 +21,9 @@ randomMax = 20
 dictLong = {'files': '/lhcb/data/file', 'targetSE': '/SE/Target/se',
  'blob': 'physicalFile = blablablablablabla ,fileSize = 6536589', 'srcSE': '/SE/SRC/src'}
 
-def makeSequenceA( nb ):
+def makeSequenceA():
   sequence = DLSequence()
-  sequence.setCaller( 'longCallerName' + str( nb ) )
+  sequence.setCaller( 'longCallerName' )
   calls = []
   calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
   calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
@@ -44,7 +44,7 @@ def makeSequenceA( nb ):
 
 
   for call in calls :
-    for x in range( 5 ):
+    for x in range( 1 ):
       call.addAction( DLAction( DLFile( dictLong['files'] + str( random.randint( 0, randomMax ) ) + '.data' ) , DLStatus( 'Failed' ) ,
               DLStorageElement( dictLong['srcSE'] + str( random.randint( 0, randomMax ) ) ),
                DLStorageElement( dictLong['targetSE'] + str( random.randint( 0, randomMax ) ) ),
@@ -63,7 +63,7 @@ def makeSequenceB():
     sequence.popMethodCall()
 
   for call in calls :
-    for x in range( 100 ):
+    for x in range( 5000 ):
       call.addAction( DLAction( DLFile( dictLong['files'] + str( random.randint( 0, randomMax ) ) + '.data' ) , DLStatus( 'Successful' ) ,
               DLStorageElement( dictLong['srcSE'] + str( random.randint( 0, randomMax ) ) ),
                DLStorageElement( dictLong['targetSE'] + str( random.randint( 0, randomMax ) ) ),
@@ -73,14 +73,14 @@ def makeSequenceB():
 
 
 class SequenceA( Thread ):
-  def __init__( self, nb ):
+  def __init__( self, nb = 10 ):
     super( SequenceA, self ).__init__()
     self.nb = nb
 
   def run( self ):
     client = DataLoggingClient()
-    seq = makeSequenceA( self.nb )
-    res = client.insertCompressedSequence( seq )
+    seq = makeSequenceA()
+    res = client.insertSequence( seq )
     if not res['OK']:
       print 'res %s' % res['Message']
 
@@ -88,17 +88,17 @@ class SequenceB( Thread ):
   def run( self ):
     client = DataLoggingClient()
     seq = makeSequenceB()
-    res = client.insertCompressedSequence( seq )
+    res = client.insertSequence( seq )
     if not res['OK']:
       print 'res %s' % res['Message']
 
 begin = time.time()
 insertions = []
-for x in range( 1 ) :
-    insertions.append( SequenceA( x ) )
+for x in range( 10 ) :
+    insertions.append( SequenceA() )
     insertions[x].start()
 
-for x in range( 1 ) :
+for x in range( 10 ) :
   insertions[x].join()
 
 
