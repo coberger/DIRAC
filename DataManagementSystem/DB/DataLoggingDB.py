@@ -1,6 +1,5 @@
 '''
 Created on May 4, 2015
-
 @author: Corentin Berger
 '''
 
@@ -9,6 +8,7 @@ from datetime import datetime
 
 # from DIRAC
 from DIRAC import S_OK, gLogger, S_ERROR
+
 from DIRAC.DataManagementSystem.Client.DLAction import DLAction
 from DIRAC.DataManagementSystem.Client.DLFile import DLFile
 from DIRAC.DataManagementSystem.Client.DLCompressedSequence import DLCompressedSequence
@@ -20,13 +20,12 @@ from DIRAC.DataManagementSystem.Client.DLStorageElement import DLStorageElement
 from DIRAC.DataManagementSystem.Client.DLMethodName import DLMethodName
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
-
-
-# from sqlalchemy
-from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, BLOB, exc, between, desc
-from sqlalchemy.orm     import mapper, sessionmaker, relationship, scoped_session
 from DIRAC.DataManagementSystem.Client.DLException import DLException
 
+# from sqlalchemy
+from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between, desc
+from sqlalchemy.orm     import mapper, sessionmaker, relationship, scoped_session
+from sqlalchemy.dialects.mysql import MEDIUMBLOB
 
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
@@ -34,7 +33,7 @@ metadata = MetaData()
 
 dataLoggingCompressedSequenceTable = Table( 'DLCompressedSequence', metadata,
                    Column( 'compressedSequenceID', Integer, primary_key = True ),
-                   Column( 'value', BLOB ),
+                   Column( 'value', MEDIUMBLOB ),
                    Column( 'creationTime', DateTime ),
                    Column( 'insertionTime', DateTime ),
                    Column( 'status', Enum( 'Waiting', 'Ongoing', 'Done' ), server_default = 'Waiting' ),
@@ -173,12 +172,12 @@ class DataLoggingDB( object ):
     return S_OK()
 
 
-  def insertCompressedSequence(self, sequence):
+  def insertCompressedSequence( self, sequence ):
     session = None
     sequence = DLCompressedSequence( sequence )
     try:
       session = self.DBSession()
-      session.add(sequence)
+      session.add( sequence )
       session.commit()
     except Exception, e:
       if session :
@@ -191,33 +190,37 @@ class DataLoggingDB( object ):
     return S_OK( 'insertSequenceForAgent ok' )
 
 
-  def insertSequenceFromCompressed( self , maxSequence = 10 ):
+  def moveSequences( self , maxSequence = 10 ):
     session = None
     try:
       session = self.DBSession()
       for x in range( maxSequence ):
         sequenceCompressed = session.query( DLCompressedSequence ).filter_by( status = 'Waiting' )\
-          .order_by( DLCompressedSequence.creationTime ).first()
+          .order_by( DLCompressedSequence.creationTime ).with_lockmode( 'update' ).first()
         if sequenceCompressed:
-          sequenceCompressed.status = 'Ongoing'
-          session.merge( sequenceCompressed )
-          session.commit()
-          sequenceJSON = zlib.decompress( sequenceCompressed.value )
-          sequence = json.loads( sequenceJSON , cls = DLDecoder )
-          self.putSequence( session, sequence )
-          sequenceCompressed.insertionTime = datetime.now()
-          sequenceCompressed.status = 'Done'
-          session.merge( sequenceCompressed )
+          if sequenceCompressed.status == 'Waiting':
+            print 'id : %s status : %s' % ( sequenceCompressed.compressedSequenceID, sequenceCompressed.status )
+            sequenceCompressed.status = 'Ongoing'
+            session.merge( sequenceCompressed )
+            session.commit()
+            sequenceJSON = zlib.decompress( sequenceCompressed.value )
+            sequence = json.loads( sequenceJSON , cls = DLDecoder )
+            ret = self.putSequence( session, sequence )
+            if not ret['OK']:
+              return S_ERROR( ret['Value'] )
+            sequenceCompressed.insertionTime = datetime.now()
+            sequenceCompressed.status = 'Done'
+            session.merge( sequenceCompressed )
           session.commit()
         else :
           return S_OK( "no sequence to insert" )
     except Exception, e:
       if session :
         session.rollback()
-        sequenceCompressed.status == 'Waiting'
-        session.merge( sequenceCompressed )
-        session.commit()
-
+        if sequenceCompressed:
+          sequenceCompressed.status = 'Waiting'
+          session.merge( sequenceCompressed )
+          session.commit()
       gLogger.error( "insertSequenceFromCompressed: unexpected exception %s" % e )
       raise DLException( "insertSequenceFromCompressed: unexpected exception %s" % e )
     finally:
@@ -270,13 +273,12 @@ class DataLoggingDB( object ):
 
           if action.targetSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.targetSE , session )
-            if res['OK'] :
+            if not res['OK'] :
               return res
             action.targetSE = res['Value']
           else :
             action.targetSE = self.dictStorageElement[action.targetSE.name]
       sequence = session.merge( sequence )
-      print 'sequenceID = %s' % sequence.sequenceID
       session.commit()
     except Exception, e:
       if session :
@@ -511,4 +513,3 @@ class DataLoggingDB( object ):
       session.close
 
     return S_OK( calls )
-

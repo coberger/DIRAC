@@ -14,23 +14,21 @@ from DIRAC import S_OK
 
 class DataLoggingClient( Client ):
 
-  def __init__( self ):
-    Client.__init__( self )
+  def __init__( self, url = None, **kwargs ):
+    Client.__init__( self, **kwargs )
     self.setServer( "DataManagement/DataLogging" )
-    url = PathFinder.getServiceURL( "DataManagement/DataLogging" )
-    if not url:
-      raise RuntimeError( "CS option DataManagement/DataLogging URL is not set!" )
-    self.dataLoggingManager = RPCClient( url )
+    self.dataLoggingManager = self._getRPC()
 
-  def insertCompressedSequence( self, sequence ):
+
+  def insertSequence( self, sequence ):
     sequenceJSON = sequence.toJSON()
     if not sequenceJSON["OK"]:
-      raise Exception( 'Client.insertCompressedSequence bad sequenceJSON' )
+      raise Exception( 'DataLoggingClient.insertSequence bad sequenceJSON' )
     sequenceJSON = sequenceJSON['Value']
     seq = zlib.compress( sequenceJSON )
-    res = self.dataLoggingManager.insertSequence( seq )
-    return res
+    res = self.dataLoggingManager.insertCompressedSequence( seq )
 
+    return res
 
   def getSequenceOnFile( self, fileName ):
     res = self.dataLoggingManager.getSequenceOnFile( fileName )

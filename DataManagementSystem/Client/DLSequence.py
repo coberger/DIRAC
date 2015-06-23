@@ -126,16 +126,12 @@ class DLSequence( object ) :
   def printSequence(self, full = False ):
     seqLines = []
     seqLines.append( 'Sequence %s Caller %s' % ( self.sequenceID, self.caller.name ) )
-    cpt = 1
     stack = list()
-    previousParent = None
-    stack.append( self.methodCalls[0] )
+    stack.append( [self.methodCalls[0], 1] )
     while len( stack ) != 0 :
-      mc = stack.pop()
-      if mc.parentID == previousParent :
-        if previousParent > mc.parentID :
-          cpt -= 1
-        previousParent = mc.parentID
+      el = stack.pop()
+      mc = el[0]
+      cpt = el[1]
       line = ''
       for x in range( cpt ):
         line += '\t'
@@ -163,11 +159,7 @@ class DLSequence( object ) :
         seqLines.append( line )
 
       for child in reversed( mc.children ) :
-        stack.append( child )
-      if mc.children :
-        cpt += 1
-        previousParent = mc.parentID
-
+        stack.append( [child, cpt + 1] )
     return '\n'.join( seqLines )
 
 
@@ -176,14 +168,11 @@ class DLSequence( object ) :
     seqLines.append( 'Sequence %s Caller %s' % ( self.sequenceID, self.caller.name ) )
     cpt = 1
     stack = list()
-    previousParent = None
-    stack.append( self.methodCalls[0] )
+    stack.append( [self.methodCalls[0], 1] )
     while len( stack ) != 0 :
-      mc = stack.pop()
-      if mc.parentID != previousParent :
-        if previousParent > mc.parentID :
-          cpt -= 1
-        previousParent = mc.parentID
+      el = stack.pop()
+      mc = el[0]
+      cpt = el[1]
       base = ''
       for x in range( cpt ):
         base += '\t'
@@ -208,9 +197,5 @@ class DLSequence( object ) :
             seqLines.append( line )
       for child in mc.children :
         stack.append( child )
-      if mc.children :
-
-        cpt += 1
-
     return '\n'.join( seqLines )
 

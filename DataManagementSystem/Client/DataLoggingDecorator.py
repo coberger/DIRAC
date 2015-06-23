@@ -291,7 +291,7 @@ class _DataLoggingDecorator( object ):
     """
     try :
       client = DataLoggingClient()
-      client.insertCompressedSequence( DLBuffer.getDataLoggingSequence( current_thread().ident ) )
+      client.insertSequence( DLBuffer.getDataLoggingSequence( current_thread().ident ) )
       DLBuffer.getDataLoggingSequence( current_thread().ident ).methodCalls = list()
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )
