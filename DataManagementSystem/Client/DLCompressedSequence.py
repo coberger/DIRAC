@@ -10,13 +10,9 @@ from DIRAC import S_ERROR, S_OK
 
 class DLCompressedSequence( object ):
 
-  def __init__( self, value, creationTime = None, insertionTime = None, status = 'Waiting', compressedSequenceID = None ):
+  def __init__( self, value, status = 'Waiting', compressedSequenceID = None ):
     self.value = value
-    if not creationTime :
-      self.creationTime = datetime.now()
-    else :
-      self.creationTime = creationTime
-    self.insertionTime = insertionTime
+    self.lastUpdate = datetime.now()
     self.status = status
     self.compressedSequenceID = compressedSequenceID
 

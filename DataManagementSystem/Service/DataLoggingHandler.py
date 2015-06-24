@@ -20,6 +20,8 @@ class DataLoggingHandler( RequestHandler ):
     """ initialize handler """
     csSection = PathFinder.getServiceSection( 'DataManagement/DataLogging' )
     cls.maxSequence = gConfig.getValue( '%s/SequenceMax' % csSection, 100 )
+    cls.maxSequence = gConfig.getValue( '%s/MaxSequence' % csSection, 100 )
+    cls.maxTime = gConfig.getValue( '%s/MaxTime' % csSection, 3600 )
     try:
       cls.__dataLoggingDB = DataLoggingDB()
       cls.__dataLoggingDB.createTables()
@@ -28,12 +30,18 @@ class DataLoggingHandler( RequestHandler ):
       return S_ERROR( error )
     gThreadScheduler.setMinValidPeriod( 10 )
     gThreadScheduler.addPeriodicTask( 10, cls.moveSequences )
+    gThreadScheduler.addPeriodicTask( 10800, cls.cleanStaledSequencesStatus )
     return S_OK()
 
 
   @classmethod
   def moveSequences( cls ):
     res = cls.__dataLoggingDB.moveSequences( cls.maxSequence )
+    return res
+
+  @classmethod
+  def cleanStaledSequencesStatus( cls ):
+    res = cls.__dataLoggingDB.cleanStaledSequencesStatus( cls.maxTime )
     return res
 
   types_insertCompressedSequence = [StringTypes]
