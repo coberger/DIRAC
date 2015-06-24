@@ -4,7 +4,7 @@ Created on May 4, 2015
 '''
 
 import zlib, json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # from DIRAC
 from DIRAC import S_OK, gLogger, S_ERROR
@@ -24,7 +24,7 @@ from DIRAC.DataManagementSystem.Client.DLException import DLException
 
 # from sqlalchemy
 from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between, desc
-from sqlalchemy.orm     import mapper, sessionmaker, relationship, scoped_session
+from sqlalchemy.orm     import mapper, sessionmaker, relationship
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 
 # Metadata instance that is used to bind the engine, Object and tables
@@ -34,8 +34,7 @@ metadata = MetaData()
 dataLoggingCompressedSequenceTable = Table( 'DLCompressedSequence', metadata,
                    Column( 'compressedSequenceID', Integer, primary_key = True ),
                    Column( 'value', MEDIUMBLOB ),
-                   Column( 'creationTime', DateTime ),
-                   Column( 'insertionTime', DateTime ),
+                   Column( 'lastUpdate', DateTime ),
                    Column( 'status', Enum( 'Waiting', 'Ongoing', 'Done' ), server_default = 'Waiting' ),
                    mysql_engine = 'InnoDB' )
 
@@ -153,8 +152,7 @@ class DataLoggingDB( object ):
                                  echo = runDebug )
 
     metadata.bind = self.engine
-    self.sessionFactory = sessionmaker( bind = self.engine, autoflush = False )
-    self.DBSession = scoped_session( self.sessionFactory )
+    self.DBSession = sessionmaker( bind = self.engine, autoflush = False, expire_on_commit = False )
 
     self.dictStorageElement = {}
     self.dictFile = {}
@@ -170,6 +168,34 @@ class DataLoggingDB( object ):
       gLogger.error( "createTables: unexpected exception %s" % e )
       return S_ERROR( "createTables: unexpected exception %s" % e )
     return S_OK()
+
+
+  def cleanStaledSequencesStatus( self, maxTime = 1440 ):
+    session = None
+    currentTime = datetime.utcnow()
+    minutesAgo = currentTime - timedelta( minutes = maxTime )
+    print minutesAgo
+
+    try:
+      session = self.DBSession()
+      rows = session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Ongoing', DLCompressedSequence.lastUpdate <= minutesAgo ).with_for_update().all()
+      if rows:
+        for sequenceCompressed in rows :
+          sequenceCompressed.status = 'Waiting'
+          sequenceCompressed.lastUpdate = datetime.now()
+          session.merge( sequenceCompressed )
+        session.commit()
+      else :
+        return S_OK( "no sequence to insert" )
+    except Exception, e:
+      if session :
+        session.rollback()
+      gLogger.error( "cleanStaledSequencesStatus: unexpected exception %s" % e )
+      raise DLException( "cleanStaledSequencesStatus: unexpected exception %s" % e )
+    finally:
+      session.close()
+    return S_OK( 'updateSequencesStatus ok' )
+
 
 
   def insertCompressedSequence( self, sequence ):
@@ -192,35 +218,44 @@ class DataLoggingDB( object ):
 
   def moveSequences( self , maxSequence = 10 ):
     session = None
+    sequences = []
     try:
       session = self.DBSession()
-      for x in range( maxSequence ):
-        sequenceCompressed = session.query( DLCompressedSequence ).filter_by( status = 'Waiting' )\
-          .order_by( DLCompressedSequence.creationTime ).with_lockmode( 'update' ).first()
-        if sequenceCompressed:
-          if sequenceCompressed.status == 'Waiting':
-            print 'id : %s status : %s' % ( sequenceCompressed.compressedSequenceID, sequenceCompressed.status )
-            sequenceCompressed.status = 'Ongoing'
-            session.merge( sequenceCompressed )
-            session.commit()
-            sequenceJSON = zlib.decompress( sequenceCompressed.value )
-            sequence = json.loads( sequenceJSON , cls = DLDecoder )
+      rows = session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Waiting' )\
+          .order_by( DLCompressedSequence.lastUpdate ).with_for_update().limit( maxSequence )
+      if rows:
+        for sequenceCompressed in rows :
+          sequences.append( sequenceCompressed )
+          sequenceCompressed.status = 'Ongoing'
+          sequenceCompressed.lastUpdate = datetime.now()
+          session.merge( sequenceCompressed )
+
+
+        session.commit()
+        session.expunge_all()
+        for sequenceCompressed in sequences :
+          sequenceJSON = zlib.decompress( sequenceCompressed.value )
+          sequence = json.loads( sequenceJSON , cls = DLDecoder )
+          try :
             ret = self.putSequence( session, sequence )
             if not ret['OK']:
               return S_ERROR( ret['Value'] )
-            sequenceCompressed.insertionTime = datetime.now()
+            sequenceCompressed.lastUpdate = datetime.now()
             sequenceCompressed.status = 'Done'
             session.merge( sequenceCompressed )
-          session.commit()
-        else :
-          return S_OK( "no sequence to insert" )
+            session.commit()
+          except Exception, e:
+            gLogger.error( "moveSequences: unexpected exception %s" % e )
+            session.rollback()
+            sequenceCompressed.lastUpdate = datetime.now()
+            sequenceCompressed.status = 'Waiting'
+            session.merge( sequenceCompressed )
+            session.commit()
+      else :
+        return S_OK( "no sequence to insert" )
     except Exception, e:
       if session :
         session.rollback()
-        if sequenceCompressed:
-          sequenceCompressed.status = 'Waiting'
-          session.merge( sequenceCompressed )
-          session.commit()
       gLogger.error( "insertSequenceFromCompressed: unexpected exception %s" % e )
       raise DLException( "insertSequenceFromCompressed: unexpected exception %s" % e )
     finally:
@@ -279,10 +314,7 @@ class DataLoggingDB( object ):
           else :
             action.targetSE = self.dictStorageElement[action.targetSE.name]
       sequence = session.merge( sequence )
-      session.commit()
     except Exception, e:
-      if session :
-        session.rollback()
       gLogger.error( "putSequence: unexpected exception %s" % e )
       raise DLException( "putSequence: unexpected exception %s" % e )
     return S_OK( 'putSequence ended, Successful' )
@@ -371,7 +403,6 @@ class DataLoggingDB( object ):
     try:
       instance = session.query( DLStatus ).filter_by( name = status.name ).first()
       if not instance:
-        # print 'no instance of %s' % status.name
         instance = DLStatus( status.name )
         session.add( instance )
         session.commit()
