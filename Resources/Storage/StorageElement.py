@@ -18,6 +18,7 @@ from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
 
+
 class StorageElementCache( object ):
 
   def __init__( self ):
