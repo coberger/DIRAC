@@ -17,7 +17,7 @@ from DIRAC.DataManagementSystem.Client.DLMethodName import DLMethodName
 
 
 randomMax = 100000
-db = DataLoggingDB()
+
 dictLong = {'files': '/lhcb/data/file', 'targetSE': '/SE/Target/se',
  'blob': 'physicalFile = blablablablablabla ,fileSize = 6536589', 'srcSE': '/SE/SRC/src'}
 
@@ -106,7 +106,8 @@ class SequenceA( Thread ):
     self.nb = nb
 
   def run( self ):
-    for x in range( 100000 ) :
+    db = DataLoggingDB()
+    for x in range( 1000 ) :
       sequence = makeSequenceA()
       sequenceJSON = sequence.toJSON()
       if not sequenceJSON["OK"]:
@@ -119,8 +120,10 @@ class SequenceA( Thread ):
         return res
 
 class SequenceB( Thread ):
+
   def run( self ):
-    for x in range( 100 ) :
+    db = DataLoggingDB()
+    for x in range( 1000 ) :
       sequence = makeSequenceB()
       sequenceJSON = sequence.toJSON()
       if not sequenceJSON["OK"]:
@@ -134,11 +137,11 @@ class SequenceB( Thread ):
 
 begin = time.time()
 insertions = []
-for x in range( 1 ) :
+for x in range( 10 ) :
     insertions.append( SequenceA() )
     insertions[x].start()
 
-for x in range( 1 ) :
+for x in range( 10 ) :
   insertions[x].join()
 
 
