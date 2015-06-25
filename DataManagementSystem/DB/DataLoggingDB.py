@@ -264,21 +264,39 @@ class DataLoggingDB( object ):
 
 
   def putSequence( self, session, sequence ):
-    """ put a sequence into database"""
     try:
       res = self.putCaller( sequence.caller, session )
       if not res['OK'] :
         return res
-      sequence.caller = res['Value']
+      sequence.callerID = res['Value'].callerID
+
+      session.bulk_save_objects( [sequence], return_defaults = True )
+      session.commit()
+
+      methodCalls = []
       for mc in sequence.methodCalls:
+        mc.sequenceID = sequence.sequenceID
         if mc.name.name not in self.dictMethodName :
           res = self.putMethodName( mc.name, session )
           if not res['OK'] :
             return res
-          mc.name = res['Value']
+          mc.methodNameID = res['Value'].methodNameID
         else :
           mc.methodNameID = self.dictMethodName[mc.name.name].methodNameID
+        methodCalls.append( mc )
+
+      session.bulk_save_objects( methodCalls, return_defaults = True )
+      session.commit()
+
+      for mc in sequence.methodCalls:
+        for child in mc.children :
+          child.parentID = mc.methodCallID
+        session.bulk_save_objects( methodCalls, return_defaults = True )
+        session.commit()
+
+        actions = []
         for action in mc.actions :
+          action.methodCallID = mc.methodCallID
           # putfile
           if action.file.name not in self.dictFile :
             res = self.putFile( action.file, session )
@@ -313,7 +331,9 @@ class DataLoggingDB( object ):
             action.targetSEID = res['Value'].storageElementID
           else :
             action.targetSEID = self.dictStorageElement[action.targetSE.name].storageElementID
-      session.merge( sequence )
+          actions.append( action )
+
+        session.bulk_save_objects( actions )
     except Exception, e:
       gLogger.error( "putSequence: unexpected exception %s" % e )
       raise DLException( "putSequence: unexpected exception %s" % e )
