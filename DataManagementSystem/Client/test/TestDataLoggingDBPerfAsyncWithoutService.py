@@ -107,10 +107,11 @@ class SequenceA( Thread ):
 
   def run( self ):
     db = DataLoggingDB()
-    for x in range( 1000 ) :
+    for x in range( 100000 ) :
       sequence = makeSequenceA()
       sequenceJSON = sequence.toJSON()
       if not sequenceJSON["OK"]:
+        print 'res %s' % sequenceJSON['Message']
         return sequenceJSON
       sequenceJSON = sequenceJSON['Value']
       seq = zlib.compress( sequenceJSON )
@@ -127,6 +128,7 @@ class SequenceB( Thread ):
       sequence = makeSequenceB()
       sequenceJSON = sequence.toJSON()
       if not sequenceJSON["OK"]:
+        print 'res %s' % sequenceJSON['Message']
         return sequenceJSON
       sequenceJSON = sequenceJSON['Value']
       seq = zlib.compress( sequenceJSON )
