@@ -4,10 +4,10 @@ Created on Jun 11, 2015
 @author: Corentin Berger
 '''
 
-import random, time
+import random, time, zlib
 from threading import Thread
 
-from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
+from DIRAC.DataManagementSystem.DB.DataLoggingDB import DataLoggingDB
 from DIRAC.DataManagementSystem.Client.DLSequence import DLSequence
 from DIRAC.DataManagementSystem.Client.DLAction import DLAction
 from DIRAC.DataManagementSystem.Client.DLFile import DLFile
@@ -73,18 +73,18 @@ def makeSequenceB():
   calls = []
 
   files = []
-  for x in range( 10 ):
+  for x in range( 500 ):
     files.append( dictLong['files'] + str( random.randint( 0, randomMax ) ) + '.data' )
 
   sources = []
-  for x in range( 10 ):
+  for x in range( 500 ):
     sources.append( dictLong['srcSE'] + str( random.randint( 0, randomMax ) ) )
 
   targets = []
-  for x in range( 10 ):
+  for x in range( 500 ):
     targets.append( dictLong['targetSE'] + str( random.randint( 0, randomMax ) ) )
 
-  for x in range( 10 ):
+  for x in range( 500 ):
     calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName2' + str( random.randint( 0, randomMax ) ) )} ) )
 
   for x in range( 10 ):
@@ -106,21 +106,33 @@ class SequenceA( Thread ):
     self.nb = nb
 
   def run( self ):
-    client = DataLoggingClient()
+    db = DataLoggingDB()
     for x in range( 100 ) :
-      seq = makeSequenceA()
-      res = client.insertSequence( seq )
+      sequence = makeSequenceA()
+      sequenceJSON = sequence.toJSON()
+      if not sequenceJSON["OK"]:
+        return sequenceJSON
+      sequenceJSON = sequenceJSON['Value']
+      seq = zlib.compress( sequenceJSON )
+      res = db.insertCompressedSequence( seq )
       if not res['OK']:
         print 'res %s' % res['Message']
+        return res
 
 class SequenceB( Thread ):
   def run( self ):
-    client = DataLoggingClient()
+    db = DataLoggingDB()
     for x in range( 100 ) :
-      seq = makeSequenceB()
-      res = client.insertSequence( seq )
+      sequence = makeSequenceB()
+      sequenceJSON = sequence.toJSON()
+      if not sequenceJSON["OK"]:
+        return sequenceJSON
+      sequenceJSON = sequenceJSON['Value']
+      seq = zlib.compress( sequenceJSON )
+      res = db.insertCompressedSequence( seq )
       if not res['OK']:
         print 'res %s' % res['Message']
+        return res
 
 begin = time.time()
 insertions = []
