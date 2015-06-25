@@ -108,6 +108,7 @@ class SequenceA( Thread ):
   def run( self ):
     db = DataLoggingDB()
     for x in range( 100000 ) :
+      begin = time.time()
       sequence = makeSequenceA()
       sequenceJSON = sequence.toJSON()
       if not sequenceJSON["OK"]:
@@ -119,6 +120,7 @@ class SequenceA( Thread ):
       if not res['OK']:
         print 'res %s' % res['Message']
         return res
+      print 'end of %s, time : %s' % ( x, time.strftime( '%M : %S', time.localtime( time.time() - begin ) ) )
 
 class SequenceB( Thread ):
 
