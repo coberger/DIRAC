@@ -216,7 +216,7 @@ class DataLoggingDB( object ):
     return S_OK( 'insertSequenceForAgent ok' )
 
 
-  def moveSequences( self , maxSequence = 10 ):
+  def moveSequences( self , maxSequence = 100 ):
     session = None
     sequences = []
     try:
@@ -243,14 +243,11 @@ class DataLoggingDB( object ):
             sequenceCompressed.lastUpdate = datetime.now()
             sequenceCompressed.status = 'Done'
             session.merge( sequenceCompressed )
-            session.commit()
           except Exception, e:
             gLogger.error( "moveSequences: unexpected exception %s" % e )
             session.rollback()
-            sequenceCompressed.lastUpdate = datetime.now()
-            sequenceCompressed.status = 'Waiting'
-            session.merge( sequenceCompressed )
-            session.commit()
+            res = self.moveSequencesOneByOne( session, sequences )
+        session.commit()
       else :
         return S_OK( "no sequence to insert" )
     except Exception, e:
@@ -262,6 +259,26 @@ class DataLoggingDB( object ):
       session.close()
     return S_OK( 'insertSequenceFromCompressed ok' )
 
+  def moveSequencesOneByOne(self, session, sequences):
+    for sequenceCompressed in sequences :
+      sequenceJSON = zlib.decompress( sequenceCompressed.value )
+      sequence = json.loads( sequenceJSON , cls = DLDecoder )
+      try :
+        ret = self.putSequence( session, sequence )
+        if not ret['OK']:
+          return S_ERROR( ret['Value'] )
+        sequenceCompressed.lastUpdate = datetime.now()
+        sequenceCompressed.status = 'Done'
+        session.merge( sequenceCompressed )
+        session.commit()
+      except Exception, e:
+        gLogger.error( "moveSequences: unexpected exception %s" % e )
+        session.rollback()
+        sequenceCompressed.lastUpdate = datetime.now()
+        sequenceCompressed.status = 'Waiting'
+        session.merge( sequenceCompressed )
+        session.commit()
+    return S_OK( "moveSequencesOneByOne success" )
 
   def putSequence( self, session, sequence ):
     """ put a sequence into database"""
