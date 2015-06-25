@@ -264,76 +264,56 @@ class DataLoggingDB( object ):
 
 
   def putSequence( self, session, sequence ):
+    """ put a sequence into database"""
     try:
       res = self.putCaller( sequence.caller, session )
       if not res['OK'] :
         return res
-      sequence.callerID = res['Value'].callerID
-
-      session.bulk_save_objects( [sequence], return_defaults = True )
-      session.commit()
-
-      methodCalls = []
+      sequence.caller = res['Value']
       for mc in sequence.methodCalls:
-        mc.sequenceID = sequence.sequenceID
         if mc.name.name not in self.dictMethodName :
           res = self.putMethodName( mc.name, session )
           if not res['OK'] :
             return res
-          mc.methodNameID = res['Value'].methodNameID
+          mc.name = res['Value']
         else :
-          mc.methodNameID = self.dictMethodName[mc.name.name].methodNameID
-        methodCalls.append( mc )
-
-      session.bulk_save_objects( methodCalls, return_defaults = True )
-      session.commit()
-
-      for mc in sequence.methodCalls:
-        for child in mc.children :
-          child.parentID = mc.methodCallID
-        session.bulk_save_objects( methodCalls, return_defaults = True )
-        session.commit()
-
-        actions = []
+          mc.name = self.dictMethodName[mc.name.name]
         for action in mc.actions :
-          action.methodCallID = mc.methodCallID
           # putfile
           if action.file.name not in self.dictFile :
             res = self.putFile( action.file, session )
             if not res['OK'] :
               return res
-            action.fileID = res['Value'].fileID
+            action.file = res['Value']
           else :
-            action.fileID = self.dictFile[action.file.name].fileID
+            action.file = self.dictFile[action.file.name]
 
           # putStatus
           if action.status.name not in self.dictStatus :
             res = self.putStatus( action.status, session )
             if not res['OK'] :
               return res
-            action.statusID = res['Value'].statusID
+            action.status = res['Value']
           else :
-            action.statusID = self.dictStatus[action.status.name].statusID
+            action.status = self.dictStatus[action.status.name]
 
           # put storage element
           if action.srcSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.srcSE , session )
             if not res['OK'] :
               return res
-            action.srcSEID = res['Value'].storageElementID
+            action.srcSE = res['Value']
           else :
-            action.srcSEID = self.dictStorageElement[action.srcSE.name].storageElementID
+            action.srcSE = self.dictStorageElement[action.srcSE.name]
 
           if action.targetSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.targetSE , session )
             if not res['OK'] :
               return res
-            action.targetSEID = res['Value'].storageElementID
+            action.targetSE = res['Value']
           else :
-            action.targetSEID = self.dictStorageElement[action.targetSE.name].storageElementID
-          actions.append( action )
-
-        session.bulk_save_objects( actions )
+            action.targetSE = self.dictStorageElement[action.targetSE.name]
+      sequence = session.merge( sequence )
     except Exception, e:
       gLogger.error( "putSequence: unexpected exception %s" % e )
       raise DLException( "putSequence: unexpected exception %s" % e )
