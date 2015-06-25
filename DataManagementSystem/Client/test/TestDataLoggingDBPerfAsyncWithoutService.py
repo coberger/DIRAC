@@ -123,7 +123,7 @@ class SequenceB( Thread ):
 
   def run( self ):
     db = DataLoggingDB()
-    for x in range( 1000 ) :
+    for x in range( 10000 ) :
       sequence = makeSequenceB()
       sequenceJSON = sequence.toJSON()
       if not sequenceJSON["OK"]:
