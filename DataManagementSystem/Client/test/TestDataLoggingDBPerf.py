@@ -24,20 +24,34 @@ def makeSequenceA():
   sequence = DLSequence()
   sequence.setCaller( 'longCallerName' )
   calls = []
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
+  sequence.popMethodCall()
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
+  sequence.popMethodCall()
+  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, randomMax ) ) )} ) )
+  sequence.popMethodCall()
+  sequence.popMethodCall()
 
-  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName2' )} ) )
-  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName2' )} ) )
-  sequence.popMethodCall()
-  calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName3' )} ) )
-  sequence.popMethodCall()
-  sequence.popMethodCall()
 
   for call in calls :
-    for x in range( 1 ):
-      call.addAction( DLAction( DLFile( dictLong['files'] ), DLStatus( 'Successful' ) ,
-            DLStorageElement( dictLong['srcSE'] + str( random.randint( 0, randomMax ) ) ),
-            DLStorageElement( dictLong['targetSE'] + str( random.randint( 0, randomMax ) ) ),
-            dictLong['blob'], 'errorMessage' ) )
+    for x in range( 4 ):
+      call.addAction( DLAction( DLFile( dictLong['files'] + str( random.randint( 0, randomMax ) ) + '.data' ) , DLStatus( 'Successful' ) ,
+              DLStorageElement( dictLong['srcSE'] + str( random.randint( 0, randomMax ) ) ),
+               DLStorageElement( dictLong['targetSE'] + str( random.randint( 0, randomMax ) ) ),
+              dictLong['blob'], 'errorMessage' ) )
+      call.addAction( DLAction( DLFile( dictLong['files'] + str( random.randint( 0, randomMax ) ) + '.data' ) , DLStatus( 'Failed' ) ,
+              DLStorageElement( dictLong['srcSE'] + str( random.randint( 0, randomMax ) ) ),
+               DLStorageElement( dictLong['targetSE'] + str( random.randint( 0, randomMax ) ) ),
+              dictLong['blob'], 'errorMessage' ) )
   return sequence
 
 
@@ -65,7 +79,7 @@ client = DataLoggingClient()
 print time.strftime( '%H :%M : %S', time.localtime( time.time() ) )
 
 begin = time.time()
-for x in range( 1 ) :
+for x in range( 10000 ) :
   seq = makeSequenceA()
   begin = time.time()
   res = client.insertSequence( seq )

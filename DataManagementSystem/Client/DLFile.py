@@ -9,7 +9,7 @@ from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
 from DIRAC import S_ERROR, S_OK
 
 class DLFile( object ):
-
+  """ this is the class for data logging system wich is like  lfn"""
   def __init__( self, name ):
     self.name = name
 
