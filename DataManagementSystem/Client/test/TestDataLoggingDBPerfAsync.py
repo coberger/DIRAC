@@ -16,7 +16,7 @@ from DIRAC.DataManagementSystem.Client.DLStorageElement import DLStorageElement
 from DIRAC.DataManagementSystem.Client.DLMethodName import DLMethodName
 
 
-randomMax = 100000
+randomMax = 10
 
 dictLong = {'files': '/lhcb/data/file', 'targetSE': '/SE/Target/se',
  'blob': 'physicalFile = blablablablablabla ,fileSize = 6536589', 'srcSE': '/SE/SRC/src'}
@@ -44,7 +44,7 @@ def makeSequenceA():
 
 
   for call in calls :
-    for x in range( 4 ):
+    for x in range( 5 ):
       call.addAction( DLAction( DLFile( dictLong['files'] + str( random.randint( 0, randomMax ) ) + '.data' ) , DLStatus( 'Successful' ) ,
               DLStorageElement( dictLong['srcSE'] + str( random.randint( 0, randomMax ) ) ),
                DLStorageElement( dictLong['targetSE'] + str( random.randint( 0, randomMax ) ) ),
@@ -83,7 +83,7 @@ class SequenceA( Thread ):
 
   def run( self ):
     client = DataLoggingClient()
-    for x in range( 1000 ) :
+    for x in range( 100 ) :
       seq = makeSequenceA()
       res = client.insertSequence( seq )
       if not res['OK']:
@@ -92,7 +92,7 @@ class SequenceA( Thread ):
 class SequenceB( Thread ):
   def run( self ):
     client = DataLoggingClient()
-    for x in range( 1000 ) :
+    for x in range( 100 ) :
       seq = makeSequenceB()
       res = client.insertSequence( seq )
       if not res['OK']:
