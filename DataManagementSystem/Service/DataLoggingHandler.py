@@ -19,7 +19,6 @@ class DataLoggingHandler( RequestHandler ):
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
     csSection = PathFinder.getServiceSection( 'DataManagement/DataLogging' )
-    cls.maxSequence = gConfig.getValue( '%s/SequenceMax' % csSection, 100 )
     cls.maxSequence = gConfig.getValue( '%s/MaxSequence' % csSection, 100 )
     cls.maxTime = gConfig.getValue( '%s/MaxTime' % csSection, 3600 )
     try:

@@ -284,36 +284,36 @@ class DataLoggingDB( object ):
             res = self.putFile( action.file, session )
             if not res['OK'] :
               return res
-            action.file = res['Value']
+            action.fileID = res['Value'].fileID
           else :
-            action.file = self.dictFile[action.file.name]
+            action.fileID = self.dictFile[action.file.name].fileID
 
           # putStatus
           if action.status.name not in self.dictStatus :
             res = self.putStatus( action.status, session )
             if not res['OK'] :
               return res
-            action.status = res['Value']
+            action.statusID = res['Value'].statusID
           else :
-            action.status = self.dictStatus[action.status.name]
+            action.statusID = self.dictStatus[action.status.name].statusID
 
           # put storage element
           if action.srcSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.srcSE , session )
             if not res['OK'] :
               return res
-            action.srcSE = res['Value']
+            action.srcSEID = res['Value'].storageElementID
           else :
-            action.srcSE = self.dictStorageElement[action.srcSE.name]
+            action.srcSEID = self.dictStorageElement[action.srcSE.name].storageElementID
 
           if action.targetSE.name not in self.dictStorageElement :
             res = self.putStorageElement( action.targetSE , session )
             if not res['OK'] :
               return res
-            action.targetSE = res['Value']
+            action.targetSEID = res['Value'].storageElementID
           else :
-            action.targetSE = self.dictStorageElement[action.targetSE.name]
-      sequence = session.merge( sequence )
+            action.targetSEID = self.dictStorageElement[action.targetSE.name].storageElementID
+      session.merge( sequence )
     except Exception, e:
       gLogger.error( "putSequence: unexpected exception %s" % e )
       raise DLException( "putSequence: unexpected exception %s" % e )
