@@ -295,6 +295,7 @@ class DataLoggingDB( object ):
         sequence.caller = self.dictCaller[sequence.caller.name]
 
       print ' seqcaller = %s %s' % ( sequence.caller.callerID, sequence.caller.name )
+      sequence.callerID = sequence.caller.callerID
       for mc in sequence.methodCalls:
         if mc.name.name not in self.dictMethodName :
           res = self.putMethodName( mc.name, session )
