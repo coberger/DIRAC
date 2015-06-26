@@ -34,8 +34,8 @@ metadata = MetaData()
 dataLoggingCompressedSequenceTable = Table( 'DLCompressedSequence', metadata,
                    Column( 'compressedSequenceID', Integer, primary_key = True ),
                    Column( 'value', MEDIUMBLOB ),
-                   Column( 'lastUpdate', DateTime ),
-                   Column( 'status', Enum( 'Waiting', 'Ongoing', 'Done' ), server_default = 'Waiting' ),
+                   Column( 'lastUpdate', DateTime, index = True ),
+                   Column( 'status', Enum( 'Waiting', 'Ongoing', 'Done' ), server_default = 'Waiting', index = True ),
                    mysql_engine = 'InnoDB' )
 
 mapper( DLCompressedSequence, dataLoggingCompressedSequenceTable )
