@@ -174,12 +174,12 @@ class DataLoggingDB( object ):
     session = None
     currentTime = datetime.utcnow()
     minutesAgo = currentTime - timedelta( minutes = maxTime )
-    print minutesAgo
-
     try:
       session = self.DBSession()
       rows = session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Ongoing', DLCompressedSequence.lastUpdate <= minutesAgo ).with_for_update().all()
       if rows:
+        gLogger.info( "DataLoggingDB.cleanStaledSequencesStatus found %s sequences with status Ongoing since %s minutes, try to insert them"
+                       % ( len( rows ), maxTime ) )
         for sequenceCompressed in rows :
           sequenceCompressed.status = 'Waiting'
           sequenceCompressed.lastUpdate = datetime.now()
@@ -219,6 +219,7 @@ class DataLoggingDB( object ):
   def moveSequences( self , maxSequence = 100 ):
     session = None
     sequences = []
+    begin = datetime.utcnow()
     try:
       session = self.DBSession()
       rows = session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Waiting' )\
@@ -229,7 +230,6 @@ class DataLoggingDB( object ):
           sequenceCompressed.status = 'Ongoing'
           sequenceCompressed.lastUpdate = datetime.now()
           session.merge( sequenceCompressed )
-
 
         session.commit()
         session.expunge_all()
@@ -257,6 +257,8 @@ class DataLoggingDB( object ):
       raise DLException( "insertSequenceFromCompressed: unexpected exception %s" % e )
     finally:
       session.close()
+    end = datetime.utcnow()
+    gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( maxSequence, ( end - begin ) ) )
     return S_OK( 'insertSequenceFromCompressed ok' )
 
   def moveSequencesOneByOne(self, session, sequences):
