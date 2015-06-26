@@ -23,7 +23,7 @@ dictLong = {'files': '/lhcb/data/file', 'targetSE': '/SE/Target/se',
 
 def makeSequenceA():
   sequence = DLSequence()
-  sequence.setCaller( 'longCallerName' )
+  sequence.setCaller( 'longCallerName' + str( random.randint( 0, 20 ) ) )
   calls = []
   calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, 150 ) ) )} ) )
   calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, 150 ) ) )} ) )

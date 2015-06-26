@@ -158,6 +158,7 @@ class DataLoggingDB( object ):
     self.dictFile = {}
     self.dictMethodName = {}
     self.dictStatus = {}
+    self.dictCaller = {}
 
 
   def createTables( self ):
@@ -285,10 +286,13 @@ class DataLoggingDB( object ):
   def putSequence( self, session, sequence ):
     """ put a sequence into database"""
     try:
-      res = self.putCaller( sequence.caller, session )
-      if not res['OK'] :
-        return res
-      sequence.caller = res['Value']
+      if sequence.caller.name not in self.dictCaller :
+        res = self.putCaller( sequence.caller, session )
+        if not res['OK'] :
+          return res
+        sequence.caller = res['Value']
+      else :
+        sequence.caller = self.dictCaller[sequence.caller.name]
       for mc in sequence.methodCalls:
         if mc.name.name not in self.dictMethodName :
           res = self.putMethodName( mc.name, session )
@@ -450,6 +454,7 @@ class DataLoggingDB( object ):
         session.add( instance )
         session.commit()
       session.expunge( instance )
+      self.dictStatus[caller.name] = instance
       return S_OK( instance )
     except exc.IntegrityError :
       session.rollback()
