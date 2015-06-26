@@ -290,11 +290,11 @@ class DataLoggingDB( object ):
         res = self.putCaller( sequence.caller, session )
         if not res['OK'] :
           return res
-        sequence.callerID = res['Value'].callerID
+        sequence.caller = res['Value']
       else :
-        sequence.callerID = self.dictCaller[sequence.caller.name].callerID
+        sequence.caller = self.dictCaller[sequence.caller.name]
+      sequence.callerID = sequence.caller.callerID
 
-      print ' seqcaller = %s %s' % ( sequence.caller.callerID, sequence.caller.name )
       for mc in sequence.methodCalls:
         if mc.name.name not in self.dictMethodName :
           res = self.putMethodName( mc.name, session )
