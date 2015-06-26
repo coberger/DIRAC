@@ -449,6 +449,7 @@ class DataLoggingDB( object ):
         instance = DLCaller( caller.name )
         session.add( instance )
         session.commit()
+      print "putCaller %s %s" % ( caller.name, instance )
       session.expunge( instance )
       return S_OK( instance )
     except exc.IntegrityError :
