@@ -3,9 +3,9 @@ Created on May 5, 2015
 
 @author: Corentin Berger
 '''
-import json
+import time
 
-from types import StringTypes, NoneType, IntType
+from types import StringTypes, NoneType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
