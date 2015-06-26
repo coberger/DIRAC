@@ -3,7 +3,6 @@ Created on May 5, 2015
 
 @author: Corentin Berger
 '''
-import time
 
 from types import StringTypes, NoneType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
