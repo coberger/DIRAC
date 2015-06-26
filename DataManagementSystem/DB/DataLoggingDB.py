@@ -263,6 +263,7 @@ class DataLoggingDB( object ):
     return S_OK( 'insertSequenceFromCompressed ok' )
 
   def moveSequencesOneByOne(self, session, sequences):
+    print 'toto'
     for sequenceCompressed in sequences :
       sequenceJSON = zlib.decompress( sequenceCompressed.value )
       sequence = json.loads( sequenceJSON , cls = DLDecoder )
