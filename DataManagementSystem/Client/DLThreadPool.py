@@ -9,7 +9,7 @@ from threading          import Lock
 from DIRAC.DataManagementSystem.Client.DLSequence import DLSequence
 
 
-class DLBuffer :
+class DLThreadPool :
   """ contains all DLSequence needed by different thread"""
 
   dict = dict()
