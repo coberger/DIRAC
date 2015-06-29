@@ -11,7 +11,7 @@ from threading import current_thread
 
 from DIRAC.DataManagementSystem.Client.DLFunctions import *
 from DIRAC.DataManagementSystem.Client.DLAction import DLAction
-from DIRAC.DataManagementSystem.Client.DLBuffer import DLBuffer
+from DIRAC.DataManagementSystem.Client.DLThreadPool import DLThreadPool
 from DIRAC.DataManagementSystem.Client.DLFile import DLFile
 from DIRAC.DataManagementSystem.Client.DLStatus import DLStatus
 from DIRAC.DataManagementSystem.Client.DLStorageElement import DLStorageElement
@@ -129,6 +129,9 @@ class _DataLoggingDecorator( object ):
       # if the sequence is complete we insert it into DB
       if isSequenceComplete :
         self.insertSequence()
+    except NoLogException :
+      if not result :
+        result = self.func( *args, **kwargs )
     except DLException as e:
       if not result :
         result = self.func( *args, **kwargs )
@@ -197,7 +200,7 @@ class _DataLoggingDecorator( object ):
     :param args : a dict with the arguments needed to create a methodcall
     """
     try :
-      methodCall = DLBuffer.getDataLoggingSequence( current_thread().ident ).appendMethodCall( args )
+      methodCall = DLThreadPool.getDataLoggingSequence( current_thread().ident ).appendMethodCall( args )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.createMethodCall %s' % e )
       raise DLException( e )
@@ -206,7 +209,7 @@ class _DataLoggingDecorator( object ):
   def popMethodCall( self ):
     """ pop a methodCall from the sequence corresponding to its thread """
     try :
-      res = DLBuffer.getDataLoggingSequence( current_thread().ident ).popMethodCall()
+      res = DLThreadPool.getDataLoggingSequence( current_thread().ident ).popMethodCall()
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.popMethodCall %s' % e )
       raise DLException( e )
@@ -218,9 +221,9 @@ class _DataLoggingDecorator( object ):
         next if the caller is not set, we set it
     """
     try :
-      res = DLBuffer.getDataLoggingSequence( current_thread().ident ).isCallerSet()
+      res = DLThreadPool.getDataLoggingSequence( current_thread().ident ).isCallerSet()
       if not res["OK"]:
-        DLBuffer.getDataLoggingSequence( current_thread().ident ).setCaller( caller_name( 3 ) )
+        DLThreadPool.getDataLoggingSequence( current_thread().ident ).setCaller( caller_name( 3 ) )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DataLoggingDecorator.setCaller %s' % e )
       raise DLException( e )
@@ -279,8 +282,8 @@ class _DataLoggingDecorator( object ):
     """
     try :
       client = DataLoggingClient()
-      client.insertSequence( DLBuffer.getDataLoggingSequence( current_thread().ident ) )
-      DLBuffer.getDataLoggingSequence( current_thread().ident ).methodCalls = list()
+      client.insertSequence( DLThreadPool.getDataLoggingSequence( current_thread().ident ) )
+      DLThreadPool.getDataLoggingSequence( current_thread().ident ).methodCalls = list()
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )
       raise e
