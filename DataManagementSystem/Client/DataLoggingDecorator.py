@@ -135,9 +135,6 @@ class _DataLoggingDecorator( object ):
       gLogger.error( 'unexpected Exception in DLDecorator.call %s' % e )
     return result
 
-
-
-
   def getActionStatus( self, foncResult, methodCall, exception ):
     """ get status of an operation's list
       :param foncResult: result of a decorate function
@@ -182,7 +179,6 @@ class _DataLoggingDecorator( object ):
       gLogger.error( 'unexpected Exception in DLDecorator.getActionStatus %s' % e )
       raise DLException( e )
 
-
   def initializeAction( self, methodCall, actionArgs ):
     """ create all action for a method call and initialize their status to value 'Unknown'
         :param methodCall : methodCall in which we have to initialize action
@@ -196,7 +192,6 @@ class _DataLoggingDecorator( object ):
       gLogger.error( 'unexpected Exception in DLDecorator.initializeAction %s' % e )
       raise DLException( e )
 
-
   def createMethodCall( self, args ):
     """ create a method call and add it into the sequence corresponding to its thread
     :param args : a dict with the arguments needed to create a methodcall
@@ -208,7 +203,6 @@ class _DataLoggingDecorator( object ):
       raise DLException( e )
     return methodCall
 
-
   def popMethodCall( self ):
     """ pop a methodCall from the sequence corresponding to its thread """
     try :
@@ -217,7 +211,6 @@ class _DataLoggingDecorator( object ):
       gLogger.error( 'unexpected Exception in DLDecorator.popMethodCall %s' % e )
       raise DLException( e )
     return res
-
 
   def setCaller( self ):
     """ set the caller of the sequence corresponding to its thread
@@ -231,8 +224,6 @@ class _DataLoggingDecorator( object ):
     except Exception as e:
       gLogger.error( 'unexpected Exception in DataLoggingDecorator.setCaller %s' % e )
       raise DLException( e )
-
-
 
   def getMethodCallArgs( self, argsDecorator, *args ):
     """ get arguments to create a method call
@@ -267,7 +258,6 @@ class _DataLoggingDecorator( object ):
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.getAttribute %s' % e )
       raise DLException( e )
-
     return d
 
   def getActionArgs( self, argsDecorator, *args, **kwargs ):
@@ -281,12 +271,10 @@ class _DataLoggingDecorator( object ):
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.getActionArgs %s' % e )
       raise e
-
     return ret
 
-
   def insertSequence( self ):
-    """ this method call method named getDLSequence from DLClient
+    """ this method call method named insertSequence from DLClient
         to insert a sequence into database
     """
     try :

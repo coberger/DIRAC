@@ -19,11 +19,11 @@ from DIRAC.DataManagementSystem.Client.DLMethodName import DLMethodName
 randomMax = 100000
 
 dictLong = {'files': '/lhcb/data/file', 'targetSE': '/SE/Target/se',
- 'blob': 'physicalFile = blablablablablabla ,fileSize = 6536589', 'srcSE': '/SE/SRC/src'}
+ 'blob': 'physicalFile = physicalFile ,fileSize = 6536589', 'srcSE': '/SE/SRC/src'}
 
 def makeSequenceA():
   sequence = DLSequence()
-  sequence.setCaller( 'longCallerName' )
+  sequence.setCaller( 'longCallerName' + str( random.randint( 0, 15 ) ) )
   calls = []
   calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, 150 ) ) )} ) )
   calls.append( sequence.appendMethodCall( {'name': DLMethodName( 'longMethodName' + str( random.randint( 0, 150 ) ) )} ) )
@@ -107,7 +107,7 @@ class SequenceA( Thread ):
 
   def run( self ):
     db = DataLoggingDB()
-    for x in range( 100000 ) :
+    for x in range( 10000 ) :
       begin = time.time()
       sequence = makeSequenceA()
       sequenceJSON = sequence.toJSON()
@@ -126,7 +126,7 @@ class SequenceB( Thread ):
 
   def run( self ):
     db = DataLoggingDB()
-    for x in range( 10000 ) :
+    for x in range( 100 ) :
       sequence = makeSequenceB()
       sequenceJSON = sequence.toJSON()
       if not sequenceJSON["OK"]:
