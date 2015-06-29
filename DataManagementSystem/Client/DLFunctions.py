@@ -283,7 +283,7 @@ def getArgsExecuteSE( argsDecorator, *args, **kwargs ):
     else:
       raise NoLogException( 'Method %s is not into the list of method to log' % funcName )
   except NoLogException :
-     raise
+    raise
   except Exception as e:
     raise DLException( e )
   for arg in args :

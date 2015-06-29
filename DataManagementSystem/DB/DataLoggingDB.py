@@ -218,6 +218,12 @@ class DataLoggingDB( object ):
 
 
   def moveSequences( self , maxSequence = 100 ):
+    """ move DLCompressedSequence in DLSequence
+        selection of a umber of maxSequence DLCompressedSequence in DB
+        Update status of them to say that we are trying to insert them
+        Trying to insert them
+        Update status to say that the insertion is done
+    """
     session = None
     sequences = []
     begin = datetime.utcnow()
@@ -231,9 +237,8 @@ class DataLoggingDB( object ):
           sequenceCompressed.status = 'Ongoing'
           sequenceCompressed.lastUpdate = datetime.now()
           session.merge( sequenceCompressed )
-
         session.commit()
-        session.expunge_all()
+
         for sequenceCompressed in sequences :
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
@@ -248,6 +253,8 @@ class DataLoggingDB( object ):
             gLogger.error( "moveSequences: unexpected exception %s" % e )
             session.rollback()
             res = self.moveSequencesOneByOne( session, sequences )
+            if not res['OK']:
+              return res
         session.commit()
       else :
         return S_OK( "no sequence to insert" )
@@ -263,7 +270,6 @@ class DataLoggingDB( object ):
     return S_OK( 'insertSequenceFromCompressed ok' )
 
   def moveSequencesOneByOne(self, session, sequences):
-    print 'toto'
     for sequenceCompressed in sequences :
       sequenceJSON = zlib.decompress( sequenceCompressed.value )
       sequence = json.loads( sequenceJSON , cls = DLDecoder )
@@ -287,186 +293,80 @@ class DataLoggingDB( object ):
   def putSequence( self, session, sequence ):
     """ put a sequence into database"""
     try:
-      if sequence.caller.name not in self.dictCaller :
-        res = self.putCaller( sequence.caller, session )
-        if not res['OK'] :
-          return res
-        sequence.caller = res['Value']
-      else :
-        sequence.caller = self.dictCaller[sequence.caller.name]
-      sequence.callerID = sequence.caller.callerID
+      res = self.getOrCreate(session,DLCaller, sequence.caller, self.dictCaller)
+      if not res['OK'] :
+        return res
+      sequence.caller = res['Value']
 
       for mc in sequence.methodCalls:
-        if mc.name.name not in self.dictMethodName :
-          res = self.putMethodName( mc.name, session )
-          if not res['OK'] :
-            return res
-          mc.name = res['Value']
-        else :
-          mc.name = self.dictMethodName[mc.name.name]
+
+        res = self.getOrCreate( session, DLMethodName, mc.name, self.dictMethodName )
+        if not res['OK'] :
+          return res
+        mc.name = res['Value']
+
         for action in mc.actions :
           # putfile
-          if action.file.name not in self.dictFile :
-            res = self.putFile( action.file, session )
-            if not res['OK'] :
-              return res
-            action.file = res['Value']
-          else :
-            action.file = self.dictFile[action.file.name]
+          res = self.getOrCreate( session, DLFile, action.file, self.dictFile )
+          if not res['OK'] :
+            return res
+          action.file = res['Value']
 
           # putStatus
-          if action.status.name not in self.dictStatus :
-            res = self.putStatus( action.status, session )
-            if not res['OK'] :
-              return res
-            action.status = res['Value']
-          else :
-            action.status = self.dictStatus[action.status.name]
+          res = self.getOrCreate( session, DLStatus, action.status, self.dictStatus )
+          if not res['OK'] :
+            return res
+          action.status = res['Value']
 
           # put storage element
-          if action.srcSE.name not in self.dictStorageElement :
-            res = self.putStorageElement( action.srcSE , session )
-            if not res['OK'] :
-              return res
-            action.srcSE = res['Value']
-          else :
-            action.srcSE = self.dictStorageElement[action.srcSE.name]
+          res = self.getOrCreate( session, DLStorageElement, action.srcSE, self.dictStorageElement )
+          if not res['OK'] :
+            return res
+          action.srcSE = res['Value']
 
-          if action.targetSE.name not in self.dictStorageElement :
-            res = self.putStorageElement( action.targetSE , session )
-            if not res['OK'] :
-              return res
-            action.targetSE = res['Value']
-          else :
-            action.targetSE = self.dictStorageElement[action.targetSE.name]
+          res = self.getOrCreate( session, DLStorageElement, action.targetSE, self.dictStorageElement )
+          if not res['OK'] :
+            return res
+          action.targetSE = res['Value']
+
       sequence = session.merge( sequence )
+
     except Exception, e:
       gLogger.error( "putSequence: unexpected exception %s" % e )
       raise DLException( "putSequence: unexpected exception %s" % e )
     return S_OK( 'putSequence ended, Successful' )
 
-  def putMethodName( self, mn, session ):
-    """ put a MethodName into datbase
-        if the MethodName's name is already in data base, we just return the object
-        else we insert a new MethodName
+  def getOrCreate( self, session, model, obj, objDict ):
+    """ get or create a database object
+        :param session: a database session
+        :param model: the model of object
+        :param obj, the object it
+        :param objDict, the dictionnary where object of model are saved
     """
     try:
-      instance = session.query( DLMethodName ).filter_by( name = mn.name ).first()
-      if not instance:
-        instance = DLMethodName( mn.name )
-        session.add( instance )
-        session.commit()
-      session.expunge( instance )
-      self.dictMethodName[mn.name] = instance
-      return S_OK( instance )
-    except exc.IntegrityError as e:
-      session.rollback()
-      instance = session.query( DLMethodName ).filter_by( name = mn.name ).first()
-      return S_OK( instance )
-    except Exception, e:
-      session.rollback()
-      gLogger.error( "putMethodName: unexpected exception %s" % e )
-      return S_ERROR( "putMethodName: unexpected exception %s" % e )
-
-
-  def putStorageElement( self, se, session ):
-    """ put a lfn into datbase
-        if the lfn's name is already in data base, we just return the object
-        else we insert a new lfn
-    """
-    try:
-      if se.name is None :
+      if obj.name is None :
         return S_OK( None )
-      else :
-        instance = session.query( DLStorageElement ).filter_by( name = se.name ).first()
+      elif obj.name not in objDict :
+        # select to know if the object is already in database
+        instance = session.query( model ).filter_by( name = obj.name ).first()
         if not instance:
-          instance = DLStorageElement( se.name )
+          # if the object is not in db, we insert it
+          instance = model( obj.name )
           session.add( instance )
           session.commit()
-        self.dictStorageElement[se.name] = instance
+        objDict[obj.name] = instance
         session.expunge( instance )
-        return S_OK( instance )
-    except exc.IntegrityError :
+      return  S_OK( objDict[obj.name] )
+    except exc.IntegrityError as e :
+      gLogger.info( "IntegrityError: %s" % e )
       session.rollback()
-      instance = session.query( DLStorageElement ).filter_by( name = se.name ).first()
+      instance = session.query( model ).filter_by( name = obj.name ).first()
+      objDict[obj.name] = instance
       return S_OK( instance )
     except Exception, e:
       session.rollback()
-      gLogger.error( "putStorageElement: unexpected exception %s" % e )
-      return S_ERROR( "putStorageElement: unexpected exception %s" % e )
-
-
-  def putFile( self, dlFile, session ):
-    """ put a file into datbase
-        if the file's name is already in data base, we just return the object
-        else we insert a new file
-    """
-    try:
-      instance = session.query( DLFile ).filter_by( name = dlFile.name ).first()
-      if not instance:
-        instance = DLFile( dlFile.name )
-        session.add( instance )
-        session.commit()
-      session.expunge( instance )
-      self.dictFile[dlFile.name] = instance
-      return S_OK( instance )
-
-    except exc.IntegrityError :
-      session.rollback()
-      instance = session.query( DLFile ).filter_by( name = file.name ).first()
-      return S_OK( instance )
-    except Exception, e:
-      session.rollback()
-      gLogger.error( "putFile: unexpected exception %s" % e )
-      return S_ERROR( "putFile: unexpected exception %s" % e )
-
-
-  def putStatus( self, status , session ):
-    """ put a status into datbase
-        if the status is already in data base, we just return the object
-        else we insert a new status
-    """
-    try:
-      instance = session.query( DLStatus ).filter_by( name = status.name ).first()
-      if not instance:
-        instance = DLStatus( status.name )
-        session.add( instance )
-        session.commit()
-      session.expunge( instance )
-      self.dictStatus[status.name] = instance
-      return S_OK( instance )
-    except exc.IntegrityError :
-      session.rollback()
-      instance = session.query( DLStatus ).filter_by( name = status.name ).first()
-      return S_OK( instance )
-    except Exception, e:
-      session.rollback()
-      gLogger.error( "putStatus: unexpected exception %s" % e )
-      return S_ERROR( "putStatus: unexpected exception %s" % e )
-
-
-  def putCaller( self, caller, session ):
-    """ put a caller into datbase
-        if the caller's name is already in data base, we just return the object
-        else we insert a new caller
-    """
-    try:
-      instance = session.query( DLCaller ).filter_by( name = caller.name ).first()
-      if not instance:
-        instance = DLCaller( caller.name )
-        session.add( instance )
-        session.commit()
-      session.expunge( instance )
-      self.dictStatus[caller.name] = instance
-      return S_OK( instance )
-    except exc.IntegrityError :
-      session.rollback()
-      instance = session.query( DLCaller ).filter_by( name = caller.name ).first()
-      return S_OK( instance )
-    except Exception, e:
-      session.rollback()
-      gLogger.error( "putCaller: unexpected exception %s" % e )
-      return S_ERROR( "putCaller: unexpected exception %s" % e )
+      gLogger.error( "getOrCreate: unexpected exception %s" % e )
+      return S_ERROR( "getOrCreate: unexpected exception %s" % e )
 
 
   def getSequenceOnFile( self, lfn ):
@@ -491,7 +391,7 @@ class DataLoggingDB( object ):
 
   def getSequenceByID( self, IDSeq ):
     """
-      get the sequence for the id ID
+      get the sequence for the id IDSeq
     """
     session = self.DBSession()
 
@@ -508,7 +408,7 @@ class DataLoggingDB( object ):
 
   def getMethodCallOnFile( self, lfn, before, after ):
     """
-      get all operation about a file's name
+      get all operation about a file's name, before and after are date, can be None
     """
     session = self.DBSession()
     try:
