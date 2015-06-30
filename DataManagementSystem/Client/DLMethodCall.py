@@ -88,49 +88,4 @@ class DLMethodCall( object ):
 
 
 
-  def printMethodCallLFN( self, lfn, full = False ):
-    callLines = []
-    line = '%s %s %s' % \
-      ( self.creationTime, self.name.name, 'SequenceID %s ' % self.sequenceID )
-    for action in self.actions :
-      if action.file.name == lfn:
-        if full :
-          line += '%s%s%s%s%s'\
-            % ( '%s ' % action.status.name,
-                ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-                ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
-                ',blob %s ' % action.blob if action.blob else '',
-                ',errorMessage %s ' % action.messageError if action.messageError else '' )
-        else :
-          line += '%s%s%s'\
-              % ( '%s ' % action.status.name,
-                  ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-                  ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
-        callLines.append( line )
 
-    return '\n'.join( callLines )
-
-
-  def printMethodCall( self, full = False ):
-    callLines = []
-    line = '%s %s %s' % \
-      ( self.creationTime, self.name.name, 'SequenceID %s ' % self.sequenceID )
-    callLines.append( line )
-    for action in self.actions :
-      if full :
-        line = '\t%s%s%s%s%s%s'\
-          % ( '%s ' % action.status.name,
-              ',file %s ' % action.file.name if action.file else '',
-              ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-              ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
-              ',blob %s ' % action.blob if action.blob else '',
-              ',errorMessage %s ' % action.messageError if action.messageError else '' )
-      else :
-        line = '\t%s%s%s%s'\
-            % ( '%s ' % action.status.name,
-                ',file %s ' % action.file.name if action.file else '',
-                ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-                ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
-      callLines.append( line )
-
-    return '\n'.join( callLines )

@@ -39,6 +39,55 @@ for switch in Script.getUnprocessedSwitches():
 
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
+def printMethodCallLFN( call, lfn, full = False ):
+  callLines = []
+  line = '%s %s %s' % \
+    ( call.creationTime, call.name.name, 'SequenceID %s ' % call.sequenceID )
+  for action in call.actions :
+    if action.file.name == lfn:
+      if full :
+        line += '%s%s%s%s%s'\
+          % ( '%s ' % action.status.name,
+              ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
+              ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
+              ',blob %s ' % action.blob if action.blob else '',
+              ',errorMessage %s ' % action.messageError if action.messageError else '' )
+      else :
+        line += '%s%s%s'\
+            % ( '%s ' % action.status.name,
+                ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
+                ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
+      callLines.append( line )
+
+  return '\n'.join( callLines )
+
+
+def printMethodCall( call, full = False ):
+  callLines = []
+  line = '%s %s %s' % \
+    ( call.creationTime, call.name.name, 'SequenceID %s ' % call.sequenceID )
+  callLines.append( line )
+  for action in call.actions :
+    if full :
+      line = '\t%s%s%s%s%s%s'\
+        % ( '%s ' % action.status.name,
+            ',file %s ' % action.file.name if action.file else '',
+            ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
+            ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
+            ',blob %s ' % action.blob if action.blob else '',
+            ',errorMessage %s ' % action.messageError if action.messageError else '' )
+    else :
+      line = '\t%s%s%s%s'\
+          % ( '%s ' % action.status.name,
+              ',file %s ' % action.file.name if action.file else '',
+              ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
+              ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
+    callLines.append( line )
+
+  return '\n'.join( callLines )
+
+
+
 args = Script.getPositionalArgs()
 
 dlc = DataLoggingClient()
@@ -50,15 +99,14 @@ else :
     res = dlc.getMethodCallOnFile( lfn, before, after )
     if res['OK']:
       for call in res['Value'] :
-        print call.printMethodCallLFN( lfn, full = fullFlag )
+        print printMethodCallLFN( call, lfn, full = fullFlag )
     else :
       print res['Value']
   elif name :
     res = dlc.getMethodCallByName( name, before, after )
     if res['OK']:
       for call in res['Value'] :
-        print call.printMethodCall( full = fullFlag )
+        print printMethodCall( call, full = fullFlag )
     else :
       print res['Value']
-
 
