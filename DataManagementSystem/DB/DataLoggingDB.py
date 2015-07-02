@@ -187,6 +187,7 @@ class DataLoggingDB( object ):
           session.merge( sequenceCompressed )
         session.commit()
       else :
+        gLogger.info( "DataLoggingDB.cleanStaledSequencesStatus found 0 sequence with status Ongoing" )
         return S_OK( "no sequence to insert" )
     except Exception, e:
       if session :
@@ -261,12 +262,12 @@ class DataLoggingDB( object ):
     except Exception, e:
       if session :
         session.rollback()
-      gLogger.error( "insertSequenceFromCompressed: unexpected exception %s" % e )
-      raise DLException( "insertSequenceFromCompressed: unexpected exception %s" % e )
+      gLogger.error( "moveSequences: unexpected exception %s" % e )
+      raise DLException( "moveSequences: unexpected exception %s" % e )
     finally:
       session.close()
     end = datetime.utcnow()
-    gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( maxSequence, ( end - begin ) ) )
+    gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( end - begin ) ) )
     return S_OK( 'insertSequenceFromCompressed ok' )
 
   def moveSequencesOneByOne(self, session, sequences):
@@ -290,8 +291,28 @@ class DataLoggingDB( object ):
         session.commit()
     return S_OK( "moveSequencesOneByOne success" )
 
+
+  def insertSequenceDirectly(self, sequence):
+    session = None
+    try:
+      session = self.DBSession()
+      ret = self.putSequence( session, sequence )
+      if not ret['OK']:
+        return S_ERROR( ret['Value'] )
+      session.commit()
+    except Exception, e:
+      if session :
+        session.rollback()
+      gLogger.error( "insertSequenceDirectly: unexpected exception %s" % e )
+      raise DLException( "insertSequenceDirectly: unexpected exception %s" % e )
+    finally:
+      session.close()
+    return S_OK( 'insertSequenceDirectly success' )
+
+
   def putSequence( self, session, sequence ):
     """ put a sequence into database"""
+
     try:
       res = self.getOrCreate(session,DLCaller, sequence.caller, self.dictCaller)
       if not res['OK'] :
@@ -329,7 +350,7 @@ class DataLoggingDB( object ):
             return res
           action.targetSE = res['Value']
 
-      sequence = session.merge( sequence )
+      session.merge( sequence )
 
     except Exception, e:
       gLogger.error( "putSequence: unexpected exception %s" % e )

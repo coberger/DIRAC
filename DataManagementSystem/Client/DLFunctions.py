@@ -8,6 +8,7 @@ import inspect
 import os
 
 from DIRAC.DataManagementSystem.Client.DLException import DLException, NoLogException
+from DIRAC import S_ERROR, S_OK, gLogger
 
 def caller_name( skip = 2 ):
   """Get a name of a caller in the format module.class.method
@@ -42,23 +43,20 @@ def caller_name( skip = 2 ):
   del parentframe
   return ret
 
-
 def extractArgs( argsDecorator, *args, **kwargs ):
   """ create a dict with the key and value of decorate function's arguments
-      this is the default mfunction to extract arguments
+      this is the default function to extract arguments
       argsDecorator is the arguments given to create the decorator
       key 'argsPosition' is needed to know which arguments is on each position
       argsPosition is a list with position of the arguments in the call of the decorate function
       ex : argsPosition = ['files','protocol','srcSE','targetSE']
   """
-
+  wantedArgs = ['files', 'srcSE', 'targetSE']
+  opArgs = dict.fromkeys( wantedArgs, None )
+  opArgs['files'] = []
   try :
-    wantedArgs = ['files', 'srcSE', 'targetSE']
-
     argsPosition = argsDecorator['argsPosition']
-    # print 'extractArgs argsPosition %s  args %s kwargs %s ' % ( argsPosition, args, kwargs )
-
-    opArgs = dict.fromkeys( wantedArgs, None )
+    # print 'extractArgs argsPosition %s  args %s kwargs %s \n' % ( argsPosition, args, kwargs )
     blobList = []
     for i in range( len( argsPosition ) ):
       a = argsPosition[i]
@@ -76,7 +74,6 @@ def extractArgs( argsDecorator, *args, **kwargs ):
       for key in kwargs:
         blobList.append( "%s = %s" % ( key, kwargs[key] ) )
 
-
     if blobList:
       opArgs['blob'] = ','.join( blobList )
     else:
@@ -89,21 +86,30 @@ def extractArgs( argsDecorator, *args, **kwargs ):
         actionArgs.append( d )
     else :
       opArgs['files'] = None
-
+      actionArgs = [opArgs]
 
   except Exception as e:
-    raise DLException( e )
+    actionArgs = []
+    if 'files' in opArgs:
+      for f in opArgs['files'] :
+        d = dict( opArgs )
+        d['files'] = f
+        actionArgs.append( d )
+    else :
+      opArgs['files'] = None
+      actionArgs = [opArgs]
+    gLogger.error( 'unexpected error in DLFucntions.extractArgs %s' % e )
+    ret = S_ERROR( 'unexpected error in DLFucntions.extractArgs %s' % e )
+    ret['Value'] = actionArgs
+    return ret
 
-  if len(actionArgs) == 0 :
-    return opArgs
-  else:
-    return actionArgs
-
+  return S_OK( actionArgs )
 
 def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
   """ this is the special function to extract args for the SetReplicaProblematic method from StorageElement
       the structure of args is { 'lfn':{'targetse' : 'PFN',....} , ...}
   """
+
   try :
     wantedArgs = ['files', 'srcSE', 'targetSE']
     argsPosition = argsDecorator['argsPosition']
@@ -126,15 +132,17 @@ def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
             d['blob'] = ','.join( dBlob )
             actionArgs.append( d )
   except Exception as e:
-    raise DLException( e )
-  return actionArgs
-
+    gLogger.error( 'unexpected error in DLFucntions.extractArgsSetReplicaProblematic %s' % e )
+    ret = S_ERROR( 'unexpected error in DLFucntions.extractArgsSetReplicaProblematic %s' % e )
+    ret['Value'] = actionArgs
+    return ret
+  return S_OK( actionArgs )
 
 def extractArgsFromDict( info , *args, **kwargs ):
-  """ this is a method to excrat args from a dictionary
+  """ this is a method to extract args from a dictionary
       we check the type of the value associated of a key in the dictionary, values can be:
       -None, there is no value,
-      -srt, we need to get the name of this value,
+      -str, we need to get the name of this value,
       -dictionary, we need the keys that we need to get in this dictionary
   """
   try :
@@ -191,10 +199,16 @@ def extractArgsFromDict( info , *args, **kwargs ):
             d['blob'] = ','.join( dBlob )
             actionArgs.append( d )
         else :
-          raise DLException( 'problem extractArgsFromDict, valueType should be dict or str' )
+          ret = S_ERROR( 'Error extractArgsFromDict, valueType should be none, dict or str' )
+          ret['Value'] = actionArgs
+          return ret
   except Exception as e:
-    raise DLException( e )
-  return actionArgs
+    gLogger.error( 'unexpected error in DLFucntions.extractArgsFromDict %s' % e )
+    ret = S_ERROR( 'unexpected error in DLFucntions.extractArgsFromDict %s' % e )
+    ret['Value'] = actionArgs
+    return ret
+
+  return S_OK( actionArgs )
 
 def getArgsExecuteFC( argsDecorator, *args, **kwargs ):
   """ this is the special function to extract arguments from a decorate function
@@ -203,23 +217,24 @@ def getArgsExecuteFC( argsDecorator, *args, **kwargs ):
       are not passed in the decorate function like the function's name called
       to get the argument's position of the function that we really want to call
   """
+
   try :
     funcName = argsDecorator['call']
     if funcName in argsDecorator['methods_to_log']:
       info = argsDecorator['methods_to_log_arguments'][funcName]
       argsDecorator['argsPosition'] = argsDecorator['methods_to_log_arguments'][funcName]['Arguments']
-      if 'specialFunction' == info :
-        args = extractArgsSetReplicaProblematic( argsDecorator , *args, **kwargs )
+      if info.get( 'specialFunction', '' ) == 'setReplicaProblematic' :
+        args = extractArgsSetReplicaProblematic( argsDecorator , *args, **kwargs )['Value']
       elif info['type'] == 'unknown':
-        args = extractArgs( argsDecorator , *args, **kwargs )
+        args = extractArgs( argsDecorator , *args, **kwargs )['Value']
       elif info['type'] == 'dict' :
-        args = extractArgsFromDict( info , *args, **kwargs )
+        args = extractArgsFromDict( info , *args, **kwargs )['Value']
     else:
       raise NoLogException( 'Method %s  is not into the list of method to log' % funcName )
   except Exception as e:
-    raise DLException( e )
-  return args
-
+    ret = S_ERROR( 'unexpected error in DLFucntions.getArgsExecuteFC %s' % e )
+    ret['Value'] = args
+  return S_OK( args )
 
 def getTupleArgs( argsDecorator, *args, **kwargs ):
   """this is the special function to extract arguments from a decorate function
@@ -227,12 +242,11 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
   """
   try :
     wantedArgs = ['files', 'srcSE', 'targetSE']
-    funcArgs = list()
+    actionArgs = []
     opArgs = dict.fromkeys( wantedArgs, None )
 
     argsPosition = argsDecorator['argsPosition']
     tupleArgsPosition = argsDecorator['tupleArgsPosition']
-
     blobList = []
     for i in range( len( argsPosition ) ):
       a = argsPosition[i]
@@ -241,29 +255,37 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
         if a is 'files':
           opArgs['files'] = getFilesArgs( args[i] )
         else :
-          opArgs[a] = tuple[i]
+          opArgs[a] = args[i]
       else:
         if a is 'tuple':
           tupleArgs = list()
           dictExtract = dict( argsDecorator )
           dictExtract['argsPosition'] = tupleArgsPosition
           if isinstance( args[i], list ):
+            print 'toto'
             for t in args[i]:
-              a = extractArgs( dictExtract, *t )
+              a = extractArgs( dictExtract, *t )['Value']
               tupleArgs.append( a[0] )
-          else :
-            a = extractArgs( dictExtract, *args[i] )
-            tupleArgs.append( a[0] )
+          elif isinstance( args[i], tuple ) :
+            if isinstance( args[i][0], tuple ) :
+              for t in args[i]:
+                a = extractArgs( dictExtract, *t )['Value']
+                tupleArgs.append( a[0] )
+            else :
+              a = extractArgs( dictExtract, *args[i] )['Value']
+              tupleArgs.append( a[0] )
         elif a is not 'self':
           blobList.append( "%s = %s" % ( a, args[i] ) )
 
     for arg in tupleArgs:
-      funcArgs.append( mergeDict( opArgs, arg, blobList ) )
+      actionArgs.append( mergeDict( opArgs, arg, blobList ) )
   except Exception as e:
-    raise DLException( e )
+    gLogger.error( 'unexpected error in DLFucntions.getTupleArgs %s' % e )
+    ret = S_ERROR( 'unexpected error in DLFucntions.getTupleArgs %s' % e )
+    ret['Value'] = actionArgs
+    return ret
 
-  return funcArgs
-
+  return S_OK( actionArgs )
 
 def getArgsExecuteSE( argsDecorator, *args, **kwargs ):
   """ this is the special function to extract arguments from a decorate function
@@ -271,25 +293,29 @@ def getArgsExecuteSE( argsDecorator, *args, **kwargs ):
       this is a special function because we need to get some information which
       are not passed in the decorate function like the function's name
   """
+  actionArgs = []
   try :
     funcName = argsDecorator['methodName']
     if funcName in argsDecorator['methods_to_log']:
       info = argsDecorator['methods_to_log_arguments'][funcName]
       # type 'unknown' means that args could be a list, a str or a dictionnary, all elements will be a file
       if info['type'] == 'unknown':
-        args = extractArgs( argsDecorator , *args, **kwargs )
+        actionArgs = extractArgs( argsDecorator , *args, **kwargs )['Value']
       elif info['type'] == 'dict' :
-        args = extractArgsFromDict( info , *args, **kwargs )
+        actionArgs = extractArgsFromDict( info , *args, **kwargs )['Value']
+      for arg in actionArgs :
+        arg['targetSE'] = argsDecorator['name']
     else:
       raise NoLogException( 'Method %s is not into the list of method to log' % funcName )
   except NoLogException :
     raise
   except Exception as e:
-    raise DLException( e )
-  for arg in args :
-    arg['targetSE'] = argsDecorator['name']
-  return args
+    gLogger.error( 'unexpected error in DLFucntions.getArgsExecuteSE %s' % e )
+    ret = S_ERROR( 'unexpected error in DLFucntions.getArgsExecuteSE %s' % e )
+    ret['Value'] = actionArgs
+    return ret
 
+  return S_OK( actionArgs )
 
 
 def getFilesArgs( args ):
@@ -300,19 +326,17 @@ def getFilesArgs( args ):
     # if args is a list
     if isinstance( args , list ):
       files = args
-
     # if args is a dictionary
     elif isinstance( args , dict ):
       files = []
       for el in args.keys() :
         files .append( str( el ) )
-
     else :
       files = [args]
   except Exception as e:
-    raise DLException( e )
-
-  return files
+    gLogger.error( 'unexpected error in DLFucntions.getFilesArgs %s' % e )
+  finally:
+    return files
 
 def mergeDict( opArgs, tupleArgs, blobList ):
   """merge of the two dict wich contains arguments needed to create actions"""

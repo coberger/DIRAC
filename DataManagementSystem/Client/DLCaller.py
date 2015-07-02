@@ -39,3 +39,6 @@ class DLCaller( object ):
     jsonData['__type__'] = self.__class__.__name__
 
     return jsonData
+
+  def __repr__( self ):
+    return self.name

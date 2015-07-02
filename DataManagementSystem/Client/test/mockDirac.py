@@ -14,27 +14,25 @@ def splitIntoSuccFailed( lfns ):
   localLfns = list( lfns )
   successful = dict.fromkeys( localLfns[0::2], {} )
   failed = dict.fromkeys( set( localLfns ) - set( successful ), {} )
-
   return successful, failed
 
 
 class TestFileCatalog:
-  listFC = ['titi', 'toto', 'tata']
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE'], getActionArgsFunction = 'normal', specialList = listFC )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE'], getActionArgsFunction = 'normal' )
   def addFile( self, lfns, seName ):
     """Adding new file, registering them into seName"""
 
     s, f = splitIntoSuccFailed( lfns )
     return S_OK( {'Successful' : s, 'Failed' : f} )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE' ], getActionArgsFunction = 'normal', specialList = listFC )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE' ], getActionArgsFunction = 'normal' )
   def addReplica( self, lfns, seName ):
     """Adding new replica, registering them into seName"""
     self.getFileSize( lfns )
     s, f = splitIntoSuccFailed( lfns )
     return S_OK( {'Successful' : s, 'Failed' : f} )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files'], getActionArgsFunction = 'normal', directInsert = True )
   def getFileSize( self, lfns ):
     """Getting file size"""
 
@@ -54,7 +52,7 @@ class TestStorageElement:
 
     return S_OK( {'Successful' : s, 'Failed' : f} )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files'], getActionArgsFunction = 'normal', directInsert = True )
   def getFileSize( self, lfns ):
     """Getting file size"""
 
@@ -65,7 +63,7 @@ class TestStorageElement:
 
 class TestDataManager:
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'srcSE', 'targetSE', 'timeout'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'srcSE', 'targetSE', 'timeout'], getActionArgsFunction = 'normal', directInsert = True )
   def replicateAndRegister( self, lfns, srcSE, dstSE, timeout, protocol = 'srm' ):
     """ replicate a file from one se to the other and register the new replicas"""
     fc = TestFileCatalog()
@@ -93,7 +91,7 @@ class TestDataManager:
     return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'localPath', 'targetSE' ], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'localPath', 'targetSE' ], getActionArgsFunction = 'normal', directInsert = True )
   def putAndRegister( self, lfns, localPath, dstSE ):
     """ Take a local file and copy it to the dest storageElement and register the new file"""
     fc = TestFileCatalog()
@@ -139,7 +137,7 @@ class ClientA( Thread ):
 
   def doSomething( self ):
     dm = TestDataManager()
-    res = dm.replicateAndRegister( self.lfn, 'sourceSE', 'destSE', 1, protocol = 'toto' )
+    res = dm.replicateAndRegister( self.lfn, 'sourceSE', 'destSE', 1, protocol = 'aProtocol' )
     s = res['Value']['Successful']
     f = res['Value']['Failed']
 
@@ -164,7 +162,7 @@ class ClientB( Thread ):
 
   def doSomething( self ):
     dm = TestDataManager()
-    res = dm.putAndRegister( ['A', 'B', 'C', 'D'], '/local/path/', 'destSE' )
+    res = dm.putAndRegister( ['/data/file1', '/data/file2', '/data/file3', '/data/file4'], '/local/path/', 'destSE' )
     s = res['Value']['Successful']
     f = res['Value']['Failed']
     #===========================================================================
@@ -178,78 +176,30 @@ class ClientB( Thread ):
     self.doSomething()
 
 
+class TestRaiseException:
 
-class FileCatalogMethod( object ):
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'timeout', 'srcSE'], getActionArgsFunction = 'toto', directInsert = True )
+  def test(self, lfns):
+    s, f = splitIntoSuccFailed( lfns )
+    return S_OK( {'Successful' : s, 'Failed' : f} )
+
+
+class ClientC( Thread ):
+
   def __init__( self ):
-    pass
-
-  def isFile( self, lfns, name, default = 'defIsFileArgsDefaultValue' ):
-    s, f = splitIntoSuccFailed( lfns )
-
-    return S_OK( {'Successful' : s, 'Failed' : f} )
-
-  def isDirectory( self, lfns, default = 'defIsDirectoryArgsDefaultValue' ):
-    s, f = splitIntoSuccFailed( lfns )
-
-    return S_OK( {'Successful' : s, 'Failed' : f} )
+    Thread.__init__( self )
 
 
+  def doSomething( self ):
+    re = TestRaiseException()
+    res = re.test( ['/data/file1', '/data/file2', '/data/file3', '/data/file4'] )
+    #===========================================================================
+    # print "s : %s" % s
+    # print "f : %s" % f
+    #===========================================================================
+
+  def run( self ):
+    self.doSomething()
 
 
-#===============================================================================
-# class FileCatalog ( object ) :
-#   methods = ['isFile', 'isDirectory' ]
-#   methodsArgs = {'isFile' :
-#                         {'Arguments' : ['self', 'files', 'name'],
-#                          'Default' : {'default': 'defIsFileArgsDefaultValue'} },
-#                  'isDirectory' :
-#                         {'Arguments' : ['self', 'files'],
-#                          'Default' : {'default': 'defIsDirectoryArgsDefaultValue'} }
-#                  }
-#   def __init__( self ):
-#     pass
-#
-#
-#   def __getattr__( self, name ):
-#
-#     self.call = name
-#     if name in FileCatalog.methods:
-#       return self.execute
-#     else:
-#       raise AttributeError
-#
-#   @DataLoggingDecorator( argsPosition = None, getActionArgsFunction = 'execute',
-#                           attributesToGet = ['call' ], methods_to_log = ['isDirectory', 'isFile'],
-#                            methods_to_log_arguments = {'isFile' :
-#                                                         {'Arguments' : ['self', 'files', 'name'],
-#                                                             'Default' : {'default': 'defIsFileArgsDefaultValue'} },
-#                                                       'isDirectory' :
-#                                                         {'Arguments' : ['self', 'files'],
-#                                                           'Default' : {'default': 'defIsDirectoryArgsDefaultValue'} }
-#                                                        }
-#                          )
-#   def execute( self, *parms, **kws ):
-#     fcm = FileCatalogMethod()
-#     method = getattr( fcm, self.call )
-#     res = method( *parms, **kws )
-#     return res
-#
-#
-#
-#
-#
-# class ClientC( Thread ):
-#
-#   def __init__( self ):
-#     Thread.__init__( self )
-#
-#
-#   def doSomethingElse( self ):
-#     fc = FileCatalog()
-#
-#     fc.isFile( ['lfn3', 'lfn4', 'lfn5', 'lfn6'], 'titi' )
-#     fc.isDirectory( ['lfn1', 'lfn2'] )
-#
-#   def run( self ):
-#     self.doSomethingElse()
-#===============================================================================
+

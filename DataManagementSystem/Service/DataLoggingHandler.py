@@ -3,13 +3,16 @@ Created on May 5, 2015
 
 @author: Corentin Berger
 '''
+import zlib, json
 
-from types import StringTypes, NoneType
+from types import StringTypes, NoneType, BooleanType
+
+from DIRAC      import S_OK, gConfig, gLogger, S_ERROR
+
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC      import S_OK, gConfig, gLogger, S_ERROR
-
+from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
 
 class DataLoggingHandler( RequestHandler ):
@@ -28,7 +31,7 @@ class DataLoggingHandler( RequestHandler ):
       return S_ERROR( error )
     gThreadScheduler.setMinValidPeriod( 10 )
     gThreadScheduler.addPeriodicTask( 10, cls.moveSequences )
-    gThreadScheduler.addPeriodicTask( 10800, cls.cleanStaledSequencesStatus )
+    gThreadScheduler.addPeriodicTask( 10, cls.cleanStaledSequencesStatus )
     return S_OK()
 
 
@@ -42,10 +45,15 @@ class DataLoggingHandler( RequestHandler ):
     res = cls.__dataLoggingDB.cleanStaledSequencesStatus( cls.maxTime )
     return res
 
-  types_insertCompressedSequence = [StringTypes]
+  types_insertSequence = [StringTypes, BooleanType]
   @classmethod
-  def export_insertCompressedSequence( cls, sequenceCompress ):
-    res = cls.__dataLoggingDB.insertCompressedSequence( sequenceCompress )
+  def export_insertSequence( cls, sequenceCompressed, directInsert ):
+    if directInsert :
+      sequenceJSON = zlib.decompress( sequenceCompressed )
+      sequence = json.loads( sequenceJSON , cls = DLDecoder )
+      res = cls.__dataLoggingDB.insertSequenceDirectly( sequence )
+    else :
+      res = cls.__dataLoggingDB.insertCompressedSequence( sequenceCompressed )
     return res
 
 

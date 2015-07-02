@@ -69,16 +69,16 @@ class _DataLoggingDecorator( object ):
     self.func = func
     self.name = func.__name__
     self.argsDecorator = {}
+    self.argsDecorator['directInsert'] = False
+
     # set the different attribute from kwargs
     for key, value in kwargs.items():
       if type( value ) in StringTypes:
         value = value.encode()
       if value is not None:
         self.argsDecorator[key] = value
-    if 'getActionArgsFunction' in self.argsDecorator:
-      self.getActionArgsFunction = funcDict[self.argsDecorator['getActionArgsFunction']]
-    else :
-      self.getActionArgsFunction = funcDict['default']
+
+    self.getActionArgsFunction = funcDict.get( self.argsDecorator['getActionArgsFunction'], funcDict['default'] )
     functools.wraps( func )( self )
 
   def __get__( self, inst, owner = None ):
@@ -163,7 +163,7 @@ class _DataLoggingDecorator( object ):
                   if failed:
                     if action.file.name in failed :
                       action.status.name = 'Failed'
-                      action.messageError = foncResult['Value']['Failed'][action.file.name]
+                      action.messageError = str( foncResult['Value']['Failed'][action.file.name] )
 
             else :  # if  not ok
               for action in methodCall.actions :
@@ -274,6 +274,10 @@ class _DataLoggingDecorator( object ):
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.getActionArgs %s' % e )
       raise e
+    if not ret['OK']:
+      gLogger.error( 'unexpected error in DLDecorator.getActionArgs %s' % ret['Message'] )
+    ret = ret['Value']
+
     return ret
 
   def insertSequence( self ):
@@ -282,8 +286,9 @@ class _DataLoggingDecorator( object ):
     """
     try :
       client = DataLoggingClient()
-      client.insertSequence( DLThreadPool.getDataLoggingSequence( current_thread().ident ) )
-      DLThreadPool.getDataLoggingSequence( current_thread().ident ).methodCalls = list()
+      client.insertSequence( DLThreadPool.getDataLoggingSequence( current_thread().ident ), self.argsDecorator['directInsert'] )
+      DLThreadPool.getDataLoggingSequence( current_thread().ident ).methodCalls = []
+      DLThreadPool.getDataLoggingSequence( current_thread().ident ).caller = None
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )
       raise e
