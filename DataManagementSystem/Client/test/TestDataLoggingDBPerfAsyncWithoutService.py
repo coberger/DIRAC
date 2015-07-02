@@ -107,7 +107,7 @@ class SequenceA( Thread ):
 
   def run( self ):
     db = DataLoggingDB()
-    for x in range( 10000 ) :
+    for x in range( 30 ) :
       begin = time.time()
       sequence = makeSequenceA()
       sequenceJSON = sequence.toJSON()

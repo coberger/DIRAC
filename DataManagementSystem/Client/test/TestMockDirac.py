@@ -5,11 +5,16 @@ Created on Jun 11, 2015
 '''
 
 
-from DIRAC.DataManagementSystem.Client.test.mockDirac import ClientA
+from DIRAC.DataManagementSystem.Client.test.mockDirac import ClientA, ClientB, ClientC
 
 
 
-client = ClientA( ['coco1'] )
-
+client = ClientC()
 client.start()
 client.join()
+
+#===============================================================================
+# clientB = ClientB()
+# clientB.start()
+# clientB.join()
+#===============================================================================

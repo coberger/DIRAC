@@ -17,7 +17,7 @@ class DataLoggingClient( Client ):
     self.dataLoggingManager = self._getRPC()
 
 
-  def insertSequence( self, sequence ):
+  def insertSequence( self, sequence, directInsert = False ):
     """
       This insert a sequence into DataLoggingDB database
       :param sequence, the sequence to insert
@@ -27,7 +27,7 @@ class DataLoggingClient( Client ):
       return sequenceJSON
     sequenceJSON = sequenceJSON['Value']
     seq = zlib.compress( sequenceJSON )
-    res = self.dataLoggingManager.insertCompressedSequence( seq )
+    res = self.dataLoggingManager.insertSequence( seq, directInsert )
 
     return res
 

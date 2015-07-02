@@ -118,11 +118,11 @@ else :
       for seq in res['Value'] :
         print printSequenceLFN( seq, lfn, full = fullFlag )
     else :
-      print res['Value']
+      print res['Message']
   elif id :
     res = dlc.getSequenceByID( IDSeq )
     if res['OK']:
       for seq in res['Value'] :
         print printSequence( seq, full = fullFlag )
     else :
-      print res['Value']
+      print res['Message']
