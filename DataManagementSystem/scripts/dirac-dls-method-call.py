@@ -27,13 +27,13 @@ Script.parseCommandLine( ignoreErrors = False )
 for switch in Script.getUnprocessedSwitches():
   if switch[0] == "f" or switch[0].lower() == "lfn":
     lfn = switch[1]
-  if switch[0] == "m" or switch[0].lower() == "MethodName":
+  elif switch[0] == "m" or switch[0].lower() == "MethodName":
     name = switch[1]
-  if switch[0] == "a" or switch[0].lower() == "After":
+  elif switch[0] == "a" or switch[0].lower() == "After":
     after = switch[1]
-  if switch[0] == "b" or switch[0].lower() == "Before":
+  elif switch[0] == "b" or switch[0].lower() == "Before":
     before = switch[1]
-  if switch[0].lower() == "full":
+  elif switch[0].lower() == "full":
     fullFlag = True
 
 
@@ -44,17 +44,17 @@ def printMethodCallLFN( call, lfn, full = False ):
   line = '%s %s %s' % \
     ( call.creationTime, call.name.name, 'SequenceID %s ' % call.sequenceID )
   for action in call.actions :
-    if action.file.name == lfn:
+    if action.fileDL.name == lfn:
       if full :
         line += '%s%s%s%s%s'\
-          % ( '%s ' % action.status.name,
+          % ( '%s ' % action.status,
               ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
               ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
-              ',blob %s ' % action.blob if action.blob else '',
+              ',extra %s ' % action.extra if action.extra else '',
               ',errorMessage %s ' % action.messageError if action.messageError else '' )
       else :
         line += '%s%s%s'\
-            % ( '%s ' % action.status.name,
+            % ( '%s ' % action.status,
                 ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
                 ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
       callLines.append( line )
@@ -70,16 +70,16 @@ def printMethodCall( call, full = False ):
   for action in call.actions :
     if full :
       line = '\t%s%s%s%s%s%s'\
-        % ( '%s ' % action.status.name,
-            ',file %s ' % action.file.name if action.file else '',
+        % ( '%s ' % action.status,
+            ',file %s ' % action.fileDL.name if action.fileDL else '',
             ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
             ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
-            ',blob %s ' % action.blob if action.blob else '',
+            ',extra %s ' % action.extra if action.extra else '',
             ',errorMessage %s ' % action.messageError if action.messageError else '' )
     else :
       line = '\t%s%s%s%s'\
-          % ( '%s ' % action.status.name,
-              ',file %s ' % action.file.name if action.file else '',
+          % ( '%s ' % action.status,
+              ',file %s ' % action.fileDL.name if action.fileDL else '',
               ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
               ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
     callLines.append( line )

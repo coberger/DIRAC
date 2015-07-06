@@ -4,7 +4,7 @@ Created on May 5, 2015
 @author: Corentin Berger
 '''
 
-from DIRAC              import S_OK
+from DIRAC import S_OK
 from DIRAC.DataManagementSystem.Client.DataLoggingDecorator  import DataLoggingDecorator
 
 from threading import Thread
@@ -19,10 +19,12 @@ def splitIntoSuccFailed( lfns ):
 
 class TestFileCatalog:
   @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE'], getActionArgsFunction = 'normal' )
-  def addFile( self, lfns, seName ):
+  def addFile( self, lfns, seName, exceptionFlag ):
     """Adding new file, registering them into seName"""
-
-    s, f = splitIntoSuccFailed( lfns )
+    if not exceptionFlag:
+      s, f = splitIntoSuccFailed( lfns )
+    else :
+      raise Exception( 'addFile exception' )
     return S_OK( {'Successful' : s, 'Failed' : f} )
 
   @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE' ], getActionArgsFunction = 'normal' )
@@ -91,8 +93,9 @@ class TestDataManager:
     return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'localPath', 'targetSE' ], getActionArgsFunction = 'normal', directInsert = True )
-  def putAndRegister( self, lfns, localPath, dstSE ):
+  @DataLoggingDecorator( 
+                         argsPosition = ['self', 'files', 'localPath', 'targetSE' ], getActionArgsFunction = 'normal', directInsert = True )
+  def putAndRegister( self, lfns, localPath, dstSE, exceptionFlag = False ):
     """ Take a local file and copy it to the dest storageElement and register the new file"""
     fc = TestFileCatalog()
     se = TestStorageElement( dstSE )
@@ -104,7 +107,7 @@ class TestDataManager:
     for lfn in failed:
       failed.setdefault( lfn, {} )['put'] = 'blablaMsg'
 
-    res = fc.addFile( successful, dstSE )
+    res = fc.addFile( successful, dstSE, exceptionFlag )
 
     failed.update( res['Value']['Failed'] )
 
@@ -176,12 +179,11 @@ class ClientB( Thread ):
     self.doSomething()
 
 
-class TestRaiseException:
+class RaiseDecoratorException:
 
   @DataLoggingDecorator( argsPosition = ['self', 'files', 'timeout', 'srcSE'], getActionArgsFunction = 'toto', directInsert = True )
-  def test(self, lfns):
-    s, f = splitIntoSuccFailed( lfns )
-    return S_OK( {'Successful' : s, 'Failed' : f} )
+  def test( self ):
+    return S_OK( 5 )
 
 
 class ClientC( Thread ):
@@ -191,15 +193,26 @@ class ClientC( Thread ):
 
 
   def doSomething( self ):
-    re = TestRaiseException()
-    res = re.test( ['/data/file1', '/data/file2', '/data/file3', '/data/file4'] )
-    #===========================================================================
-    # print "s : %s" % s
-    # print "f : %s" % f
-    #===========================================================================
+    rde = RaiseDecoratorException()
+    res = rde.test()
+    return res
 
   def run( self ):
     self.doSomething()
 
+class ClientD( Thread ):
 
+  def __init__( self ):
+    Thread.__init__( self )
+
+
+  def doSomething( self ):
+    dm = TestDataManager()
+    res = dm.putAndRegister( ['/data/file1', '/data/file2', '/data/file3', '/data/file4'], '/local/path/', 'destSE', exceptionFlag = True )
+    s = res['Value']['Successful']
+    f = res['Value']['Failed']
+    res = TestFileCatalog().getFileSize( s )
+
+  def run( self ):
+    self.doSomething()
 

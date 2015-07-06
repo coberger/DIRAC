@@ -9,10 +9,16 @@ from DIRAC.Core.Base import Script
 lfn = None
 IDSeq = None
 fullFlag = False
+callerName = None
+after = None
+before = None
 
 Script.registerSwitch( '', 'Full', '   Print full method call' )
 Script.registerSwitch( 'f:', 'LFN=', 'Name of LFN [%s]' % lfn )
 Script.registerSwitch( 'i:', 'ID=', 'ID of sequence [%s]' % IDSeq )
+Script.registerSwitch( 'n:', 'Name=', 'Name of caller [%s]' % callerName )
+Script.registerSwitch( 'a:', 'After=', 'date, format be like 1999-12-31 [%s]' % after )
+Script.registerSwitch( 'b:', 'Before=', 'date, format be like 1999-12-31 [%s]' % before )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'USAGE:',
                                      ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
@@ -24,9 +30,15 @@ Script.parseCommandLine( ignoreErrors = False )
 for switch in Script.getUnprocessedSwitches():
   if switch[0] == "f" or switch[0].lower() == "lfn":
     lfn = switch[1]
-  if switch[0] == "i" or switch[0].lower() == "ID":
+  elif switch[0] == "i" or switch[0].lower() == "id":
     IDSeq = switch[1]
-  if switch[0].lower() == "full":
+  elif switch[0] == "n" or switch[0].lower() == "name":
+    callerName = switch[1]
+  elif switch[0] == "a" or switch[0].lower() == "After":
+    after = switch[1]
+  elif switch[0] == "b" or switch[0].lower() == "Before":
+    before = switch[1]
+  elif switch[0].lower() == "full":
     fullFlag = True
 
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
@@ -52,16 +64,16 @@ def printSequence( seq, full = False ):
         line += '\t'
       if full :
         line += '\t%s%s%s%s%s%s'\
-          % ( '%s' % action.status.name,
-              ', file %s ' % action.file.name if action.file else '',
+          % ( '%s' % action.status,
+              ', file %s ' % action.fileDL.name if action.fileDL else '',
               ', sourceSE %s ' % action.srcSE.name if action.srcSE else '',
               ', targetSE %s ' % action.targetSE.name if action.targetSE else '',
-              ', blob %s ' % action.blob if action.blob else '',
+              ', extra %s ' % action.extra if action.extra else '',
               ', errorMessage %s ' % action.messageError if action.messageError else '' )
       else :
         line += '\t%s%s%s%s'\
-            % ( '%s' % action.status.name,
-                ', file %s ' % action.file.name if action.file else '',
+            % ( '%s' % action.status,
+                ', file %s ' % action.fileDL.name if action.fileDL else '',
                 ', sourceSE %s ' % action.srcSE.name if action.srcSE else '',
                 ', targetSE %s ' % action.targetSE.name if action.targetSE else '' )
       seqLines.append( line )
@@ -87,40 +99,49 @@ def printSequenceLFN( seq, lfn, full = False ):
     base += '%s %s, ' % \
     ( mc.creationTime, mc.name.name )
     for action in mc.actions :
-      if action.file.name == lfn:
+      if action.fileDL.name == lfn:
         line = base
         if full :
           line += '%s%s%s%s%s'\
-              % ( '%s' % action.status.name,
+              % ( '%s' % action.status,
                   ', sourceSE %s ' % action.srcSE.name if action.srcSE else '',
                   ', targetSE %s ' % action.targetSE.name if action.targetSE else '',
-                  ', blob %s ' % action.blob if action.blob else '',
+                  ', extra %s ' % action.extra if action.extra else '',
                   ', errorMessage %s ' % action.messageError if action.messageError else '' )
           seqLines.append( line )
         else :
           line += '%s%s%s'\
-              % ( '%s' % action.status.name,
+              % ( '%s' % action.status,
                   ', sourceSE %s ' % action.srcSE.name if action.srcSE else '',
                   ', targetSE %s ' % action.targetSE.name if action.targetSE else '' )
           seqLines.append( line )
     for child in mc.children :
-      stack.append( child )
+      stack.append( [child, cpt + 1] )
   return '\n'.join( seqLines )
 
 
-if not lfn and not IDSeq :
-  print 'you should give at least one lfn or one sequence ID'
+if not lfn and not IDSeq and not callerName :
+  print 'you should give at least one lfn, one sequence ID or one caller name'
 else :
   dlc = DataLoggingClient()
   if lfn :
-    res = dlc.getSequenceOnFile( lfn )
+    res = dlc.getSequenceOnFile( lfn, before, after )
     if res['OK']:
       for seq in res['Value'] :
         print printSequenceLFN( seq, lfn, full = fullFlag )
     else :
       print res['Message']
-  elif id :
+
+  elif IDSeq :
     res = dlc.getSequenceByID( IDSeq )
+    if res['OK']:
+      for seq in res['Value'] :
+        print printSequence( seq, full = fullFlag )
+    else :
+      print res['Message']
+
+  elif callerName :
+    res = dlc.getSequenceByCaller( callerName, before, after )
     if res['OK']:
       for seq in res['Value'] :
         print printSequence( seq, full = fullFlag )
