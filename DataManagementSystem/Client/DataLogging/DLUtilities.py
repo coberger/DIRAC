@@ -7,7 +7,7 @@ Created on May 7, 2015
 import inspect
 import os
 
-from DIRAC.DataManagementSystem.Client.DLException import DLException, NoLogException
+from DIRAC.DataManagementSystem.Client.DataLogging.DLException import NoLogException
 from DIRAC import S_ERROR, S_OK, gLogger
 
 def caller_name( skip = 2 ):
@@ -38,7 +38,7 @@ def caller_name( skip = 2 ):
       name.append( codename )  # function or a method
   ret = ".".join( name )
   if ret == '__main__' :
-    ( filename, lineno, function, code_context, index ) = inspect.getframeinfo( parentframe )
+    ( filename, _lineno, _function, _code_context, _index ) = inspect.getframeinfo( parentframe )
     ret = os.path.basename( filename )
   del parentframe
   return ret
@@ -57,32 +57,32 @@ def extractArgs( argsDecorator, *args, **kwargs ):
   try :
     argsPosition = argsDecorator['argsPosition']
     # print 'extractArgs argsPosition %s  args %s kwargs %s \n' % ( argsPosition, args, kwargs )
-    blobList = []
+    extraList = []
     for i in range( len( argsPosition ) ):
       a = argsPosition[i]
       ainwanted = a in wantedArgs
       if ainwanted:
         if a is 'files':
-          opArgs['files'] = getFilesArgs( args[i] )
+          opArgs['files'] = getArgFiles( args[i] )
         else :
           opArgs[a] = args[i]
       else:
         if a is not 'self':
-          blobList.append( "%s = %s" % ( a, args[i] ) )
+          extraList.append( "%s = %s" % ( a, args[i] ) )
 
     if kwargs:
       for key in kwargs:
-        blobList.append( "%s = %s" % ( key, kwargs[key] ) )
+        extraList.append( "%s = %s" % ( key, kwargs[key] ) )
 
-    if blobList:
-      opArgs['blob'] = ','.join( blobList )
+    if extraList:
+      opArgs['extra'] = ','.join( extraList )
     else:
-      opArgs['blob'] = None
+      opArgs['extra'] = None
     actionArgs = []
     if 'files' in opArgs:
       for f in opArgs['files'] :
         d = dict( opArgs )
-        d['files'] = f
+        d['file'] = f
         actionArgs.append( d )
     else :
       opArgs['files'] = None
@@ -93,10 +93,10 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     if 'files' in opArgs:
       for f in opArgs['files'] :
         d = dict( opArgs )
-        d['files'] = f
+        d['file'] = f
         actionArgs.append( d )
     else :
-      opArgs['files'] = None
+      opArgs['file'] = None
       actionArgs = [opArgs]
     gLogger.error( 'unexpected error in DLFucntions.extractArgs %s' % e )
     ret = S_ERROR( 'unexpected error in DLFucntions.extractArgs %s' % e )
@@ -114,22 +114,22 @@ def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
     wantedArgs = ['files', 'srcSE', 'targetSE']
     argsPosition = argsDecorator['argsPosition']
     opArgs = dict.fromkeys( wantedArgs, None )
-    blobList = []
+    extraList = []
     actionArgs = []
 
     if kwargs:
       for key in kwargs:
-        blobList.append( "%s = %s" % ( key, kwargs[key] ) )
+        extraList.append( "%s = %s" % ( key, kwargs[key] ) )
     for i in range( len( argsPosition ) ):
       if argsPosition[i] is 'files':
         for key, dictInfo in args[i].items():
           for key2, value in dictInfo.items():
             d = dict( opArgs )
-            d['files'] = key
+            d['file'] = key
             d['targetSE'] = key2
-            dBlob = list( blobList )
-            dBlob.append( 'PFN = %s' % value )
-            d['blob'] = ','.join( dBlob )
+            dextra = list( extraList )
+            dextra.append( 'PFN = %s' % value )
+            d['extra'] = ','.join( dextra )
             actionArgs.append( d )
   except Exception as e:
     gLogger.error( 'unexpected error in DLFucntions.extractArgsSetReplicaProblematic %s' % e )
@@ -151,52 +151,52 @@ def extractArgsFromDict( info , *args, **kwargs ):
 
     argsPosition = info['Arguments']
     opArgs = dict.fromkeys( wantedArgs, None )
-    blobList = []
+    extraList = []
 
     actionArgs = []
 
     if kwargs:
       for key in kwargs:
-        blobList.append( "%s = %s" % ( key, kwargs[key] ) )
+        extraList.append( "%s = %s" % ( key, kwargs[key] ) )
 
     for i in range( len( argsPosition ) ):
       if argsPosition[i] is 'files':
 
         if info['valueType'] == 'str':
           for key, value in args[i].items():
-            dBlob = list(blobList)
+            dextra = list( extraList )
             d = dict( opArgs )
             valueName = info['valueName']
             valueNameInWanted = valueName in wantedArgs
             if valueNameInWanted:
               d[valueName] = value
             else:
-              dBlob.append("%s = %s" % ( valueName, value ))
-            d['files'] = key
-            d['blob'] = ','.join( dBlob )
+              dextra.append( "%s = %s" % ( valueName, value ) )
+            d['file'] = key
+            d['extra'] = ','.join( dextra )
             actionArgs.append( d )
 
         elif info['valueType'] == 'None':
           for key in args[i]:
-            dBlob = list( blobList )
+            dextra = list( extraList )
             d = dict( opArgs )
-            d['files'] = key
-            d['blob'] = ','.join( dBlob )
+            d['file'] = key
+            d['extra'] = ','.join( dextra )
             actionArgs.append( d )
 
         elif info['valueType'] == 'dict':
           keysToGet = info['dictKeys']
           for key, dictInfo in args[i].items():
-            dBlob = list(blobList)
+            dextra = list( extraList )
             d = dict( opArgs )
-            d['files'] = key
+            d['file'] = key
             for keyToget in keysToGet:
               keyinwanted = keyToget in wantedArgs
               if keyinwanted:
                 d[keyToget] = dictInfo.get( keysToGet[keyToget], None )
               else :
-                dBlob.append( "%s = %s" % ( keysToGet[keyToget], dictInfo.get( keysToGet[keyToget], None ) ) )
-            d['blob'] = ','.join( dBlob )
+                dextra.append( "%s = %s" % ( keysToGet[keyToget], dictInfo.get( keysToGet[keyToget], None ) ) )
+            d['extra'] = ','.join( dextra )
             actionArgs.append( d )
         else :
           ret = S_ERROR( 'Error extractArgsFromDict, valueType should be none, dict or str' )
@@ -210,7 +210,7 @@ def extractArgsFromDict( info , *args, **kwargs ):
 
   return S_OK( actionArgs )
 
-def getArgsExecuteFC( argsDecorator, *args, **kwargs ):
+def extractArgsExecuteFC( argsDecorator, *args, **kwargs ):
   """ this is the special function to extract arguments from a decorate function
       when the decorate function is 'execute' from the file catalog
       this is a special function because we need to get some information which
@@ -236,7 +236,7 @@ def getArgsExecuteFC( argsDecorator, *args, **kwargs ):
     ret['Value'] = args
   return S_OK( args )
 
-def getTupleArgs( argsDecorator, *args, **kwargs ):
+def extractTupleArgs( argsDecorator, *args, **kwargs ):
   """this is the special function to extract arguments from a decorate function
     when the decorate function has tuple in arguments like 'registerFile' in the data manager
   """
@@ -247,13 +247,13 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
 
     argsPosition = argsDecorator['argsPosition']
     tupleArgsPosition = argsDecorator['tupleArgsPosition']
-    blobList = []
+    extraList = []
     for i in range( len( argsPosition ) ):
       a = argsPosition[i]
       ainwanted = a in wantedArgs
       if ainwanted:
         if a is 'files':
-          opArgs['files'] = getFilesArgs( args[i] )
+          opArgs['file'] = getArgFiles( args[i] )
         else :
           opArgs[a] = args[i]
       else:
@@ -262,7 +262,6 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
           dictExtract = dict( argsDecorator )
           dictExtract['argsPosition'] = tupleArgsPosition
           if isinstance( args[i], list ):
-            print 'toto'
             for t in args[i]:
               a = extractArgs( dictExtract, *t )['Value']
               tupleArgs.append( a[0] )
@@ -275,10 +274,10 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
               a = extractArgs( dictExtract, *args[i] )['Value']
               tupleArgs.append( a[0] )
         elif a is not 'self':
-          blobList.append( "%s = %s" % ( a, args[i] ) )
+          extraList.append( "%s = %s" % ( a, args[i] ) )
 
     for arg in tupleArgs:
-      actionArgs.append( mergeDict( opArgs, arg, blobList ) )
+      actionArgs.append( mergeDict( opArgs, arg, extraList ) )
   except Exception as e:
     gLogger.error( 'unexpected error in DLFucntions.getTupleArgs %s' % e )
     ret = S_ERROR( 'unexpected error in DLFucntions.getTupleArgs %s' % e )
@@ -287,7 +286,7 @@ def getTupleArgs( argsDecorator, *args, **kwargs ):
 
   return S_OK( actionArgs )
 
-def getArgsExecuteSE( argsDecorator, *args, **kwargs ):
+def extractArgsExecuteSE( argsDecorator, *args, **kwargs ):
   """ this is the special function to extract arguments from a decorate function
       when the decorate function is 'execute' from the Storage Element
       this is a special function because we need to get some information which
@@ -318,7 +317,7 @@ def getArgsExecuteSE( argsDecorator, *args, **kwargs ):
   return S_OK( actionArgs )
 
 
-def getFilesArgs( args ):
+def getArgFiles( args ):
   """ get  files from args, args can be a string, a list or a dictionary
       return a list with file's name
   """
@@ -334,13 +333,13 @@ def getFilesArgs( args ):
     else :
       files = [args]
   except Exception as e:
-    gLogger.error( 'unexpected error in DLFucntions.getFilesArgs %s' % e )
+    gLogger.error( 'unexpected error in DLFucntions.getArgFiles %s' % e )
   finally:
     return files
 
-def mergeDict( opArgs, tupleArgs, blobList ):
+def mergeDict( opArgs, tupleArgs, extraList ):
   """merge of the two dict wich contains arguments needed to create actions"""
-  localBlobList = list( blobList )
+  localExtraList = list( extraList )
   d = dict()
   for k in set( opArgs.keys() + tupleArgs.keys() ) :
     l = list()
@@ -361,16 +360,16 @@ def mergeDict( opArgs, tupleArgs, blobList ):
           l.append( tupleArgs[k] )
 
     if k is'files' :
-      d[k] = tupleArgs[k]
+      d['file'] = tupleArgs[k]
     else :
       if len( l ) == 0 :
         d[k] = None
       else :
         d[k] = ','.join( l )
-  localBlobList.append( tupleArgs['blob'] )
-  if localBlobList:
-    d['blob'] = ','.join( localBlobList )
+  localExtraList.append( tupleArgs['extra'] )
+  if localExtraList:
+    d['extra'] = ','.join( localExtraList )
   else:
-    d['blob'] = None
+    d['extra'] = None
 
   return d
