@@ -3,30 +3,20 @@ Created on May 4, 2015
 
 @author: Corentin Berger
 '''
-
-import json
 from DIRAC import S_ERROR, S_OK
-from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
-from DIRAC.DataManagementSystem.Client.DLMethodCall import DLMethodCall
-from DIRAC.DataManagementSystem.Client.DLCaller import DLCaller
 
-class DLSequence( object ) :
+from DIRAC.DataManagementSystem.private.DLJSON import DLJSON
+from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
+from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
+
+class DLSequence( DLJSON ) :
   """ Describe a sequence, used to know sequence of MethodCall"""
+  attrNames = ['sequenceID', 'caller', 'methodCalls']
 
   def __init__( self ):
     self.caller = None
-    self.stack = list()
-    self.methodCalls = list()
-    self.sequenceID = None
-
-  def toJSON( self ):
-    """ Returns the JSON description string of the Sequence """
-    try:
-      jsonStr = json.dumps( self, cls = DLEncoder )
-      return S_OK( jsonStr )
-    except Exception, e:
-      return S_ERROR( e )
-
+    self.stack = []
+    self.methodCalls = []
 
   @staticmethod
   def fromJSON( methodCall, caller, sequenceID ):
@@ -48,26 +38,6 @@ class DLSequence( object ) :
 
     return seq
 
-  def _getJSONData( self ):
-    """ Returns the data that have to be serialized by JSON """
-
-    attrNames = ['sequenceID', 'caller']
-    jsonData = {}
-
-    for attrName in attrNames :
-
-      if not hasattr( self, attrName ):
-        continue
-
-      value = getattr( self, attrName )
-
-      jsonData[attrName] = value
-
-    jsonData['MethodCalls'] = self.methodCalls
-    jsonData['__type__'] = self.__class__.__name__
-
-    return jsonData
-
 
   def appendMethodCall( self, args ):
     """
@@ -88,24 +58,25 @@ class DLSequence( object ) :
     :param self: self reference
     Pop an operation from the stack
     """
-    toInsert = False
-
     # if it's not  the first method call, we the element that we need to pop into the parent
     if len( self.stack ) != 1 :
       self.stack[len( self.stack ) - 2].addChild( self.stack[len( self.stack ) - 1] )
 
     res = self.stack.pop()
 
-    # we set the order of children
+    # we set the rank of children
     cpt = 0
     for child in res.children :
-      child.order = cpt
+      child.rank = cpt
       cpt += 1
 
-    # if we have pop the last element, we need to insert the sequence into data base
+    return res
+
+
+  def isComplete( self ):
+    toInsert = False
     if len( self.stack ) == 0 :
       toInsert = True
-
     return toInsert
 
   def setCaller( self, caller ):
