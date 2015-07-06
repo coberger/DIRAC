@@ -3,7 +3,8 @@ Created on May 5, 2015
 
 @author: Corentin Berger
 '''
-import zlib, json
+import zlib
+import json
 
 from types import StringTypes, NoneType, BooleanType
 
@@ -19,35 +20,55 @@ class DataLoggingHandler( RequestHandler ):
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
-    """ initialize handler """
+    """ initialize handler
+    """
     csSection = PathFinder.getServiceSection( 'DataManagement/DataLogging' )
-    cls.maxSequence = gConfig.getValue( '%s/MaxSequence' % csSection, 100 )
-    cls.maxTime = gConfig.getValue( '%s/MaxTime' % csSection, 3600 )
+    # maxSequenceToMove is the maximum number of sequences that we can move in the moveSequences method
+    cls.maxSequenceToMove = gConfig.getValue( '%s/MaxSequenceToMove' % csSection, 100 )
+    # expirationTime is the maximum time for a Compressed Sequence to has its status at Ongoing, the time is in minutes
+    cls.expirationTime = gConfig.getValue( '%s/ExpirationTime' % csSection, 3600 )
+    # period between each call of moveSequences method, in second
+    cls.moveSequencesPeriod = gConfig.getValue( '%s/MoveSequencesPeriod' % csSection, 100 )
+    # period between each call of cleanExpiredCompressedSequence method, in second
+    cls.cleanExpiredPeriod = gConfig.getValue( '%s/CleanExpiredPeriod' % csSection, 3600 )
+
     try:
       cls.__dataLoggingDB = DataLoggingDB()
       cls.__dataLoggingDB.createTables()
     except RuntimeError, error:
       gLogger.exception( error )
       return S_ERROR( error )
+    # we set the minimum Valid period at 10 seconds
     gThreadScheduler.setMinValidPeriod( 10 )
-    gThreadScheduler.addPeriodicTask( 10, cls.moveSequences )
-    gThreadScheduler.addPeriodicTask( 10, cls.cleanStaledSequencesStatus )
+    # method moveSequences will be call each 10 seconds
+    gThreadScheduler.addPeriodicTask( cls.moveSequencesPeriod, cls.moveSequences )
+    # method cleanExpiredCompressedSequence will be call each 10800 seconds or 3 hours
+    gThreadScheduler.addPeriodicTask( cls.cleanExpiredPeriod, cls.cleanExpiredCompressedSequence )
     return S_OK()
 
 
   @classmethod
   def moveSequences( cls ):
-    res = cls.__dataLoggingDB.moveSequences( cls.maxSequence )
+    """ this method call the moveSequences method of DataLoggingDB"""
+    res = cls.__dataLoggingDB.moveSequences( cls.maxSequenceToMove )
     return res
 
   @classmethod
-  def cleanStaledSequencesStatus( cls ):
-    res = cls.__dataLoggingDB.cleanStaledSequencesStatus( cls.maxTime )
+  def cleanExpiredCompressedSequence( cls ):
+    """ this method call the cleanStaledSequencesStatus method of DataLoggingDB"""
+    res = cls.__dataLoggingDB.cleanExpiredCompressedSequence( cls.expirationTime )
     return res
 
   types_insertSequence = [StringTypes, BooleanType]
   @classmethod
   def export_insertSequence( cls, sequenceCompressed, directInsert ):
+    """
+      this method call the insertSequenceDirectly method of DataLoggingDB if directInsert = True
+      else call insertCompressedSequence method of DataLoggingDB
+
+      :param sequence, the sequence to insert
+      :param directInsert, a boolean, if we want to insert directly as a DLSequence and not a DLCompressedSequence
+    """
     if directInsert :
       sequenceJSON = zlib.decompress( sequenceCompressed )
       sequence = json.loads( sequenceJSON , cls = DLDecoder )
@@ -57,49 +78,93 @@ class DataLoggingHandler( RequestHandler ):
     return res
 
 
-  types_getSequenceOnFile = [StringTypes]
+  types_getSequenceOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getSequenceOnFile( cls, fileName ):
-    res = cls.__dataLoggingDB.getSequenceOnFile( fileName )
-    sequences = []
-    if res["OK"]:
-      seqs = res["Value"]
-      for seq in seqs :
-        sequences.append( seq.toJSON()["Value"] )
+  def export_getSequenceOnFile( cls, fileName, before, after ):
+    """
+      this method call the getSequenceOnFile method of DataLoggingDB
+
+      :param fileName, name of a file
+      :param before, a date
+      :param after, a date
+
+      :return sequences, a list of sequence
+    """
+    res = cls.__dataLoggingDB.getSequenceOnFile( fileName, before, after )
+    if not res["OK"]:
+      return res
+    sequences = [seq.toJSON()['Value'] for seq in res['Value']]
     return S_OK( sequences )
 
 
   types_getSequenceByID = [StringTypes]
   @classmethod
   def export_getSequenceByID( cls, IDSeq ):
+    """
+      this method call the getSequenceByID method of DataLoggingDB
+
+      :param IDSeq, ID of the sequence
+
+      :return sequences, a list of sequence
+    """
     res = cls.__dataLoggingDB.getSequenceByID( IDSeq )
-    sequences = []
-    if res["OK"]:
-      seqs = res["Value"]
-      for seq in seqs :
-        sequences.append( seq.toJSON()["Value"] )
+    if not res["OK"]:
+      return res
+    sequences = [seq.toJSON()['Value'] for seq in res['Value']]
+    return S_OK( sequences )
+
+  types_getSequenceByCaller = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  @classmethod
+  def export_getSequenceByCaller( cls, callerName, before, after ):
+    """
+      this method call the getSequenceByCaller method of DataLoggingDB
+
+      :param callerName, name of a caller
+      :param before, a date
+      :param after, a date
+
+      :return sequences, a list of sequence
+    """
+    res = cls.__dataLoggingDB.getSequenceByCaller( callerName, before, after )
+    if not res["OK"]:
+      return res
+    sequences = [seq.toJSON()['Value'] for seq in res['Value']]
     return S_OK( sequences )
 
 
   types_getMethodCallOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
   def export_getMethodCallOnFile( cls, fileName, before, after ):
+    """
+      this method call the getMethodCallOnFile method of DataLoggingDB
+
+      :param fileName, name of the file
+      :param before, a date
+      :param after, a date
+
+      :return methodCalls, a list of method call
+    """
     res = cls.__dataLoggingDB.getMethodCallOnFile( fileName, before, after )
-    methodCalls = []
-    if res["OK"]:
-      calls = res["Value"]
-      for call in calls :
-        methodCalls.append( call.toJSON()["Value"] )
+    if not res["OK"]:
+      return res
+    methodCalls = [call.toJSON()['Value'] for call in res['Value']]
     return S_OK( methodCalls )
 
 
   types_getMethodCallByName = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
   def export_getMethodCallByName( cls, methodName, before, after ):
+    """
+      this method call the getMethodCallByName method of DataLoggingDB
+
+      :param name, name of the method
+      :param before, a date
+      :param after, a date
+
+      :return methodCalls, a list of method call
+    """
     res = cls.__dataLoggingDB.getMethodCallByName( methodName, before, after )
-    methodCalls = []
-    if res["OK"]:
-      calls = res["Value"]
-      for call in calls :
-        methodCalls.append( call.toJSON()["Value"] )
+    if not res["OK"]:
+      return res
+    methodCalls = [call.toJSON()['Value'] for call in res['Value']]
     return S_OK( methodCalls )

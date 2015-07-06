@@ -3,24 +3,24 @@ Created on May 4, 2015
 @author: Corentin Berger
 '''
 
-import zlib, json
+import zlib
+import json
 from datetime import datetime, timedelta
 
 # from DIRAC
 from DIRAC import S_OK, gLogger, S_ERROR
 
-from DIRAC.DataManagementSystem.Client.DLAction import DLAction
-from DIRAC.DataManagementSystem.Client.DLFile import DLFile
-from DIRAC.DataManagementSystem.Client.DLCompressedSequence import DLCompressedSequence
-from DIRAC.DataManagementSystem.Client.DLSequence import DLSequence
-from DIRAC.DataManagementSystem.Client.DLCaller import DLCaller
-from DIRAC.DataManagementSystem.Client.DLMethodCall import DLMethodCall
-from DIRAC.DataManagementSystem.Client.DLStatus import DLStatus
-from DIRAC.DataManagementSystem.Client.DLStorageElement import DLStorageElement
-from DIRAC.DataManagementSystem.Client.DLMethodName import DLMethodName
+from DIRAC.DataManagementSystem.Client.DataLogging.DLAction import DLAction
+from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
+from DIRAC.DataManagementSystem.Client.DataLogging.DLCompressedSequence import DLCompressedSequence
+from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
+from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
+from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
+from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
+from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
-from DIRAC.DataManagementSystem.Client.DLException import DLException
+from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException
 
 # from sqlalchemy
 from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between, desc
@@ -30,90 +30,88 @@ from sqlalchemy.dialects.mysql import MEDIUMBLOB
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
 
-
+# Description of the DLCompressedSequence table
 dataLoggingCompressedSequenceTable = Table( 'DLCompressedSequence', metadata,
                    Column( 'compressedSequenceID', Integer, primary_key = True ),
                    Column( 'value', MEDIUMBLOB ),
                    Column( 'lastUpdate', DateTime, index = True ),
                    Column( 'status', Enum( 'Waiting', 'Ongoing', 'Done' ), server_default = 'Waiting', index = True ),
                    mysql_engine = 'InnoDB' )
-
+# Map the DLCompressedSequence object to the dataLoggingCompressedSequenceTable
 mapper( DLCompressedSequence, dataLoggingCompressedSequenceTable )
 
+# Description of the DLFile table
 dataLoggingFileTable = Table( 'DLFile', metadata,
                    Column( 'fileID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
-
+# Map the DLFile object to the dataLoggingFileTable
 mapper( DLFile, dataLoggingFileTable )
 
+# Description of the DLMethodName table
 dataLoggingMethodNameTable = Table( 'DLMethodName', metadata,
                    Column( 'methodNameID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
-
+# Map the DLMethodName object to the dataLoggingMethodNameTable
 mapper( DLMethodName, dataLoggingMethodNameTable )
 
+# Description of the DLStorageElement table
 dataLoggingStorageElementTable = Table( 'DLStorageElement', metadata,
                    Column( 'storageElementID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
-
+# Map the DLStorageElement object to the dataLoggingStorageElementTable
 mapper( DLStorageElement, dataLoggingStorageElementTable )
 
-dataLoggingStatusTable = Table( 'DLStatus', metadata,
-                   Column( 'statusID', Integer, primary_key = True, index = True ),
-                   Column( 'name' , Enum( 'Successful', 'Failed', 'Unknown' ), server_default = 'Unknown' , unique = True ),
-                   mysql_engine = 'InnoDB' )
-
-mapper( DLStatus, dataLoggingStatusTable )
-
+# Description of the DLCaller table
 dataLoggingCallerTable = Table( 'DLCaller', metadata,
                    Column( 'callerID', Integer, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
-
+# Map the DLCaller object to the dataLoggingCallerTable
 mapper( DLCaller, dataLoggingCallerTable )
 
-
+# Description of the DLAction table
 dataLoggingActionTable = Table( 'DLAction', metadata,
                    Column( 'actionID', Integer, primary_key = True ),
                    Column( 'methodCallID', Integer, ForeignKey( 'DLMethodCall.methodCallID' ) ),
                    Column( 'fileID', Integer, ForeignKey( 'DLFile.fileID' ) ),
-                   Column( 'statusID', Integer, ForeignKey( 'DLStatus.statusID' ) ),
+                   Column( 'status' , Enum( 'Successful', 'Failed', 'Unknown' ), server_default = 'Unknown' ),
                    Column( 'srcSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID' ) ),
                    Column( 'targetSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID' ) ),
-                   Column( 'blob', String( 2048 ) ),
-                   Column( 'messageError', String( 2048 ) ),
+                   Column( 'extra', String( 2048 ) ),
+                   Column( 'errorMessage', String( 2048 ) ),
                    mysql_engine = 'InnoDB' )
-
+# Map the DLAction object to the dataLoggingActionTable, with two foreign key constraints,
+# and one relationship between attribute fileDL and table DLFile
 mapper( DLAction, dataLoggingActionTable,
-        properties = { 'file' : relationship( DLFile ),
-                      'status' : relationship( DLStatus ),
+        properties = { 'fileDL' : relationship( DLFile ),
                       'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.srcSEID ),
                       'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.targetSEID )} )
 
-
-
+# Description of the DLSequence table
 dataLoggingSequenceTable = Table( 'DLSequence', metadata,
                    Column( 'sequenceID', Integer, primary_key = True ),
                    Column( 'callerID', Integer, ForeignKey( 'DLCaller.callerID' ) ),
                    mysql_engine = 'InnoDB' )
-
-
+# Map the DLSequence object to the dataLoggingSequenceTable with one relationship between attribute methodCalls and table DLMethodCall
+# and one foreign key for attribute caller
 mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DLMethodCall ),
                                                                      'caller' : relationship( DLCaller ) } )
 
-
+# Description of the DLMethodCall table
 dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
                    Column( 'methodCallID', Integer, primary_key = True ),
                    Column( 'creationTime', DateTime ),
                    Column( 'methodNameID', Integer, ForeignKey( 'DLMethodName.methodNameID' ) ),
                    Column( 'parentID', Integer, ForeignKey( 'DLMethodCall.methodCallID' ) ),
                    Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.sequenceID' ) ),
-                   Column( 'order', Integer ),
+                   Column( 'rank', Integer ),
                    mysql_engine = 'InnoDB' )
-
+# Map the DLMethodCall object to the dataLoggingMethodCallTable with one relationship between attribute children and table DLMethodCall
+# one foreign key for attribute name on table DLMethodName
+# and an other relationship between attribute actions and table DLAction
 mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : relationship( DLMethodCall ),
                                                                            'name': relationship( DLMethodName ),
                                                                            'actions': relationship( DLAction ) } )
@@ -122,8 +120,9 @@ mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : 
 class DataLoggingDB( object ):
 
   def __getDBConnectionInfo( self, fullname ):
-    """ Collect from the CS all the info needed to connect to the DB.
-        This should be in a base class eventually
+    """
+      Collect from the CS all the info needed to connect to the DB.
+      This should be in a base class eventually
     """
 
     result = getDBParameters( fullname )
@@ -139,8 +138,10 @@ class DataLoggingDB( object ):
 
 
   def __init__( self, systemInstance = 'Default' ):
-    """c'tor
-    :param self: self reference
+    """
+      init method
+
+      :param self: self reference
     """
 
     self.log = gLogger.getSubLogger( 'DataLoggingDB' )
@@ -154,10 +155,10 @@ class DataLoggingDB( object ):
     metadata.bind = self.engine
     self.DBSession = sessionmaker( bind = self.engine, autoflush = False, expire_on_commit = False )
 
+    # this dictionaries will serve to save object from database, like that we don't need to do a select all the time for the same object
     self.dictStorageElement = {}
     self.dictFile = {}
     self.dictMethodName = {}
-    self.dictStatus = {}
     self.dictCaller = {}
 
 
@@ -171,16 +172,23 @@ class DataLoggingDB( object ):
     return S_OK()
 
 
-  def cleanStaledSequencesStatus( self, maxTime = 1440 ):
+  def cleanExpiredCompressedSequence( self, expirationTime = 1440 ):
+    """
+      this method check if the last update of some Compressed Sequence are not older than maxTime ago and if their status is at Ongoing
+      if both, we change the status at Waiting
+
+      :param expirationTime, a number of minute
+    """
     session = None
     currentTime = datetime.utcnow()
-    minutesAgo = currentTime - timedelta( minutes = maxTime )
+    start = currentTime - timedelta( minutes = expirationTime )
     try:
       session = self.DBSession()
-      rows = session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Ongoing', DLCompressedSequence.lastUpdate <= minutesAgo ).with_for_update().all()
+      rows = session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Ongoing', DLCompressedSequence.lastUpdate <= start ).with_for_update().all()
       if rows:
+        # if we found some DLCompressedSequence, we change their status
         gLogger.info( "DataLoggingDB.cleanStaledSequencesStatus found %s sequences with status Ongoing since %s minutes, try to insert them"
-                       % ( len( rows ), maxTime ) )
+                       % ( len( rows ), expirationTime ) )
         for sequenceCompressed in rows :
           sequenceCompressed.status = 'Waiting'
           sequenceCompressed.lastUpdate = datetime.now()
@@ -196,11 +204,15 @@ class DataLoggingDB( object ):
       raise DLException( "cleanStaledSequencesStatus: unexpected exception %s" % e )
     finally:
       session.close()
-    return S_OK( 'updateSequencesStatus ok' )
+    return S_OK()
 
 
 
   def insertCompressedSequence( self, sequence ):
+    """
+      we insert a new compressed sequence
+      :param sequence, sequence is s DLSequence JSON which is compressed
+    """
     session = None
     sequence = DLCompressedSequence( sequence )
     try:
@@ -215,44 +227,56 @@ class DataLoggingDB( object ):
     finally:
       if session :
         session.close()
-    return S_OK( 'insertSequenceForAgent ok' )
+    return S_OK()
 
 
-  def moveSequences( self , maxSequence = 100 ):
-    """ move DLCompressedSequence in DLSequence
-        selection of a umber of maxSequence DLCompressedSequence in DB
-        Update status of them to say that we are trying to insert them
-        Trying to insert them
-        Update status to say that the insertion is done
+  def moveSequences( self , maxSequenceToMove = 100 ):
+    """
+      move DLCompressedSequence in DLSequence
+      selection of a number of maxSequence DLCompressedSequence in DB
+      Update status of them to say that we are trying to insert them
+      Trying to insert them
+      Update status to say that the insertion is done
+
+      :param maxSequenceToMove: the number of sequences to move per call of this method
     """
     session = None
     sequences = []
     begin = datetime.utcnow()
     try:
       session = self.DBSession()
+      # selection of DLCompressedSequence with status 'Waiting' with a lock on rows that we are trying to select
       rows = session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Waiting' )\
-          .order_by( DLCompressedSequence.lastUpdate ).with_for_update().limit( maxSequence )
+          .order_by( DLCompressedSequence.lastUpdate ).with_for_update().limit( maxSequenceToMove )
       if rows:
+        # if we have found some
         for sequenceCompressed in rows :
           sequences.append( sequenceCompressed )
+          # status update to Ongoing for each DLCompressedSequence
           sequenceCompressed.status = 'Ongoing'
+          # we update the lastUpdate value
           sequenceCompressed.lastUpdate = datetime.now()
           session.merge( sequenceCompressed )
         session.commit()
 
         for sequenceCompressed in sequences :
+          # decompression of the JSON repsentation of a DLSequence
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
+          # decode of the JSON
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
           try :
-            ret = self.putSequence( session, sequence )
+            # put sequence into db
+            ret = self.__putSequence( session, sequence )
             if not ret['OK']:
               return S_ERROR( ret['Value'] )
+            # update of status and lastUpdate
             sequenceCompressed.lastUpdate = datetime.now()
             sequenceCompressed.status = 'Done'
             session.merge( sequenceCompressed )
           except Exception, e:
             gLogger.error( "moveSequences: unexpected exception %s" % e )
             session.rollback()
+            # if there is an error we try to insert sequence one by one
             res = self.moveSequencesOneByOne( session, sequences )
             if not res['OK']:
               return res
@@ -268,14 +292,25 @@ class DataLoggingDB( object ):
       session.close()
     end = datetime.utcnow()
     gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( end - begin ) ) )
-    return S_OK( 'insertSequenceFromCompressed ok' )
+    return S_OK()
 
   def moveSequencesOneByOne(self, session, sequences):
+    """
+      move DLCompressedSequence in DLSequence
+      sequences is a list of DLSequence
+      Trying to insert a sequence
+      Update its status to say that the insertion is done
+      We dot that for each sequence in sequences
+
+      :param session: a database session
+      :param sequences: a list of DLSequence
+
+    """
     for sequenceCompressed in sequences :
       sequenceJSON = zlib.decompress( sequenceCompressed.value )
       sequence = json.loads( sequenceJSON , cls = DLDecoder )
       try :
-        ret = self.putSequence( session, sequence )
+        ret = self.__putSequence( session, sequence )
         if not ret['OK']:
           return S_ERROR( ret['Value'] )
         sequenceCompressed.lastUpdate = datetime.now()
@@ -289,14 +324,19 @@ class DataLoggingDB( object ):
         sequenceCompressed.status = 'Waiting'
         session.merge( sequenceCompressed )
         session.commit()
-    return S_OK( "moveSequencesOneByOne success" )
+    return S_OK()
 
 
   def insertSequenceDirectly(self, sequence):
+    """
+      this method insert a sequence JSON compressed directly into database, as a DLSequence and not as a DLCompressedSequence
+
+      :param sequence: a DLSequence
+    """
     session = None
     try:
       session = self.DBSession()
-      ret = self.putSequence( session, sequence )
+      ret = self.__putSequence( session, sequence )
       if not ret['OK']:
         return S_ERROR( ret['Value'] )
       session.commit()
@@ -307,13 +347,20 @@ class DataLoggingDB( object ):
       raise DLException( "insertSequenceDirectly: unexpected exception %s" % e )
     finally:
       session.close()
-    return S_OK( 'insertSequenceDirectly success' )
+    return S_OK()
 
 
-  def putSequence( self, session, sequence ):
-    """ put a sequence into database"""
+  def __putSequence( self, session, sequence ):
+    """
+      put a sequence into database
+
+      :param session: a database session
+      :param sequence: a DLSequence
+
+    """
 
     try:
+      # we get the caller from database
       res = self.getOrCreate(session,DLCaller, sequence.caller, self.dictCaller)
       if not res['OK'] :
         return res
@@ -327,19 +374,13 @@ class DataLoggingDB( object ):
         mc.name = res['Value']
 
         for action in mc.actions :
-          # putfile
-          res = self.getOrCreate( session, DLFile, action.file, self.dictFile )
+          # we get the DLFile from database
+          res = self.getOrCreate( session, DLFile, action.fileDL, self.dictFile )
           if not res['OK'] :
             return res
-          action.file = res['Value']
+          action.fileDL = res['Value']
 
-          # putStatus
-          res = self.getOrCreate( session, DLStatus, action.status, self.dictStatus )
-          if not res['OK'] :
-            return res
-          action.status = res['Value']
-
-          # put storage element
+          # we get the DLStorageElement from database
           res = self.getOrCreate( session, DLStorageElement, action.srcSE, self.dictStorageElement )
           if not res['OK'] :
             return res
@@ -355,14 +396,17 @@ class DataLoggingDB( object ):
     except Exception, e:
       gLogger.error( "putSequence: unexpected exception %s" % e )
       raise DLException( "putSequence: unexpected exception %s" % e )
-    return S_OK( 'putSequence ended, Successful' )
+    return S_OK()
 
   def getOrCreate( self, session, model, obj, objDict ):
-    """ get or create a database object
-        :param session: a database session
-        :param model: the model of object
-        :param obj, the object it
-        :param objDict, the dictionnary where object of model are saved
+    """
+      get or create a database object
+
+      :param session: a database session
+      :param model: the model of object
+      :param obj, the object it
+      :param objDict, the dictionary where object of model are saved
+
     """
     try:
       if obj.name is None :
@@ -390,18 +434,32 @@ class DataLoggingDB( object ):
       return S_ERROR( "getOrCreate: unexpected exception %s" % e )
 
 
-  def getSequenceOnFile( self, lfn ):
+  def getSequenceOnFile( self, lfn, before, after ):
     """
       get all sequence about a lfn's name
+
+      :param lfn, a lfn name
+      :param before, a date, can be None
+      :param after, a date, can be None
+
+      :return seqs: a list of DLSequence
     """
     session = self.DBSession()
 
-    try:
-      seqs = session.query( DLSequence )\
+    query =session.query( DLSequence )\
                   .join( DLMethodCall )\
                   .join( DLAction )\
                   .join( DLFile )\
-                  .filter( DLFile.name == lfn ).distinct( DLSequence.sequenceID )
+                  .filter( DLFile.name == lfn )
+    if before and after :
+      query = query.filter( DLMethodCall.creationTime.between( after, before ) )
+    elif before :
+      query = query.filter( DLMethodCall.creationTime <= before )
+    elif after :
+      query = query.filter( DLMethodCall.creationTime >= after )
+
+    try :
+      seqs = query.distinct( DLSequence.sequenceID )
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -413,6 +471,10 @@ class DataLoggingDB( object ):
   def getSequenceByID( self, IDSeq ):
     """
       get the sequence for the id IDSeq
+
+      :param IDSeq, an id of a sequence
+
+      :return seqs: a list of DLSequence
     """
     session = self.DBSession()
 
@@ -427,32 +489,62 @@ class DataLoggingDB( object ):
       session.close
     return S_OK( seqs )
 
-  def getMethodCallOnFile( self, lfn, before, after ):
+
+  def getSequenceByCaller( self, callerName, before, after ):
     """
-      get all operation about a file's name, before and after are date, can be None
+      get the sequence where the caller is callerName
+
+      :param callerName, a caller name
+      :param before, a date, can be None
+      :param after, a date, can be None
+
+      :return seqs: a list of DLSequence
     """
     session = self.DBSession()
+    query = session.query( DLSequence )\
+              .join( DLCaller )\
+              .join( DLMethodCall )\
+              .filter( DLCaller.name == callerName )
+    if before and after :
+      query = query.filter( DLMethodCall.creationTime.between( after, before ) )
+    elif before :
+      query = query.filter( DLMethodCall.creationTime <= before )
+    elif after :
+      query = query.filter( DLMethodCall.creationTime >= after )
+
+    try :
+      seqs = query.distinct( DLSequence.sequenceID )
+    except Exception, e:
+      gLogger.error( "getSequenceByCaller: unexpected exception %s" % e )
+      return S_ERROR( "getSequenceByCaller: unexpected exception %s" % e )
+    finally:
+      session.close
+    return S_OK( seqs )
+
+  def getMethodCallOnFile( self, lfn, before, after ):
+    """
+      get all operation about a file's name, before and after are date
+
+      :param lfn, a lfn name
+      :param before, a date, can be None
+      :param after, a date, can be None
+
+      :return calls: a list of DLMethodCall
+    """
+    session = self.DBSession()
+    query = session.query( DLMethodCall )\
+                .join( DLAction )\
+                .join( DLFile )\
+                .filter( DLFile.name == lfn )
+    if before and after :
+      query = query.filter( DLMethodCall.creationTime.between( after, before ) )
+    elif before :
+      query = query.filter( DLMethodCall.creationTime <= before )
+    elif after :
+      query = query.filter( DLMethodCall.creationTime >= after )
+
     try:
-      if before and after :
-        calls = session.query( DLMethodCall )\
-                .join( DLAction )\
-                .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime.between( after, before ) ).distinct( DLMethodCall.methodCallID )
-      elif before :
-        calls = session.query( DLMethodCall )\
-                .join( DLAction )\
-                .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime <= before ).distinct( DLMethodCall.methodCallID )
-      elif after :
-        calls = session.query( DLMethodCall )\
-                .join( DLAction )\
-                .join( DLFile )\
-                .filter( DLFile.name == lfn ).filter( DLMethodCall.creationTime >= after ).distinct( DLMethodCall.methodCallID )
-      else :
-        calls = session.query( DLMethodCall )\
-                  .join( DLAction )\
-                  .join( DLFile )\
-                  .filter( DLFile.name == lfn ).distinct( DLMethodCall.methodCallID )
+      calls = query.distinct( DLMethodCall.methodCallID )
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
@@ -465,25 +557,26 @@ class DataLoggingDB( object ):
   def getMethodCallByName( self, name, before, after ):
     """
       get all operation about a method call name
+
+      :param name, a method name
+      :param before, a date, can be None
+      :param after, a date, can be None
+
+      :return calls: a list of DLMethodCall
     """
     session = self.DBSession()
+    query = session.query( DLMethodCall )\
+                .join( DLMethodName )\
+                .filter( DLMethodName.name == name )
+
+    if before and after :
+      query = query.filter( DLMethodCall.creationTime.between( after, before ) )
+    elif before :
+      query = query.filter( DLMethodCall.creationTime <= before )
+    elif after :
+      query = query.filter( DLMethodCall.creationTime >= after )
     try:
-      if before and after :
-        calls = session.query( DLMethodCall )\
-                .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime.between( after, before ) ).distinct( DLMethodCall.methodCallID )
-      elif before :
-        calls = session.query( DLMethodCall )\
-                .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime <= before ).distinct( DLMethodCall.methodCallID )
-      elif after :
-        calls = session.query( DLMethodCall )\
-                .join( DLMethodName )\
-                .filter( DLMethodName.name == name ).filter( DLMethodCall.creationTime >= after ).distinct( DLMethodCall.methodCallID )
-      else :
-        calls = session.query( DLMethodCall )\
-                  .join( DLMethodName )\
-                  .filter( DLMethodName.name == name ).distinct( DLMethodCall.methodCallID )
+      calls = query.distinct( DLMethodCall.methodCallID )
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )

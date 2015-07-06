@@ -7,14 +7,14 @@ Created on May 5, 2015
 import json
 from json import JSONDecoder
 
-from DIRAC.DataManagementSystem.Client.DLAction import DLAction
-from DIRAC.DataManagementSystem.Client.DLFile import DLFile
-from DIRAC.DataManagementSystem.Client.DLSequence import DLSequence
-from DIRAC.DataManagementSystem.Client.DLMethodCall import DLMethodCall
-from DIRAC.DataManagementSystem.Client.DLMethodName import DLMethodName
-from DIRAC.DataManagementSystem.Client.DLStatus import DLStatus
-from DIRAC.DataManagementSystem.Client.DLCaller import DLCaller
-from DIRAC.DataManagementSystem.Client.DLStorageElement import DLStorageElement
+from DIRAC.DataManagementSystem.Client.DataLogging.DLAction import DLAction
+from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
+from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
+from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
+from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
+from DIRAC.DataManagementSystem.Client.DataLogging.DLStatus import DLStatus
+from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
+from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
 
 
 class DLDecoder( json.JSONDecoder ):
@@ -31,17 +31,17 @@ class DLDecoder( json.JSONDecoder ):
         typeObj = d.pop( '__type__' )
         try:
           if typeObj == 'DLAction':
-            obj = DLAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['blob'], d['messageError'], ID = d['actionID'] )
+            obj = DLAction( d['fileDL'], d['status'] , d['srcSE'], d['targetSE'], d['extra'], d['errorMessage'], ID = d['actionID'] )
           elif typeObj == 'DLSequence':
-            obj = DLSequence.fromJSON( d['MethodCalls'][0], d['caller'], d['sequenceID'] )
+            obj = DLSequence.fromJSON( d['methodCalls'][0], d['caller'], d['sequenceID'] )
           elif typeObj == 'DLFile':
             obj = DLFile( d['name'] )
           elif typeObj == 'DLStatus':
             obj = DLStatus( d['name'] )
           elif typeObj == 'DLMethodCall':
             obj = DLMethodCall( d )
-            obj.actions = d['Actions']
-            obj.children = d['Children']
+            obj.actions = d['actions']
+            obj.children = d['children']
           elif typeObj == 'DLCaller':
             obj = DLCaller( d['name'] )
           elif typeObj == 'DLMethodName':
