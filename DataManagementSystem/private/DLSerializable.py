@@ -11,9 +11,10 @@ from DIRAC import S_ERROR, S_OK
 
 from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
 
-class DLJSON( object ):
+class DLSerializable( object ):
   def __init__( self ):
     self.attrNames = []
+
   def toJSON( self ):
     """ Returns the JSON description string """
     try:

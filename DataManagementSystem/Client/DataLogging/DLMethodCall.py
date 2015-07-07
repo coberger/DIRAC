@@ -6,9 +6,9 @@ Created on May 4, 2015
 
 import datetime
 from types import StringTypes
-from DIRAC.DataManagementSystem.private.DLJSON import DLJSON
+from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 
-class DLMethodCall( DLJSON ):
+class DLMethodCall( DLSerializable ):
   """
   describe a method call
   """
@@ -21,6 +21,7 @@ class DLMethodCall( DLJSON ):
     :param self: self reference
     :param dict fromDict: attributes dictionary
     """
+    super( DLMethodCall, self ).__init__()
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.creationTime = now
     self.children = []

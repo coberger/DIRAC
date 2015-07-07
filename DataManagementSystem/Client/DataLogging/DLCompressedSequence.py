@@ -3,12 +3,9 @@ Created on Jun 19, 2015
 
 @author: Corentin Berger
 '''
-import json
 from datetime import datetime
-from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
-from DIRAC import S_ERROR, S_OK
 
-class DLCompressedSequence( object ):
+class DLCompressedSequence():
   """ This class is here for the mapping with the table DLCompressedSequence
       value is a DLSequence json that is compressed
       status can be Waiting, Ongoing, Done

@@ -5,15 +5,16 @@ Created on May 4, 2015
 '''
 from DIRAC import S_ERROR, S_OK
 
-from DIRAC.DataManagementSystem.private.DLJSON import DLJSON
+from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
 from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
 
-class DLSequence( DLJSON ) :
+class DLSequence( DLSerializable ) :
   """ Describe a sequence, used to know sequence of MethodCall"""
   attrNames = ['sequenceID', 'caller', 'methodCalls']
 
   def __init__( self ):
+    super( DLSequence, self ).__init__()
     self.caller = None
     self.stack = []
     self.methodCalls = []
