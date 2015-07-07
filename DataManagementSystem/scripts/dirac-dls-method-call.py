@@ -98,15 +98,21 @@ else :
   if lfn :
     res = dlc.getMethodCallOnFile( lfn, before, after )
     if res['OK']:
-      for call in res['Value'] :
-        print printMethodCallLFN( call, lfn, full = fullFlag )
+      if not res['Value'] :
+        print 'no methodCall to print'
+      else :
+        for call in res['Value'] :
+          print printMethodCallLFN( call, lfn, full = fullFlag )
     else :
       print res['Value']
   elif name :
     res = dlc.getMethodCallByName( name, before, after )
     if res['OK']:
-      for call in res['Value'] :
-        print printMethodCall( call, full = fullFlag )
+      if not res['Value'] :
+        print 'no methodCall to print'
+      else :
+        for call in res['Value'] :
+          print printMethodCall( call, full = fullFlag )
     else :
       print res['Value']
 

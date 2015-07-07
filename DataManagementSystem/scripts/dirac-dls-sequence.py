@@ -127,23 +127,32 @@ else :
   if lfn :
     res = dlc.getSequenceOnFile( lfn, before, after )
     if res['OK']:
-      for seq in res['Value'] :
-        print printSequenceLFN( seq, lfn, full = fullFlag )
+      if not res['Value'] :
+        print 'no sequence to print'
+      else :
+        for seq in res['Value'] :
+          print printSequenceLFN( seq, lfn, full = fullFlag )
     else :
       print res['Message']
 
   elif IDSeq :
     res = dlc.getSequenceByID( IDSeq )
     if res['OK']:
-      for seq in res['Value'] :
-        print printSequence( seq, full = fullFlag )
+      if not res['Value'] :
+        print 'no sequence to print'
+      else :
+        for seq in res['Value'] :
+          print printSequence( seq, full = fullFlag )
     else :
       print res['Message']
 
   elif callerName :
     res = dlc.getSequenceByCaller( callerName, before, after )
     if res['OK']:
-      for seq in res['Value'] :
-        print printSequence( seq, full = fullFlag )
+      if not res['Value'] :
+        print 'no sequence to print'
+      else :
+        for seq in res['Value'] :
+          print printSequence( seq, full = fullFlag )
     else :
       print res['Message']
