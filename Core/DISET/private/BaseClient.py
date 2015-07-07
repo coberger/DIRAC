@@ -39,7 +39,6 @@ class BaseClient:
     if type( serviceName ) not in types.StringTypes:
       raise TypeError( "Service name expected to be a string. Received %s type %s" %
                        ( str( serviceName ), type( serviceName ) ) )
-      print 'titi '
     self._destinationSrv = serviceName
     self._serviceName = serviceName
     self.kwargs = kwargs

@@ -12,7 +12,7 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
 class DLThreadPool :
   """
     contains all DLSequence needed by different thread
-    we need this class because different can be in a sequence, we need to share the sequence
+    this class serve to have one sequence by thread
     pool is a dictionary with key thread id and with value a DLSequence
   """
   pool = dict()
