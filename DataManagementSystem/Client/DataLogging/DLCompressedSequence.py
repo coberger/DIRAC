@@ -5,7 +5,7 @@ Created on Jun 19, 2015
 '''
 from datetime import datetime
 
-class DLCompressedSequence():
+class DLCompressedSequence( object ):
   """ This class is here for the mapping with the table DLCompressedSequence
       value is a DLSequence json that is compressed
       status can be Waiting, Ongoing, Done
