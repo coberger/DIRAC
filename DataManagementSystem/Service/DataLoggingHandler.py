@@ -61,7 +61,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_insertSequence = [StringTypes, BooleanType]
   @classmethod
-  def export_insertSequence( cls, sequenceCompressed, directInsert ):
+  def export_insertSequence( cls, sequenceCompressed, directInsert = False ):
     """
       this method call the insertSequenceDirectly method of DataLoggingDB if directInsert = True
       else call insertCompressedSequence method of DataLoggingDB
@@ -80,7 +80,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getSequenceOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getSequenceOnFile( cls, fileName, before, after ):
+  def export_getSequenceOnFile( cls, fileName, before = None, after = None ):
     """
       this method call the getSequenceOnFile method of DataLoggingDB
 
@@ -115,7 +115,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getSequenceByCaller = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getSequenceByCaller( cls, callerName, before, after ):
+  def export_getSequenceByCaller( cls, callerName, before = None, after = None ):
     """
       this method call the getSequenceByCaller method of DataLoggingDB
 
@@ -134,7 +134,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getMethodCallOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getMethodCallOnFile( cls, fileName, before, after ):
+  def export_getMethodCallOnFile( cls, fileName, before = None, after = None ):
     """
       this method call the getMethodCallOnFile method of DataLoggingDB
 
@@ -153,7 +153,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getMethodCallByName = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getMethodCallByName( cls, methodName, before, after ):
+  def export_getMethodCallByName( cls, methodName, before = None, after = None ):
     """
       this method call the getMethodCallByName method of DataLoggingDB
 

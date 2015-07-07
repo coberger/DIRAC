@@ -33,7 +33,7 @@ class DataLoggingClient( Client ):
     res = self.dataLoggingManager.insertSequence( seq, directInsert )
     return res
 
-  def getSequenceOnFile( self, fileName, before, after ):
+  def getSequenceOnFile( self, fileName, before = None, after = None ):
     """
       This select all Sequence about a file
 
@@ -64,7 +64,7 @@ class DataLoggingClient( Client ):
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
     return S_OK( sequences )
 
-  def getSequenceByCaller( self, callerName, before, after ):
+  def getSequenceByCaller( self, callerName, before = None, after = None ):
     """
       This select all Sequence about an ID
 
@@ -81,7 +81,7 @@ class DataLoggingClient( Client ):
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
     return S_OK( sequences )
 
-  def getMethodCallOnFile( self, fileName, before, after ):
+  def getMethodCallOnFile( self, fileName, before = None, after = None ):
     """
       This select all method call about a file, you can precise a date before, a date after and both to make a between
 
@@ -97,7 +97,7 @@ class DataLoggingClient( Client ):
     methodCalls = [json.loads( call, cls = DLDecoder ) for call in res['Value']]
     return S_OK( methodCalls )
 
-  def getMethodCallByName( self, name, before, after ):
+  def getMethodCallByName( self, name, before = None, after = None ):
     """
       This select all method call about a specific method name, you can precise a date before, a date after and both to make a between
 
