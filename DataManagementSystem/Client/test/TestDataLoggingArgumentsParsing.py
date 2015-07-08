@@ -6,7 +6,6 @@ Created on May 20, 2015
 import unittest
 
 from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import funcDict
-from DIRAC.DataManagementSystem.Client.DLException import DLException
 
 argsDictDefault = {}
 argsDictDefault['argsPosition'] = [ 'files', 'localPath', 'targetSE' ]
@@ -73,7 +72,7 @@ class DataLoggingArgumentsParsingTestCase( unittest.TestCase ):
 class DefaultCase ( DataLoggingArgumentsParsingTestCase ):
 
   def test_DictEqual( self ):
-    ok = [{'files': 18, 'targetSE': 'destSE', 'blob': 'localPath = /local/path/', 'srcSE': None}, {'files': 19, 'targetSE': 'destSE', 'blob': 'localPath = /local/path/', 'srcSE': None}, {'files': 20, 'targetSE': 'destSE', 'blob': 'localPath = /local/path/', 'srcSE': None}]
+    ok = [{'file': 18, 'targetSE': 'destSE', 'extra': 'localPath = /local/path/', 'srcSE': None}, {'file': 19, 'targetSE': 'destSE', 'extra': 'localPath = /local/path/', 'srcSE': None}, {'file': 20, 'targetSE': 'destSE', 'extra': 'localPath = /local/path/', 'srcSE': None}]
     getArgs = funcDict['normal']
     ret = callFunction( getArgs, dict( argsDictDefault ), *argumentsDefault )
     self.assertEqual( ret['Value'], ok )
@@ -91,7 +90,7 @@ class DefaultCase ( DataLoggingArgumentsParsingTestCase ):
 class TupleCase ( DataLoggingArgumentsParsingTestCase ):
 
   def test_DictEqual( self ):
-    ok = [{'files': 'M', 'targetSE': 'destinationSE', 'blob': 'physicalFile = destUrl,fileSize = 150,fileGuid = 40,checksum = 108524789', 'srcSE': None}, {'files': 'TITI', 'targetSE': 'TargetSE', 'blob': 'physicalFile = targetURL,fileSize = 7855,fileGuid = 14,checksum = 155', 'srcSE': None}]
+    ok = [{'file': 'M', 'targetSE': 'destinationSE', 'extra': 'physicalFile = destUrl,fileSize = 150,fileGuid = 40,checksum = 108524789', 'srcSE': None}, {'files': 'TITI', 'targetSE': 'TargetSE', 'extra': 'physicalFile = targetURL,fileSize = 7855,fileGuid = 14,checksum = 155', 'srcSE': None}]
     getArgs = funcDict['tuple']
     ret = callFunction( getArgs, dict( argsDictTuple ), *argumentsTuple )
     self.assertEqual( ret['Value'], ok )
@@ -109,7 +108,7 @@ class TupleCase ( DataLoggingArgumentsParsingTestCase ):
 
 class ExecuteFCCase ( DataLoggingArgumentsParsingTestCase ):
   def test_DictEqual( self ):
-    ok = [{'files': 'lfn1', 'targetSE': 'se1', 'blob': 'Size = 1,GUID = 1,Checksum = 1,PFN = PFN1', 'srcSE': None}, {'files': 'lfn2', 'targetSE': 'se2', 'blob': 'Size = 2,GUID = 2,Checksum = 2,PFN = PFN2', 'srcSE': None}, {'files': 'lfn3', 'targetSE': 'se3', 'blob': 'Size = 3,GUID = 3,Checksum = 3,PFN = PFN3', 'srcSE': None}]
+    ok = [{'file': 'lfn1', 'targetSE': 'se1', 'extra': 'Size = 1,GUID = 1,Checksum = 1,PFN = PFN1', 'srcSE': None}, {'file': 'lfn2', 'targetSE': 'se2', 'extra': 'Size = 2,GUID = 2,Checksum = 2,PFN = PFN2', 'srcSE': None}, {'file': 'lfn3', 'targetSE': 'se3', 'extra': 'Size = 3,GUID = 3,Checksum = 3,PFN = PFN3', 'srcSE': None}]
     getArgs = funcDict['executeFC']
     ret = callFunction( getArgs, dict( argsDictExecuteFC ), *argumentsExecuteFC )
     self.assertEqual( ret['Value'], ok )
@@ -127,7 +126,7 @@ class ExecuteFCCase ( DataLoggingArgumentsParsingTestCase ):
 class SetReplicaProblematicCase( DataLoggingArgumentsParsingTestCase ):
 
   def test_DictEqual( self ):
-    ok = [{'files': 'L2', 'targetSE': 'S20', 'blob': 'PFN = P20', 'srcSE': None}, {'files': 'L3', 'targetSE': 'S31', 'blob': 'PFN = P31', 'srcSE': None}, {'files': 'L3', 'targetSE': 'S30', 'blob': 'PFN = P30', 'srcSE': None}, {'files': 'L3', 'targetSE': 'S32', 'blob': 'PFN = P32', 'srcSE': None}, {'files': 'L1', 'targetSE': 'S11', 'blob': 'PFN = P11', 'srcSE': None}, {'files': 'L1', 'targetSE': 'S10', 'blob': 'PFN = P10', 'srcSE': None}]
+    ok = [{'file': 'L2', 'targetSE': 'S20', 'extra': 'PFN = P20', 'srcSE': None}, {'file': 'L3', 'targetSE': 'S31', 'extra': 'PFN = P31', 'srcSE': None}, {'file': 'L3', 'targetSE': 'S30', 'extra': 'PFN = P30', 'srcSE': None}, {'file': 'L3', 'targetSE': 'S32', 'extra': 'PFN = P32', 'srcSE': None}, {'file': 'L1', 'targetSE': 'S11', 'extra': 'PFN = P11', 'srcSE': None}, {'file': 'L1', 'targetSE': 'S10', 'extra': 'PFN = P10', 'srcSE': None}]
     getArgs = funcDict['executeFC']
     ret = callFunction( getArgs, dict( argsDictSetReplicaProblematic ), *argumentsSetReplicaProblematic )
     self.assertEqual( ret['Value'], ok )
@@ -135,7 +134,7 @@ class SetReplicaProblematicCase( DataLoggingArgumentsParsingTestCase ):
 
 class ExecuteSECase ( DataLoggingArgumentsParsingTestCase ):
   def test_DictEqual( self ):
-    ok = [{'files': 'lfn1', 'targetSE': 'targetSE1', 'blob': 'src_file = src_file1', 'srcSE': None}, {'files': 'lfn2', 'targetSE': 'targetSE1', 'blob': 'src_file = src_file2', 'srcSE': None}, {'files': 'lfn3', 'targetSE': 'targetSE1', 'blob': 'src_file = src_file3', 'srcSE': None}]
+    ok = [{'file': 'lfn1', 'targetSE': 'targetSE1', 'extra': 'src_file = src_file1', 'srcSE': None}, {'file': 'lfn2', 'targetSE': 'targetSE1', 'extra': 'src_file = src_file2', 'srcSE': None}, {'file': 'lfn3', 'targetSE': 'targetSE1', 'extra': 'src_file = src_file3', 'srcSE': None}]
     getArgs = funcDict['executeSE']
     ret = callFunction( getArgs, dict( argsDictExecuteSE ), *argumentsExecuteSE )
     self.assertEqual( ret['Value'], ok )
