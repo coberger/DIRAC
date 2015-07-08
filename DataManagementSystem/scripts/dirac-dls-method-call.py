@@ -42,7 +42,7 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 def printMethodCallLFN( call, lfn, full = False ):
   callLines = []
   line = '%s %s %s' % \
-    ( call.creationTime, call.name.name, 'SequenceID %s ' % call.sequenceID )
+    ( call.name.name, 'SequenceID %s ' % call.sequenceID, call.creationTime )
   for action in call.actions :
     if action.fileDL.name == lfn:
       if full :
@@ -51,7 +51,7 @@ def printMethodCallLFN( call, lfn, full = False ):
               ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
               ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
               ',extra %s ' % action.extra if action.extra else '',
-              ',errorMessage %s ' % action.messageError if action.messageError else '' )
+              ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
       else :
         line += '%s%s%s'\
             % ( '%s ' % action.status,
@@ -65,7 +65,7 @@ def printMethodCallLFN( call, lfn, full = False ):
 def printMethodCall( call, full = False ):
   callLines = []
   line = '%s %s %s' % \
-    ( call.creationTime, call.name.name, 'SequenceID %s ' % call.sequenceID )
+    ( call.name.name, 'SequenceID %s ' % call.sequenceID, call.creationTime )
   callLines.append( line )
   for action in call.actions :
     if full :
@@ -75,7 +75,7 @@ def printMethodCall( call, full = False ):
             ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
             ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
             ',extra %s ' % action.extra if action.extra else '',
-            ',errorMessage %s ' % action.messageError if action.messageError else '' )
+            ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
     else :
       line = '\t%s%s%s%s'\
           % ( '%s ' % action.status,

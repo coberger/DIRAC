@@ -541,7 +541,9 @@ class DataManager( object ):
     self.log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
     return S_OK( {'Successful': successful, 'Failed': failed } )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', 'srcSE', 'destPath', 'localCache', 'catalog' ], \
+                         kwargsName = {'srcSE':'sourceSE'}, \
+                        getActionArgsFunction = 'normal' )
   def replicateAndRegister( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' , catalog = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 
@@ -591,7 +593,8 @@ class DataManager( object ):
         failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
     return S_OK( {'Successful': successful, 'Failed': failed} )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', 'srcSE', 'destPath', 'localCache' ], \
+                         kwargsName = {'srcSE':'sourceSE'}, getActionArgsFunction = 'normal' )
   def replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 

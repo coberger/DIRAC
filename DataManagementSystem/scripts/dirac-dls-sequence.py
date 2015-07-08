@@ -56,7 +56,7 @@ def printSequence( seq, full = False ):
     for x in range( cpt ):
       line += '\t'
     line += '%s %s ' % \
-    ( mc.creationTime, mc.name.name )
+    ( mc.name.name, mc.creationTime )
     seqLines.append( line )
     for action in mc.actions :
       line = ''
@@ -97,7 +97,7 @@ def printSequenceLFN( seq, lfn, full = False ):
     for x in range( cpt ):
       base += '\t'
     base += '%s %s, ' % \
-    ( mc.creationTime, mc.name.name )
+    ( mc.name.name, mc.creationTime )
     for action in mc.actions :
       if action.fileDL.name == lfn:
         line = base
@@ -132,6 +132,7 @@ else :
       else :
         for seq in res['Value'] :
           print printSequenceLFN( seq, lfn, full = fullFlag )
+          print'|n'
     else :
       print res['Message']
 
@@ -143,6 +144,7 @@ else :
       else :
         for seq in res['Value'] :
           print printSequence( seq, full = fullFlag )
+          print'|n'
     else :
       print res['Message']
 
@@ -154,5 +156,6 @@ else :
       else :
         for seq in res['Value'] :
           print printSequence( seq, full = fullFlag )
+          print'|n'
     else :
       print res['Message']

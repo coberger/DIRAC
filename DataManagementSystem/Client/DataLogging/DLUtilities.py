@@ -59,6 +59,8 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     # print 'extractArgs argsPosition %s  args %s kwargs %s \n' % ( argsPosition, args, kwargs )
     extraList = []
     for i in range( len( argsPosition ) ):
+      if i == len( args ):
+        break
       a = argsPosition[i]
       ainwanted = a in wantedArgs
       if ainwanted:
@@ -71,6 +73,10 @@ def extractArgs( argsDecorator, *args, **kwargs ):
           extraList.append( "%s = %s" % ( a, args[i] ) )
 
     if kwargs:
+      for arg in wantedArgs:
+        print 'args %s, kwargsName %s' % ( arg, argsDecorator['kwargsName'] )
+        if arg in argsDecorator['kwargsName']:
+          opArgs[arg] = kwargs.pop( argsDecorator['kwargsName'][arg], 'None' )
       for key in kwargs:
         extraList.append( "%s = %s" % ( key, kwargs[key] ) )
 
