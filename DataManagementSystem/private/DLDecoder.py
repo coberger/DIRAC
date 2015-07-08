@@ -23,10 +23,8 @@ class DLDecoder( json.JSONDecoder ):
                              *args, **kargs )
 
     def dict_to_object( self, d ):
-        # print 'decode %s' % d
         if '__type__' not in d:
             return d
-        # print 'type %s' % d['__type__']
         typeObj = d.pop( '__type__' )
         try:
           if typeObj == 'DLAction':
