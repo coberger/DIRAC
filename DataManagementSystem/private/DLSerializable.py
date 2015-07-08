@@ -13,7 +13,7 @@ from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
 
 class DLSerializable( object ):
   def __init__( self ):
-    self.attrNames = []
+    pass
 
   def toJSON( self ):
     """ Returns the JSON description string """
@@ -26,12 +26,9 @@ class DLSerializable( object ):
 
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
-
-
     jsonData = {}
 
     for attrName in self.attrNames :
-
       value = getattr( self, attrName, None )
       if isinstance( value, datetime.datetime ):
         # We convert date time to a string
