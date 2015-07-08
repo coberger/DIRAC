@@ -12,7 +12,6 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
 from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
-from DIRAC.DataManagementSystem.Client.DataLogging.DLStatus import DLStatus
 from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
 from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
 
@@ -36,8 +35,6 @@ class DLDecoder( json.JSONDecoder ):
             obj = DLSequence.fromJSON( d['methodCalls'][0], d['caller'], d['sequenceID'] )
           elif typeObj == 'DLFile':
             obj = DLFile( d['name'] )
-          elif typeObj == 'DLStatus':
-            obj = DLStatus( d['name'] )
           elif typeObj == 'DLMethodCall':
             obj = DLMethodCall( d )
             obj.actions = d['actions']
