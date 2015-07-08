@@ -69,7 +69,7 @@ def printSequence( seq, full = False ):
               ', sourceSE %s ' % action.srcSE.name if action.srcSE else '',
               ', targetSE %s ' % action.targetSE.name if action.targetSE else '',
               ', extra %s ' % action.extra if action.extra else '',
-              ', errorMessage %s ' % action.messageError if action.messageError else '' )
+              ', errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
       else :
         line += '\t%s%s%s%s'\
             % ( '%s' % action.status,
@@ -107,7 +107,7 @@ def printSequenceLFN( seq, lfn, full = False ):
                   ', sourceSE %s ' % action.srcSE.name if action.srcSE else '',
                   ', targetSE %s ' % action.targetSE.name if action.targetSE else '',
                   ', extra %s ' % action.extra if action.extra else '',
-                  ', errorMessage %s ' % action.messageError if action.messageError else '' )
+                  ', errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
           seqLines.append( line )
         else :
           line += '%s%s%s'\
