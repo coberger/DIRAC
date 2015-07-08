@@ -8,7 +8,7 @@ from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 
 class DLCaller( DLSerializable ):
 
-  attrNames = ['ID', 'name']
+  attrNames = ['callerID', 'name']
 
   def __init__( self, name ):
     super( DLCaller, self ).__init__()
