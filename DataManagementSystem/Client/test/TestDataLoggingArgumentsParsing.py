@@ -76,7 +76,6 @@ class DefaultCase ( DataLoggingArgumentsParsingTestCase ):
     getArgs = funcDict['normal']
     ret = callFunction( getArgs, dict( argsDictDefault ), *argumentsDefault )
     self.assertEqual( ret['Value'], ok )
-
   def test_Error( self ):
     getArgs = funcDict['executeSE']
     ret = callFunction( getArgs, dict( argsDictDefault ), *argumentsDefault )
@@ -90,7 +89,7 @@ class DefaultCase ( DataLoggingArgumentsParsingTestCase ):
 class TupleCase ( DataLoggingArgumentsParsingTestCase ):
 
   def test_DictEqual( self ):
-    ok = [{'file': 'M', 'targetSE': 'destinationSE', 'extra': 'physicalFile = destUrl,fileSize = 150,fileGuid = 40,checksum = 108524789', 'srcSE': None}, {'files': 'TITI', 'targetSE': 'TargetSE', 'extra': 'physicalFile = targetURL,fileSize = 7855,fileGuid = 14,checksum = 155', 'srcSE': None}]
+    ok = [{'file': 'M', 'targetSE': 'destinationSE', 'extra': 'physicalFile = destUrl,fileSize = 150,fileGuid = 40,checksum = 108524789', 'srcSE': None}, {'file': 'TITI', 'targetSE': 'TargetSE', 'extra': 'physicalFile = targetURL,fileSize = 7855,fileGuid = 14,checksum = 155', 'srcSE': None}]
     getArgs = funcDict['tuple']
     ret = callFunction( getArgs, dict( argsDictTuple ), *argumentsTuple )
     self.assertEqual( ret['Value'], ok )
