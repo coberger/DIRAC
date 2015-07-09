@@ -132,7 +132,7 @@ else :
       else :
         for seq in res['Value'] :
           print printSequenceLFN( seq, lfn, full = fullFlag )
-          print'|n'
+          print'\n'
     else :
       print res['Message']
 
@@ -144,7 +144,7 @@ else :
       else :
         for seq in res['Value'] :
           print printSequence( seq, full = fullFlag )
-          print'|n'
+          print'\n'
     else :
       print res['Message']
 
@@ -156,6 +156,6 @@ else :
       else :
         for seq in res['Value'] :
           print printSequence( seq, full = fullFlag )
-          print'|n'
+          print'\n'
     else :
       print res['Message']
