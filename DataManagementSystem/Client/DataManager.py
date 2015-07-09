@@ -409,7 +409,7 @@ class DataManager( object ):
     sortedSEs += randomize( [se for se in ses if se not in sortedSEs] )
     return S_OK( sortedSEs )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'fileName', 'targetSE'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'fileName', 'targetSE', 'guid', 'path', 'checksum'], getActionArgsFunction = 'normal' )
   def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, checksum = None ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
@@ -541,8 +541,7 @@ class DataManager( object ):
     self.log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
     return S_OK( {'Successful': successful, 'Failed': failed } )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', 'srcSE', 'destPath', 'localCache', 'catalog' ], \
-                         kwargsName = {'srcSE':'sourceSE'}, \
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', ( 'srcSE', 'sourceSE' ), 'destPath', 'localCache', 'catalog' ], \
                         getActionArgsFunction = 'normal' )
   def replicateAndRegister( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' , catalog = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -593,8 +592,8 @@ class DataManager( object ):
         failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
     return S_OK( {'Successful': successful, 'Failed': failed} )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', 'srcSE', 'destPath', 'localCache' ], \
-                         kwargsName = {'srcSE':'sourceSE'}, getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', ( 'srcSE', 'sourceSE' ), 'destPath', 'localCache' ], \
+                         getActionArgsFunction = 'normal' )
   def replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 
@@ -903,7 +902,7 @@ class DataManager( object ):
   #
   # These are the file catalog write methods
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'tuple'], getActionArgsFunction = 'tuple', \
+  @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'tuple', \
                          tupleArgsPosition = ['files', 'physicalFile', 'fileSize', 'targetSE', 'fileGuid', 'checksum' ] )
   def registerFile( self, fileTuple, catalog = '' ):
     """ Register a file or a list of files
@@ -952,7 +951,7 @@ class DataManager( object ):
       self.log.debug( errStr, res['Message'] )
 
     return res
-  @DataLoggingDecorator( argsPosition = ['self', 'tuple'], getActionArgsFunction = 'tuple', \
+  @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'tuple', \
                          tupleArgsPosition = ['files', 'PFN', 'targetSE' ] )
   def registerReplica( self, replicaTuple, catalog = '' ):
     """ Register a replica (or list of) supplied in the replicaTuples.
@@ -1026,7 +1025,7 @@ class DataManager( object ):
   #
   # These are the removal methods for physical and catalogue removal
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'files'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'force'], getActionArgsFunction = 'normal' )
   def removeFile( self, lfn, force = None ):
     """ Remove the file (all replicas) from Storage Elements and file catalogue
 
