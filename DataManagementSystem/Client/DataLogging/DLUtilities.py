@@ -84,9 +84,9 @@ def extractArgs( argsDecorator, *args, **kwargs ):
           keyToGet = argName[1]
           argName = argName[0]
         if argName in wantedArgs:
-          opArgs[argName] = kwargs.pop( keyToGet, 'None' )
+          opArgs[argName] = kwargs.pop( keyToGet, None )
         else :
-          value = kwargs.pop( argName, 'None' )
+          value = kwargs.pop( argName, None )
           if value :
             extraList.append( "%s = %s" % ( argName, value ) )
         i += 1
