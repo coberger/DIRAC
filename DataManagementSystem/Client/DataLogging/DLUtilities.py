@@ -80,6 +80,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     if kwargs:
       while i < len( argsPosition ) :
         argName = argsPosition[i]
+        print argName
         if isinstance( argName, tuple ):
           keyToGet = argName[1]
           argName = argName[0]
@@ -88,6 +89,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
         else :
           value = kwargs.pop( argName, 'None' )
           if value :
+            print value
             extraList.append( "%s = %s" % ( argName, value ) )
         i += 1
 
