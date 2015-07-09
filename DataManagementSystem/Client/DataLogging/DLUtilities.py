@@ -49,36 +49,47 @@ def extractArgs( argsDecorator, *args, **kwargs ):
       argsDecorator is the arguments given to create the decorator
       key 'argsPosition' is needed to know which arguments is on each position
       argsPosition is a list with position of the arguments in the call of the decorate function
-      ex : argsPosition = ['files','protocol','srcSE','targetSE']
+      ex : argsPosition = ['files','protocol','srcSE','targetSE'] if all arguments are passed in args
+           argsPosition = ['files','protocol',('srcSE','sourceSE'),('targetSE','destSE')]
+           this is an exemple if in the method srcSE and targetSE are nominal args and if theirs name are sourceSE and destSE
   """
   wantedArgs = ['files', 'srcSE', 'targetSE']
   opArgs = dict.fromkeys( wantedArgs, None )
   opArgs['files'] = []
   try :
     argsPosition = argsDecorator['argsPosition']
-    # print 'extractArgs argsPosition %s  args %s kwargs %s \n' % ( argsPosition, args, kwargs )
     extraList = []
-    for i in range( len( argsPosition ) ):
+    i = 0
+    while i < len( argsPosition ) :
       if i == len( args ):
         break
-      a = argsPosition[i]
-      ainwanted = a in wantedArgs
-      if ainwanted:
-        if a is 'files':
+      argName = argsPosition[i]
+      if isinstance( argName, tuple ):
+        argName = argName[0]
+      if argName in wantedArgs:
+        if argName is 'files':
           opArgs['files'] = getArgFiles( args[i] )
         else :
-          opArgs[a] = args[i]
+          opArgs[argName] = args[i]
       else:
-        if a is not 'self':
-          extraList.append( "%s = %s" % ( a, args[i] ) )
+        if argName is not 'self':
+          if args[i]:
+            extraList.append( "%s = %s" % ( argName, args[i] ) )
+      i += 1
 
     if kwargs:
-      for arg in wantedArgs:
-        print 'args %s, kwargsName %s' % ( arg, argsDecorator['kwargsName'] )
-        if arg in argsDecorator['kwargsName']:
-          opArgs[arg] = kwargs.pop( argsDecorator['kwargsName'][arg], 'None' )
-      for key in kwargs:
-        extraList.append( "%s = %s" % ( key, kwargs[key] ) )
+      while i < len( argsPosition ) :
+        argName = argsPosition[i]
+        if isinstance( argName, tuple ):
+          keyToGet = argName[1]
+          argName = argName[0]
+        if argName in wantedArgs:
+          opArgs[argName] = kwargs.pop( keyToGet, 'None' )
+        else :
+          value = kwargs.pop( argName, 'None' )
+          if value :
+            extraList.append( "%s = %s" % ( argName, value ) )
+        i += 1
 
     if extraList:
       opArgs['extra'] = ','.join( extraList )
@@ -108,7 +119,6 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     ret = S_ERROR( 'unexpected error in DLFucntions.extractArgs %s' % e )
     ret['Value'] = actionArgs
     return ret
-
   return S_OK( actionArgs )
 
 def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
@@ -173,8 +183,7 @@ def extractArgsFromDict( info , *args, **kwargs ):
             dextra = list( extraList )
             d = dict( opArgs )
             valueName = info['valueName']
-            valueNameInWanted = valueName in wantedArgs
-            if valueNameInWanted:
+            if valueName in wantedArgs:
               d[valueName] = value
             else:
               dextra.append( "%s = %s" % ( valueName, value ) )
@@ -197,8 +206,7 @@ def extractArgsFromDict( info , *args, **kwargs ):
             d = dict( opArgs )
             d['file'] = key
             for keyToget in keysToGet:
-              keyinwanted = keyToget in wantedArgs
-              if keyinwanted:
+              if keyToget in wantedArgs:
                 d[keyToget] = dictInfo.get( keysToGet[keyToget], None )
               else :
                 dextra.append( "%s = %s" % ( keysToGet[keyToget], dictInfo.get( keysToGet[keyToget], None ) ) )
@@ -255,9 +263,10 @@ def extractTupleArgs( argsDecorator, *args, **kwargs ):
     tupleArgsPosition = argsDecorator['tupleArgsPosition']
     extraList = []
     for i in range( len( argsPosition ) ):
+      if i == len( args ):
+        break
       a = argsPosition[i]
-      ainwanted = a in wantedArgs
-      if ainwanted:
+      if a in wantedArgs:
         if a is 'files':
           opArgs['file'] = getArgFiles( args[i] )
         else :
@@ -335,7 +344,7 @@ def getArgFiles( args ):
     elif isinstance( args , dict ):
       files = []
       for el in args.keys() :
-        files .append( str( el ) )
+        files.append( str( el ) )
     else :
       files = [args]
   except Exception as e:
