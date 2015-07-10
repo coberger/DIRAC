@@ -535,7 +535,7 @@ class DataLoggingDB( object ):
     query = session.query( DLMethodCall )\
                 .join( DLAction )\
                 .join( DLFile )\
-                .filter( DLFile.name == lfn )
+                .filter( DLFile.name == lfn ).order_by( DLMethodCall.sequenceID, DLMethodCall.creationTime )
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
     elif before :
@@ -567,7 +567,8 @@ class DataLoggingDB( object ):
     session = self.DBSession()
     query = session.query( DLMethodCall )\
                 .join( DLMethodName )\
-                .filter( DLMethodName.name == name )
+                .filter( DLMethodName.name == name )\
+                .order_by( DLMethodCall.sequenceID, DLMethodCall.creationTime )
 
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
