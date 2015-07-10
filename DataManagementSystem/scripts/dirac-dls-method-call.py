@@ -60,7 +60,7 @@ def printMethodCallLFN( call, lfn, full = False, status = None ):
             line += '%s%s'\
               % ( ',extra %s ' % action.extra if action.extra else '',
               ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
-        callLines.append( line )
+
       else :
         line += '%s%s%s%s'\
             % ( '%s ' % action.status,
@@ -71,7 +71,7 @@ def printMethodCallLFN( call, lfn, full = False, status = None ):
           line += '%s%s'\
             % ( ',extra %s ' % action.extra if action.extra else '',
               ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
-        callLines.append( line )
+      callLines.append( line )
   return '\n'.join( callLines )
 
 
@@ -92,7 +92,6 @@ def printMethodCall( call, full = False, status = None ):
             line += '%s%s'\
                 % ( ',extra %s ' % action.extra if action.extra else '',
                   ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
-          callLines.append( line )
     else :
       line = '\t%s%s%s%s'\
               % ( '%s ' % action.status,
@@ -103,7 +102,7 @@ def printMethodCall( call, full = False, status = None ):
         line += '%s%s'\
             % ( ',extra %s ' % action.extra if action.extra else '',
               ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
-      callLines.append( line )
+    callLines.append( line )
   return '\n'.join( callLines )
 
 
@@ -117,7 +116,7 @@ if not lfn and not name :
 else :
   if lfn :
     print status
-    res = dlc.getMethodCallOnFile( lfn, before, after )
+    res = dlc.getMethodCallOnFile( lfn, before, after, status )
     if res['OK']:
       if not res['Value'] :
         print 'no methodCall to print'
@@ -127,7 +126,7 @@ else :
     else :
       print res['Value']
   elif name :
-    res = dlc.getMethodCallByName( name, before, after )
+    res = dlc.getMethodCallByName( name, before, after, status )
     if res['OK']:
       if not res['Value'] :
         print 'no methodCall to print'

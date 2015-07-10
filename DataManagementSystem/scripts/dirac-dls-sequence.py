@@ -129,7 +129,7 @@ if not lfn and not IDSeq and not callerName :
 else :
   dlc = DataLoggingClient()
   if lfn :
-    res = dlc.getSequenceOnFile( lfn, before, after )
+    res = dlc.getSequenceOnFile( lfn, before, after, status )
     if res['OK']:
       if not res['Value'] :
         print 'no sequence to print'
@@ -153,7 +153,7 @@ else :
       print res['Message']
 
   elif callerName :
-    res = dlc.getSequenceByCaller( callerName, before, after )
+    res = dlc.getSequenceByCaller( callerName, before, after, status )
     if res['OK']:
       if not res['Value'] :
         print 'no sequence to print'
