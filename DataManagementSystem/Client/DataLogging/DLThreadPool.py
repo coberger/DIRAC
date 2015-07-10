@@ -6,8 +6,8 @@ Created on May 4, 2015
 
 from threading  import Lock
 
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
-
 
 class DLThreadPool :
   """
@@ -26,20 +26,33 @@ class DLThreadPool :
 
   @classmethod
   def getDataLoggingSequence( cls, threadID ):
-    """ return the DLSequence associated to the threadID
-        :param threadID: id of the thread
+    """
+      return the DLSequence associated to the threadID
+
+      :param threadID: id of the thread
+
+      :return res, S_OK( sequence ) or S_ERROR('Error message')
     """
     cls.lock.acquire()
     if threadID not in cls.pool:
-      cls.pool[threadID] = DLSequence()
+      seq = DLSequence()
+      res = getProxyInfo()
+      if res['OK']:
+        proxyInfo = res['Value']
+        seq.userName = proxyInfo['username']
+        seq.group = proxyInfo['group']
+        seq.hostName = proxyInfo['hostname']
+      cls.pool[threadID] = seq
     res = cls.pool[threadID]
     cls.lock.release()
     return res
 
   @classmethod
   def popDataLoggingSequence( cls, threadID ):
-    """ pop an element from the dict and return the value associated to key threadID
-        :param threadID: id of the thread
+    """
+      pop an element from the dict and return the value associated to key threadID
+
+      :param threadID: id of the thread
     """
     cls.lock.acquire()
     res = cls.pool.pop( threadID )

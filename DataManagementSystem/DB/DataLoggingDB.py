@@ -23,7 +23,7 @@ from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException
 
 # from sqlalchemy
-from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between, desc
+from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between
 from sqlalchemy.orm     import mapper, sessionmaker, relationship
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 
@@ -94,6 +94,9 @@ mapper( DLAction, dataLoggingActionTable,
 dataLoggingSequenceTable = Table( 'DLSequence', metadata,
                    Column( 'sequenceID', Integer, primary_key = True ),
                    Column( 'callerID', Integer, ForeignKey( 'DLCaller.callerID' ) ),
+                   Column( 'group', String( 1024 ) ),
+                   Column( 'userName', String( 1024 ) ),
+                   Column( 'hostName', String( 1024 ) ),
                    mysql_engine = 'InnoDB' )
 # Map the DLSequence object to the dataLoggingSequenceTable with one relationship between attribute methodCalls and table DLMethodCall
 # and one foreign key for attribute caller

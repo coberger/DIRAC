@@ -11,21 +11,27 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
 
 class DLSequence( DLSerializable ) :
   """ Describe a sequence, used to know sequence of MethodCall"""
-  attrNames = ['sequenceID', 'caller', 'methodCalls']
+  attrNames = ['sequenceID', 'caller', 'methodCalls', 'userName', 'hostName', 'group']
 
   def __init__( self ):
     super( DLSequence, self ).__init__()
     self.caller = None
+    self.userName = None
+    self.hostName = None
+    self.group = None
     self.stack = []
     self.methodCalls = []
 
   @staticmethod
-  def fromJSON( methodCall, caller, sequenceID ):
+  def fromJSON( methodCall, caller, sequenceID, userName, group, hostName ):
     """ create a sequence from a JSON representation"""
     seq = DLSequence()
     stack = list()
     seq.sequenceID = sequenceID
     seq.caller = caller
+    seq.userName = userName
+    seq.hostName = hostName
+    seq.group = group
     seq.methodCalls = list()
 
     # depth first search

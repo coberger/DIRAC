@@ -30,7 +30,7 @@ class DLDecoder( json.JSONDecoder ):
           if typeObj == 'DLAction':
             obj = DLAction( d['fileDL'], d['status'] , d['srcSE'], d['targetSE'], d['extra'], d['errorMessage'], ID = d['actionID'] )
           elif typeObj == 'DLSequence':
-            obj = DLSequence.fromJSON( d['methodCalls'][0], d['caller'], d['sequenceID'] )
+            obj = DLSequence.fromJSON( d['methodCalls'][0], d['caller'], d['sequenceID'], d['userName'], d['group'], d['hostName'] )
           elif typeObj == 'DLFile':
             obj = DLFile( d['name'] )
           elif typeObj == 'DLMethodCall':
