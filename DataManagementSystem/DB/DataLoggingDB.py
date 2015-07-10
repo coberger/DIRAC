@@ -23,7 +23,7 @@ from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException
 
 # from sqlalchemy
-from sqlalchemy         import create_engine, func, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between, desc
+from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between
 from sqlalchemy.orm     import mapper, sessionmaker, relationship
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 
