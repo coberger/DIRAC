@@ -6,7 +6,11 @@ Created on May 4, 2015
 
 from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 
-class DLAction ( DLSerializable ):
+class DLAction( DLSerializable ):
+  """
+    this is the DLAction class for data logging system
+    an action is corresponding to one method call about one lfn
+  """
 
   attrNames = ['fileDL', 'status', 'srcSE', 'targetSE', 'extra', 'errorMessage', 'actionID']
 

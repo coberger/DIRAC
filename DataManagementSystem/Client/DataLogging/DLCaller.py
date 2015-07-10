@@ -7,6 +7,10 @@ from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 
 
 class DLCaller( DLSerializable ):
+  """
+    this is the DLCaller class for data logging system
+    the caller is who called the first decorate method
+  """
 
   attrNames = ['callerID', 'name']
 
