@@ -37,6 +37,7 @@ class DLThreadPool :
     if threadID not in cls.pool:
       seq = DLSequence()
       res = getProxyInfo()
+      print res
       if res['OK']:
         proxyInfo = res['Value']
         seq.userName = proxyInfo['username']
