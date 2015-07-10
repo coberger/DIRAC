@@ -20,7 +20,7 @@ Script.registerSwitch( 'i:', 'ID=', 'ID of sequence [%s]' % IDSeq )
 Script.registerSwitch( 'n:', 'Name=', 'Name of caller [%s]' % callerName )
 Script.registerSwitch( 'a:', 'After=', 'date, format be like 1999-12-31 [%s]' % after )
 Script.registerSwitch( 'b:', 'Before=', 'date, format be like 1999-12-31 [%s]' % before )
-Script.registerSwitch( 's:', 'Status=', 'date, format be like 1999-12-31 [%s]' % status )
+Script.registerSwitch( 'w:', 'Status=', 'date, format be like 1999-12-31 [%s]' % status )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'USAGE:',
                                      ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,

@@ -17,7 +17,7 @@ Script.registerSwitch( 'f:', 'File=', 'Name of LFN [%s]' % lfn )
 Script.registerSwitch( 'm:', 'MethodName=', 'Name of method [%s]' % name )
 Script.registerSwitch( 'a:', 'After=', 'date, format be like 1999-12-31 [%s]' % after )
 Script.registerSwitch( 'b:', 'Before=', 'date, format be like 1999-12-31 [%s]' % before )
-Script.registerSwitch( 's:', 'Status=', 'date, format be like 1999-12-31 [%s]' % status )
+Script.registerSwitch( 'w:', 'Status=', 'date, format be like 1999-12-31 [%s]' % status )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'USAGE:',
                                      ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
