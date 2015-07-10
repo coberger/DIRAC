@@ -462,6 +462,7 @@ class DataLoggingDB( object ):
 
     """
     try:
+      print obj
       if obj.name is None :
         return S_OK( None )
       elif obj.name not in objDict :
