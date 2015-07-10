@@ -193,6 +193,9 @@ class DataLoggingDB( object ):
     self.dictFile = {}
     self.dictMethodName = {}
     self.dictCaller = {}
+    self.dictUserName = {}
+    self.dictHostName = {}
+    self.dictGroup = {}
 
 
   def createTables( self ):
