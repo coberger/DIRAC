@@ -41,16 +41,18 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 
 def printMethodCallLFN( call, lfn, full = False ):
   callLines = []
-  line = '%s %s %s' % \
-    ( call.name.name, 'SequenceID %s ' % call.sequenceID, call.creationTime )
+  line = '%s %s, ' % \
+    ( call.name.name, 'SequenceID %s ' % call.sequenceID )
   for action in call.actions :
     if action.fileDL.name == lfn:
+      line += '%s%s%s%s'\
+            % ( '%s ' % action.status,
+                ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
+                ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
+                call.creationTime )
       if full :
-        line += '%s%s%s%s%s'\
-          % ( '%s ' % action.status,
-              ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-              ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
-              ',extra %s ' % action.extra if action.extra else '',
+        line += '%s%s'\
+          % ( ',extra %s ' % action.extra if action.extra else '',
               ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
       else :
         line += '%s%s%s'\

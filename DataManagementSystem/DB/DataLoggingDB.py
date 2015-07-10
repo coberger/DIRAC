@@ -23,7 +23,7 @@ from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException
 
 # from sqlalchemy
-from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between
+from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between, desc
 from sqlalchemy.orm     import mapper, sessionmaker, relationship
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 
@@ -535,7 +535,8 @@ class DataLoggingDB( object ):
     query = session.query( DLMethodCall )\
                 .join( DLAction )\
                 .join( DLFile )\
-                .filter( DLFile.name == lfn ).order_by( DLMethodCall.sequenceID, DLMethodCall.creationTime )
+                .filter( DLFile.name == lfn )\
+                .order_by( DLMethodCall.sequenceID, desc( DLMethodCall.creationTime ) )
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
     elif before :
@@ -568,7 +569,7 @@ class DataLoggingDB( object ):
     query = session.query( DLMethodCall )\
                 .join( DLMethodName )\
                 .filter( DLMethodName.name == name )\
-                .order_by( DLMethodCall.sequenceID, DLMethodCall.creationTime )
+                .order_by( DLMethodCall.sequenceID, desc( DLMethodCall.creationTime ) )
 
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
