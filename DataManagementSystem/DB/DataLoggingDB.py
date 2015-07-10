@@ -434,7 +434,7 @@ class DataLoggingDB( object ):
       return S_ERROR( "getOrCreate: unexpected exception %s" % e )
 
 
-  def getSequenceOnFile( self, lfn, before, after ):
+  def getSequenceOnFile( self, lfn, before, after, status ):
     """
       get all sequence about a lfn's name
 
@@ -457,6 +457,8 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
+    elif status :
+      query = query.filter( DLAction.status == status )
 
     try :
       seqs = query.distinct( DLSequence.sequenceID )
@@ -490,7 +492,7 @@ class DataLoggingDB( object ):
     return S_OK( seqs )
 
 
-  def getSequenceByCaller( self, callerName, before, after ):
+  def getSequenceByCaller( self, callerName, before, after, status ):
     """
       get the sequence where the caller is callerName
 
@@ -511,6 +513,8 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
+    elif status :
+      query = query.filter( DLAction.status == status )
 
     try :
       seqs = query.distinct( DLSequence.sequenceID )
@@ -521,7 +525,7 @@ class DataLoggingDB( object ):
       session.close
     return S_OK( seqs )
 
-  def getMethodCallOnFile( self, lfn, before, after ):
+  def getMethodCallOnFile( self, lfn, before, after, status ):
     """
       get all operation about a file's name, before and after are date
 
@@ -543,6 +547,8 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
+    elif status :
+      query = query.filter( DLAction.status == status )
 
     try:
       calls = query.distinct( DLMethodCall.methodCallID )
@@ -555,7 +561,7 @@ class DataLoggingDB( object ):
 
     return S_OK( calls )
 
-  def getMethodCallByName( self, name, before, after ):
+  def getMethodCallByName( self, name, before, after, status ):
     """
       get all operation about a method call name
 
@@ -577,6 +583,9 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
+    elif status :
+      query = query.filter( DLAction.status == status )
+
     try:
       calls = query.distinct( DLMethodCall.methodCallID )
     except Exception, e:

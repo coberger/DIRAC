@@ -80,7 +80,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getSequenceOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getSequenceOnFile( cls, fileName, before = None, after = None ):
+  def export_getSequenceOnFile( cls, fileName, before = None, after = None, status = None ):
     """
       this method call the getSequenceOnFile method of DataLoggingDB
 
@@ -90,7 +90,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :return sequences, a list of sequence
     """
-    res = cls.__dataLoggingDB.getSequenceOnFile( fileName, before, after )
+    res = cls.__dataLoggingDB.getSequenceOnFile( fileName, before, after, status )
     if not res["OK"]:
       return res
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
@@ -115,7 +115,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getSequenceByCaller = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getSequenceByCaller( cls, callerName, before = None, after = None ):
+  def export_getSequenceByCaller( cls, callerName, before = None, after = None, status = None ):
     """
       this method call the getSequenceByCaller method of DataLoggingDB
 
@@ -125,7 +125,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :return sequences, a list of sequence
     """
-    res = cls.__dataLoggingDB.getSequenceByCaller( callerName, before, after )
+    res = cls.__dataLoggingDB.getSequenceByCaller( callerName, before, after, status )
     if not res["OK"]:
       return res
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
@@ -134,7 +134,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getMethodCallOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getMethodCallOnFile( cls, fileName, before = None, after = None ):
+  def export_getMethodCallOnFile( cls, fileName, before = None, after = None, status = None ):
     """
       this method call the getMethodCallOnFile method of DataLoggingDB
 
@@ -144,7 +144,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :return methodCalls, a list of method call
     """
-    res = cls.__dataLoggingDB.getMethodCallOnFile( fileName, before, after )
+    res = cls.__dataLoggingDB.getMethodCallOnFile( fileName, before, after, status )
     if not res["OK"]:
       return res
     methodCalls = [call.toJSON()['Value'] for call in res['Value']]
@@ -153,7 +153,7 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getMethodCallByName = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getMethodCallByName( cls, methodName, before = None, after = None ):
+  def export_getMethodCallByName( cls, methodName, before = None, after = None, status = None ):
     """
       this method call the getMethodCallByName method of DataLoggingDB
 
@@ -163,7 +163,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :return methodCalls, a list of method call
     """
-    res = cls.__dataLoggingDB.getMethodCallByName( methodName, before, after )
+    res = cls.__dataLoggingDB.getMethodCallByName( methodName, before, after, status )
     if not res["OK"]:
       return res
     methodCalls = [call.toJSON()['Value'] for call in res['Value']]

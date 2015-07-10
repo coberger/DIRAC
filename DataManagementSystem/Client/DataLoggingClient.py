@@ -33,7 +33,7 @@ class DataLoggingClient( Client ):
     res = self.dataLoggingManager.insertSequence( seq, directInsert )
     return res
 
-  def getSequenceOnFile( self, fileName, before = None, after = None ):
+  def getSequenceOnFile( self, fileName, before = None, after = None, status = None ):
     """
       This select all Sequence about a file
 
@@ -43,7 +43,7 @@ class DataLoggingClient( Client ):
 
       :return sequences, a list of sequence
     """
-    res = self.dataLoggingManager.getSequenceOnFile( fileName, before, after )
+    res = self.dataLoggingManager.getSequenceOnFile( fileName, before, after, status )
     if not res["OK"]:
       return res
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
@@ -64,7 +64,7 @@ class DataLoggingClient( Client ):
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
     return S_OK( sequences )
 
-  def getSequenceByCaller( self, callerName, before = None, after = None ):
+  def getSequenceByCaller( self, callerName, before = None, after = None, status = None ):
     """
       This select all Sequence about an ID
 
@@ -75,13 +75,13 @@ class DataLoggingClient( Client ):
       :return sequences, a list of sequence
     """
     print callerName
-    res = self.dataLoggingManager.getSequenceByCaller( callerName, before, after )
+    res = self.dataLoggingManager.getSequenceByCaller( callerName, before, after, status )
     if not res["OK"]:
       return res
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
     return S_OK( sequences )
 
-  def getMethodCallOnFile( self, fileName, before = None, after = None ):
+  def getMethodCallOnFile( self, fileName, before = None, after = None, status = None ):
     """
       This select all method call about a file, you can precise a date before, a date after and both to make a between
 
@@ -91,13 +91,13 @@ class DataLoggingClient( Client ):
 
       :return methodCalls, a list of method call
     """
-    res = self.dataLoggingManager.getMethodCallOnFile( fileName, before, after )
+    res = self.dataLoggingManager.getMethodCallOnFile( fileName, before, after, status )
     if not res["OK"]:
       return res
     methodCalls = [json.loads( call, cls = DLDecoder ) for call in res['Value']]
     return S_OK( methodCalls )
 
-  def getMethodCallByName( self, name, before = None, after = None ):
+  def getMethodCallByName( self, name, before = None, after = None, status = None ):
     """
       This select all method call about a specific method name, you can precise a date before, a date after and both to make a between
 
@@ -107,7 +107,7 @@ class DataLoggingClient( Client ):
 
       :return methodCalls, a list of method call
     """
-    res = self.dataLoggingManager.getMethodCallByName( name, before, after )
+    res = self.dataLoggingManager.getMethodCallByName( name, before, after, status )
     if not res["OK"]:
       return res
     methodCalls = [json.loads( call, cls = DLDecoder ) for call in res['Value']]

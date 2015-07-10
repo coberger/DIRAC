@@ -12,13 +12,15 @@ fullFlag = False
 callerName = None
 after = None
 before = None
+status = None
 
 Script.registerSwitch( '', 'Full', '   Print full method call' )
-Script.registerSwitch( 'f:', 'LFN=', 'Name of LFN [%s]' % lfn )
+Script.registerSwitch( 'f:', 'File=', 'Name of LFN [%s]' % lfn )
 Script.registerSwitch( 'i:', 'ID=', 'ID of sequence [%s]' % IDSeq )
 Script.registerSwitch( 'n:', 'Name=', 'Name of caller [%s]' % callerName )
 Script.registerSwitch( 'a:', 'After=', 'date, format be like 1999-12-31 [%s]' % after )
 Script.registerSwitch( 'b:', 'Before=', 'date, format be like 1999-12-31 [%s]' % before )
+Script.registerSwitch( 's:', 'Status=', 'date, format be like 1999-12-31 [%s]' % status )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'USAGE:',
                                      ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
@@ -28,16 +30,18 @@ Script.setUsageMessage( '\n'.join( [ __doc__,
 Script.parseCommandLine( ignoreErrors = False )
 
 for switch in Script.getUnprocessedSwitches():
-  if switch[0] == "f" or switch[0].lower() == "lfn":
+  if switch[0] == "f" or switch[0].lower() == "file":
     lfn = switch[1]
   elif switch[0] == "i" or switch[0].lower() == "id":
     IDSeq = switch[1]
   elif switch[0] == "n" or switch[0].lower() == "name":
     callerName = switch[1]
-  elif switch[0] == "a" or switch[0].lower() == "After":
+  elif switch[0] == "a" or switch[0].lower() == "after":
     after = switch[1]
-  elif switch[0] == "b" or switch[0].lower() == "Before":
+  elif switch[0] == "b" or switch[0].lower() == "before":
     before = switch[1]
+  elif switch[0] == "s" or switch[0].lower() == "status":
+    status = switch[1]
   elif switch[0].lower() == "full":
     fullFlag = True
 
