@@ -116,6 +116,7 @@ if not lfn and not name :
   print 'you should give at least one lfn or one method name'
 else :
   if lfn :
+    print status
     res = dlc.getMethodCallOnFile( lfn, before, after )
     if res['OK']:
       if not res['Value'] :

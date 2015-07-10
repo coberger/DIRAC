@@ -91,6 +91,7 @@ class DataLoggingClient( Client ):
 
       :return methodCalls, a list of method call
     """
+    print status
     res = self.dataLoggingManager.getMethodCallOnFile( fileName, before, after, status )
     if not res["OK"]:
       return res
