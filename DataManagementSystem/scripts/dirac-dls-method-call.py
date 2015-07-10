@@ -40,7 +40,6 @@ for switch in Script.getUnprocessedSwitches():
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 def printMethodCallLFN( call, lfn, full = False ):
-  print call, call.actions
   callLines = []
   line = '%s %s, ' % \
     ( call.name.name, 'SequenceID %s ' % call.sequenceID )
@@ -55,7 +54,7 @@ def printMethodCallLFN( call, lfn, full = False ):
         line += '%s%s'\
           % ( ',extra %s ' % action.extra if action.extra else '',
               ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
-
+      callLines.append( line )
   return '\n'.join( callLines )
 
 
