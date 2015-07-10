@@ -40,7 +40,7 @@ for switch in Script.getUnprocessedSwitches():
     after = switch[1]
   elif switch[0] == "b" or switch[0].lower() == "before":
     before = switch[1]
-  elif switch[0] == "s" or switch[0].lower() == "status":
+  elif switch[0] == "w" or switch[0].lower() == "status":
     status = switch[1]
   elif switch[0].lower() == "full":
     fullFlag = True
