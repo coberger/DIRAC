@@ -90,7 +90,6 @@ def extractArgs( argsDecorator, *args, **kwargs ):
           if value :
             extraList.append( "%s = %s" % ( argName, value ) )
         i += 1
-
     if extraList:
       opArgs['extra'] = ','.join( extraList )
     else:
@@ -163,8 +162,6 @@ def extractArgsFromDict( info , *args, **kwargs ):
   """
   try :
     wantedArgs = ['files', 'srcSE', 'targetSE']
-    # print 'getArgsExecuteSE,argsDecorator = %s\n, args = %s\n, kwargs = %s\n' % ( info, args, kwargs )
-
     argsPosition = info['Arguments']
     opArgs = dict.fromkeys( wantedArgs, None )
     extraList = []
