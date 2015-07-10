@@ -121,14 +121,17 @@ mapper( DLAction, dataLoggingActionTable,
 dataLoggingSequenceTable = Table( 'DLSequence', metadata,
                    Column( 'sequenceID', Integer, primary_key = True ),
                    Column( 'callerID', Integer, ForeignKey( 'DLCaller.callerID' ) ),
-                   Column( 'group', String( 1024 ) ),
-                   Column( 'userName', String( 1024 ) ),
-                   Column( 'hostName', String( 1024 ) ),
+                   Column( 'groupID', Integer, ForeignKey( 'DLGroup.groupID' ) ),
+                   Column( 'userNameID', Integer, ForeignKey( 'DLUserName.userNameID' ) ),
+                   Column( 'hostNameID', Integer, ForeignKey( 'DLHostName.hostNameID' ) ),
                    mysql_engine = 'InnoDB' )
 # Map the DLSequence object to the dataLoggingSequenceTable with one relationship between attribute methodCalls and table DLMethodCall
 # and one foreign key for attribute caller
 mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DLMethodCall ),
-                                                                     'caller' : relationship( DLCaller ) } )
+                                                             'caller' : relationship( DLCaller ),
+                                                             'group' : relationship( DLGroup ),
+                                                             'userName' : relationship( DLUserName ),
+                                                              'hostName' : relationship( DLHostName ) } )
 
 # Description of the DLMethodCall table
 dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
