@@ -18,6 +18,9 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
 from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
+from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
+from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException
@@ -47,6 +50,30 @@ dataLoggingFileTable = Table( 'DLFile', metadata,
                    mysql_engine = 'InnoDB' )
 # Map the DLFile object to the dataLoggingFileTable
 mapper( DLFile, dataLoggingFileTable )
+
+# Description of the DLUserName table
+dataLoggingUserNameTable = Table( 'DLUserName', metadata,
+                   Column( 'userNameID', Integer, primary_key = True ),
+                   Column( 'name', String( 255 ), unique = True, index = True ),
+                   mysql_engine = 'InnoDB' )
+# Map the DLUserName object to the dataLoggingUserNameTable
+mapper( DLUserName, dataLoggingUserNameTable )
+
+# Description of the DLUserName table
+dataLoggingGroupTable = Table( 'DLGroup', metadata,
+                   Column( 'groupID', Integer, primary_key = True ),
+                   Column( 'name', String( 255 ), unique = True, index = True ),
+                   mysql_engine = 'InnoDB' )
+# Map the DLUserName object to the dataLoggingUserNameTable
+mapper( DLGroup, dataLoggingGroupTable )
+
+# Description of the DLUserName table
+dataLoggingHostNameTable = Table( 'DLHostName', metadata,
+                   Column( 'hostNameID', Integer, primary_key = True ),
+                   Column( 'name', String( 255 ), unique = True, index = True ),
+                   mysql_engine = 'InnoDB' )
+# Map the DLUserName object to the dataLoggingUserNameTable
+mapper( DLHostName, dataLoggingHostNameTable )
 
 # Description of the DLMethodName table
 dataLoggingMethodNameTable = Table( 'DLMethodName', metadata,
@@ -361,13 +388,30 @@ class DataLoggingDB( object ):
       :param sequence: a DLSequence
 
     """
-
     try:
       # we get the caller from database
       res = self.getOrCreate(session,DLCaller, sequence.caller, self.dictCaller)
       if not res['OK'] :
         return res
       sequence.caller = res['Value']
+
+      # we get the userName from db
+      res = self.getOrCreate( session, DLUserName, sequence.userName, self.dictUserName )
+      if not res['OK'] :
+        return res
+      sequence.userName = res['Value']
+
+      # we get the hostName from db
+      res = self.getOrCreate( session, DLHostName, sequence.hostName, self.dictHostName )
+      if not res['OK'] :
+        return res
+      sequence.hostName = res['Value']
+
+      # we get the group from db
+      res = self.getOrCreate( session, DLGroup, sequence.group, self.dictGroup )
+      if not res['OK'] :
+        return res
+      sequence.group = res['Value']
 
       for mc in sequence.methodCalls:
 

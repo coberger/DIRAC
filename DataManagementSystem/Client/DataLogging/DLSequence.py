@@ -9,6 +9,7 @@ from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
 from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
 
+
 class DLSequence( DLSerializable ) :
   """ Describe a sequence, used to know sequence of MethodCall"""
   attrNames = ['sequenceID', 'caller', 'methodCalls', 'userName', 'hostName', 'group']
