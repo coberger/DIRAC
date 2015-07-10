@@ -40,9 +40,9 @@ class DLThreadPool :
       print res
       if res['OK']:
         proxyInfo = res['Value']
-        seq.userName = proxyInfo['username']
-        seq.group = proxyInfo['group']
-        seq.hostName = proxyInfo['hostname']
+        seq.userName = proxyInfo.get( 'username' )
+        seq.group = proxyInfo.get( 'group' )
+        seq.hostName = proxyInfo.get( 'hostname' )
       cls.pool[threadID] = seq
     res = cls.pool[threadID]
     cls.lock.release()
