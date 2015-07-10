@@ -14,6 +14,9 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodC
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
 from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
 from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
+from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
+from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
 
 
 class DLDecoder( json.JSONDecoder ):
@@ -43,6 +46,12 @@ class DLDecoder( json.JSONDecoder ):
             obj = DLMethodName( d['name'] )
           elif typeObj == 'DLStorageElement':
             obj = DLStorageElement( d['name'] )
+          elif typeObj == 'DLUserName':
+            obj = DLUserName( d['name'] )
+          elif typeObj == 'DLGroup':
+            obj = DLGroup( d['name'] )
+          elif typeObj == 'DLHostName':
+            obj = DLHostName( d['name'] )
           else:
             obj = d
           return obj
