@@ -536,7 +536,7 @@ class DataLoggingDB( object ):
                 .join( DLAction )\
                 .join( DLFile )\
                 .filter( DLFile.name == lfn )\
-                .order_by( DLMethodCall.sequenceID ).order_by( desc( DLMethodCall.creationTime ) )
+                .order_by( DLMethodCall.sequenceID ).order_by( DLMethodCall.creationTime )
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
     elif before :
