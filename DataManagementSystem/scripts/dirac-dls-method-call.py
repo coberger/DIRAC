@@ -54,12 +54,6 @@ def printMethodCallLFN( call, lfn, full = False ):
         line += '%s%s'\
           % ( ',extra %s ' % action.extra if action.extra else '',
               ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
-      else :
-        line += '%s%s%s'\
-            % ( '%s ' % action.status,
-                ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-                ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
-      callLines.append( line )
 
   return '\n'.join( callLines )
 
@@ -70,20 +64,16 @@ def printMethodCall( call, full = False ):
     ( call.name.name, 'SequenceID %s ' % call.sequenceID, call.creationTime )
   callLines.append( line )
   for action in call.actions :
-    if full :
-      line = '\t%s%s%s%s%s%s'\
+    line = '\t%s%s%s%s'\
         % ( '%s ' % action.status,
             ',file %s ' % action.fileDL.name if action.fileDL else '',
             ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-            ',targetSE %s ' % action.targetSE.name if action.targetSE else '',
-            ',extra %s ' % action.extra if action.extra else '',
-            ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
-    else :
-      line = '\t%s%s%s%s'\
-          % ( '%s ' % action.status,
-              ',file %s ' % action.fileDL.name if action.fileDL else '',
-              ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-              ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
+            ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
+    if full :
+      line += '%s%s'\
+        % ( ',extra %s ' % action.extra if action.extra else '',
+           ',errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
+
     callLines.append( line )
 
   return '\n'.join( callLines )
