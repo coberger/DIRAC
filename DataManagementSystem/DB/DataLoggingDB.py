@@ -388,7 +388,6 @@ class DataLoggingDB( object ):
       :param sequence: a DLSequence
     """
     session = None
-    print sequence
     try:
       session = self.DBSession()
       ret = self.__putSequence( session, sequence )
@@ -463,10 +462,15 @@ class DataLoggingDB( object ):
             return res
           action.targetSE = res['Value']
 
+      print '\n \n \nbefore sav'
       for key, value in sequence.extra.items():
         sav = DLSequenceAttributeValue( value )
         sav.sequence = sequence
-        sav.sequenceAttribute = self.getOrCreate( session, DLSequenceAttribute, key, self.dictSequenceAttribute )
+        res = self.getOrCreate( session, DLSequenceAttribute, key, self.dictSequenceAttribute )
+        print res
+        if not res['OK']:
+          return res
+        sav.sequenceAttribute = res['Value']
         sequence.attributesValues.append( sav )
 
       session.merge( sequence )

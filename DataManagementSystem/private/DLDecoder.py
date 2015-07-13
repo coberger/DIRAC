@@ -35,7 +35,6 @@ class DLDecoder( json.JSONDecoder ):
           elif typeObj == 'DLSequence':
             print d
             obj = DLSequence.fromJSON( d['methodCalls'][0], d['caller'], d['sequenceID'], d['userName'], d['group'], d['hostName'], d['extra'] )
-            print obj
           elif typeObj == 'DLFile':
             obj = DLFile( d['name'] )
           elif typeObj == 'DLMethodCall':
