@@ -133,7 +133,8 @@ mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : rel
                                                              'caller' : relationship( DLCaller ),
                                                              'group' : relationship( DLGroup ),
                                                              'userName' : relationship( DLUserName ),
-                                                              'hostName' : relationship( DLHostName ) } )
+                                                             'hostName' : relationship( DLHostName ),
+                                                             'attributesValues': relationship( DLSequenceAttributeValue ) } )
 
 # Description of the DLMethodCall table
 dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
