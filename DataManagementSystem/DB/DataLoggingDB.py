@@ -546,6 +546,7 @@ class DataLoggingDB( object ):
       seqs = query.distinct( DLSequence.sequenceID )
       if seqs :
         for seq in seqs :
+          seq.extra = {}
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
@@ -571,6 +572,7 @@ class DataLoggingDB( object ):
                   .filter( DLSequence.sequenceID == IDSeq ).all()
       if seqs :
         for seq in seqs :
+          seq.extra = {}
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
@@ -610,6 +612,7 @@ class DataLoggingDB( object ):
       seqs = query.distinct( DLSequence.sequenceID )
       if seqs :
         for seq in seqs :
+          seq.extra = {}
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
