@@ -388,6 +388,7 @@ class DataLoggingDB( object ):
       :param sequence: a DLSequence
     """
     session = None
+    print sequence
     try:
       session = self.DBSession()
       ret = self.__putSequence( session, sequence )
