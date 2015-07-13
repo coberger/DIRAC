@@ -128,6 +128,7 @@ dataLoggingSequenceTable = Table( 'DLSequence', metadata,
                    Column( 'hostNameID', Integer, ForeignKey( 'DLHostName.hostNameID' ) ),
                    mysql_engine = 'InnoDB' )
 # Map the DLSequence object to the dataLoggingSequenceTable with one relationship between attribute methodCalls and table DLMethodCall
+# an other relationship between attribute attributesValues and table DLSequenceAttributeValue
 # and one foreign key for attribute caller
 mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DLMethodCall ),
                                                              'caller' : relationship( DLCaller ),
@@ -151,18 +152,22 @@ dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
 mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : relationship( DLMethodCall ),
                                                                            'name': relationship( DLMethodName ),
                                                                            'actions': relationship( DLAction ) } )
-
+# Description of the DLSequenceAttribute table
 dataLoggingSequenceAttribute = Table( 'DLSequenceAttribute', metadata,
                    Column( 'sequenceAttributeID', Integer, primary_key = True ),
                    Column( 'name', String( 128 ) ),
                    mysql_engine = 'InnoDB' )
+# Map the DLSequenceAttribute object to the dataLoggingSequenceAttribute
 mapper( DLSequenceAttribute, dataLoggingSequenceAttribute )
 
+# Description of the DLSequenceAttributeValue table
 dataLoggingSequenceAttributeValue = Table( 'DLSequenceAttributeValue', metadata,
                    Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.sequenceID' ), primary_key = True ),
                    Column( 'sequenceAttributeID', Integer, ForeignKey( 'DLSequenceAttribute.sequenceAttributeID' ), primary_key = True ),
                    Column( 'value', String( 128 ) ),
                    mysql_engine = 'InnoDB' )
+# Map the DLSequenceAttributeValue object to the dataLoggingSequenceAttributeValue
+# two foreign key on tables DLSequence and DLSequenceAttribute
 mapper( DLSequenceAttributeValue, dataLoggingSequenceAttributeValue,
                       properties = { 'sequence' : relationship( DLSequence ),
                                      'sequenceAttribute' : relationship( DLSequenceAttribute ) } )
@@ -187,7 +192,7 @@ class DataLoggingDB( object ):
     self.dbName = dbParameters[ 'DBName' ]
 
 
-  def __init__( self, systemInstance = 'Default' ):
+  def __init__( self ):
     """
       init method
 
@@ -544,9 +549,11 @@ class DataLoggingDB( object ):
 
     try :
       seqs = query.distinct( DLSequence.sequenceID )
+
       if seqs :
         for seq in seqs :
           seq.extra = {}
+          # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
@@ -573,6 +580,7 @@ class DataLoggingDB( object ):
       if seqs :
         for seq in seqs :
           seq.extra = {}
+          # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
@@ -613,6 +621,7 @@ class DataLoggingDB( object ):
       if seqs :
         for seq in seqs :
           seq.extra = {}
+          # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
