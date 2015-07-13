@@ -49,7 +49,10 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 
 def printSequence( seq, full = False ):
   seqLines = []
-  seqLines.append( 'Sequence %s Caller %s' % ( seq.sequenceID, seq.caller.name ) )
+  line = 'Sequence %s Caller %s Extra : ' % ( seq.sequenceID, seq.caller.name )
+  for key, value in seq.extra.items() :
+    line += '%s = %s, ' % ( key, value )
+  seqLines.append( line )
   stack = list()
   stack.append( [seq.methodCalls[0], 1] )
   while len( stack ) != 0 :

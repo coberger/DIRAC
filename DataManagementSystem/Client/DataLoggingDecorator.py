@@ -316,6 +316,8 @@ class _DataLoggingDecorator( object ):
     try :
       client = DataLoggingClient()
       seq = DLThreadPool.popDataLoggingSequence( current_thread().ident )
+      seq.addExtraArg( 'jobID', 17 )
+      seq.addExtraArg( 'bidule', 'truc' )
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )

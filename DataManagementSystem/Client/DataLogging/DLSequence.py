@@ -12,7 +12,7 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
 
 class DLSequence( DLSerializable ) :
   """ Describe a sequence, used to know sequence of MethodCall"""
-  attrNames = ['sequenceID', 'caller', 'methodCalls', 'userName', 'hostName', 'group']
+  attrNames = ['sequenceID', 'caller', 'methodCalls', 'userName', 'hostName', 'group', 'extra']
 
   def __init__( self ):
     super( DLSequence, self ).__init__()
@@ -22,9 +22,11 @@ class DLSequence( DLSerializable ) :
     self.group = None
     self.stack = []
     self.methodCalls = []
+    self.extra = {}
+    self.attributesValues = []
 
   @staticmethod
-  def fromJSON( methodCall, caller, sequenceID, userName, group, hostName ):
+  def fromJSON( methodCall, caller, sequenceID, userName, group, hostName, extra ):
     """ create a sequence from a JSON representation"""
     seq = DLSequence()
     stack = list()
@@ -34,6 +36,7 @@ class DLSequence( DLSerializable ) :
     seq.hostName = hostName
     seq.group = group
     seq.methodCalls = list()
+    seq.extra = extra
 
     # depth first search
     stack.append( methodCall )
@@ -101,4 +104,5 @@ class DLSequence( DLSerializable ) :
 
     return S_OK()
 
-
+  def addExtraArg( self, name, value ):
+    self.extra[name] = value

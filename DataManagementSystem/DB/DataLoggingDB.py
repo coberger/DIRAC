@@ -15,6 +15,8 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
 from DIRAC.DataManagementSystem.Client.DataLogging.DLCompressedSequence import DLCompressedSequence
 from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
 from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
+from DIRAC.DataManagementSystem.Client.DataLogging.DLSequenceAttributeValue import DLSequenceAttributeValue
+from DIRAC.DataManagementSystem.Client.DataLogging.DLSequenceAttribute import DLSequenceAttribute
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
 from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
@@ -149,6 +151,20 @@ mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : 
                                                                            'name': relationship( DLMethodName ),
                                                                            'actions': relationship( DLAction ) } )
 
+dataLoggingSequenceAttribute = Table( 'DLSequenceAttribute', metadata,
+                   Column( 'sequenceAttributeID', Integer, primary_key = True ),
+                   Column( 'name', String( 128 ) ),
+                   mysql_engine = 'InnoDB' )
+mapper( DLSequenceAttribute, dataLoggingSequenceAttribute )
+
+dataLoggingSequenceAttributeValue = Table( 'DLSequenceAttributeValue', metadata,
+                   Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.sequenceID' ), primary_key = True ),
+                   Column( 'sequenceAttributeID', Integer, ForeignKey( 'DLSequenceAttribute.sequenceAttributeID' ), primary_key = True ),
+                   Column( 'value', String( 128 ) ),
+                   mysql_engine = 'InnoDB' )
+mapper( DLSequenceAttributeValue, dataLoggingSequenceAttributeValue,
+                      properties = { 'sequence' : relationship( DLSequence ),
+                                     'sequenceAttribute' : relationship( DLSequenceAttribute ) } )
 
 class DataLoggingDB( object ):
 
@@ -196,6 +212,7 @@ class DataLoggingDB( object ):
     self.dictUserName = {}
     self.dictHostName = {}
     self.dictGroup = {}
+    self.dictSequenceAttribute = {}
 
 
   def createTables( self ):
@@ -396,53 +413,59 @@ class DataLoggingDB( object ):
     """
     try:
       # we get the caller from database
-      res = self.getOrCreate(session,DLCaller, sequence.caller, self.dictCaller)
+      res = self.getOrCreate( session, DLCaller, sequence.caller.name, self.dictCaller )
       if not res['OK'] :
         return res
       sequence.caller = res['Value']
 
       # we get the userName from db
-      res = self.getOrCreate( session, DLUserName, sequence.userName, self.dictUserName )
+      res = self.getOrCreate( session, DLUserName, sequence.userName.name, self.dictUserName )
       if not res['OK'] :
         return res
       sequence.userName = res['Value']
 
       # we get the hostName from db
-      res = self.getOrCreate( session, DLHostName, sequence.hostName, self.dictHostName )
+      res = self.getOrCreate( session, DLHostName, sequence.hostName.name, self.dictHostName )
       if not res['OK'] :
         return res
       sequence.hostName = res['Value']
 
       # we get the group from db
-      res = self.getOrCreate( session, DLGroup, sequence.group, self.dictGroup )
+      res = self.getOrCreate( session, DLGroup, sequence.group.name, self.dictGroup )
       if not res['OK'] :
         return res
       sequence.group = res['Value']
 
       for mc in sequence.methodCalls:
 
-        res = self.getOrCreate( session, DLMethodName, mc.name, self.dictMethodName )
+        res = self.getOrCreate( session, DLMethodName, mc.name.name, self.dictMethodName )
         if not res['OK'] :
           return res
         mc.name = res['Value']
 
         for action in mc.actions :
           # we get the DLFile from database
-          res = self.getOrCreate( session, DLFile, action.fileDL, self.dictFile )
+          res = self.getOrCreate( session, DLFile, action.fileDL.name, self.dictFile )
           if not res['OK'] :
             return res
           action.fileDL = res['Value']
 
           # we get the DLStorageElement from database
-          res = self.getOrCreate( session, DLStorageElement, action.srcSE, self.dictStorageElement )
+          res = self.getOrCreate( session, DLStorageElement, action.srcSE.name, self.dictStorageElement )
           if not res['OK'] :
             return res
           action.srcSE = res['Value']
 
-          res = self.getOrCreate( session, DLStorageElement, action.targetSE, self.dictStorageElement )
+          res = self.getOrCreate( session, DLStorageElement, action.targetSE.name, self.dictStorageElement )
           if not res['OK'] :
             return res
           action.targetSE = res['Value']
+
+      for key, value in sequence.extra.items():
+        sav = DLSequenceAttributeValue( value )
+        sav.sequence = sequence
+        sav.sequenceAttribute = self.getOrCreate( session, DLSequenceAttribute, key, self.dictSequenceAttribute )
+        sequence.attributesValues.append( sav )
 
       session.merge( sequence )
 
@@ -451,36 +474,35 @@ class DataLoggingDB( object ):
       raise DLException( "putSequence: unexpected exception %s" % e )
     return S_OK()
 
-  def getOrCreate( self, session, model, obj, objDict ):
+  def getOrCreate( self, session, model, value, objDict ):
     """
       get or create a database object
 
       :param session: a database session
       :param model: the model of object
-      :param obj, the object it
+      :param value, the value to get from DB
       :param objDict, the dictionary where object of model are saved
 
     """
     try:
-      print obj
-      if obj.name is None :
+      if value is None :
         return S_OK( None )
-      elif obj.name not in objDict :
+      elif value not in objDict :
         # select to know if the object is already in database
-        instance = session.query( model ).filter_by( name = obj.name ).first()
+        instance = session.query( model ).filter_by( name = value ).first()
         if not instance:
           # if the object is not in db, we insert it
-          instance = model( obj.name )
+          instance = model( value )
           session.add( instance )
           session.commit()
-        objDict[obj.name] = instance
+        objDict[value] = instance
         session.expunge( instance )
-      return  S_OK( objDict[obj.name] )
+      return  S_OK( objDict[value] )
     except exc.IntegrityError as e :
       gLogger.info( "IntegrityError: %s" % e )
       session.rollback()
-      instance = session.query( model ).filter_by( name = obj.name ).first()
-      objDict[obj.name] = instance
+      instance = session.query( model ).filter_by( name = value ).first()
+      objDict[value] = instance
       return S_OK( instance )
     except Exception, e:
       session.rollback()
@@ -516,6 +538,10 @@ class DataLoggingDB( object ):
 
     try :
       seqs = query.distinct( DLSequence.sequenceID )
+      if seqs :
+        for seq in seqs :
+          for av in seq.attributesValues :
+            seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -537,6 +563,10 @@ class DataLoggingDB( object ):
     try:
       seqs = session.query( DLSequence )\
                   .filter( DLSequence.sequenceID == IDSeq ).all()
+      if seqs :
+        for seq in seqs :
+          for av in seq.attributesValues :
+            seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -572,6 +602,10 @@ class DataLoggingDB( object ):
 
     try :
       seqs = query.distinct( DLSequence.sequenceID )
+      if seqs :
+        for seq in seqs :
+          for av in seq.attributesValues :
+            seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
       gLogger.error( "getSequenceByCaller: unexpected exception %s" % e )
       return S_ERROR( "getSequenceByCaller: unexpected exception %s" % e )
