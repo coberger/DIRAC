@@ -205,7 +205,7 @@ class DataLoggingDB( object ):
 
     runDebug = ( gLogger.getLevel() == 'DEBUG' )
     self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
-                                 echo = False )
+                                 echo = runDebug )
 
     metadata.bind = self.engine
     self.DBSession = sessionmaker( bind = self.engine, autoflush = False, expire_on_commit = False )
@@ -558,7 +558,8 @@ class DataLoggingDB( object ):
                      .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
     try :
       seqs = query.distinct( DLSequence.sequenceID )
-
+      print seqs
+      print type( seqs )
       if seqs :
         for seq in seqs :
           seq.extra = {}
@@ -566,12 +567,16 @@ class DataLoggingDB( object ):
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
           sequences.append( seq )
+      print seqs
+      print type( seqs )
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
 
     finally:
       session.close
+    print seqs
+    print type( seqs )
     return S_OK( sequences )
 
   def getSequenceByID( self, IDSeq ):
