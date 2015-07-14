@@ -314,14 +314,13 @@ class _DataLoggingDecorator( object ):
     """ this method call method named insertSequence from DLClient
         to insert a sequence into database
     """
-    extraArgsToGetFromEnviron = ['JOBID']
+    extraArgsToGetFromEnviron = ['JOBID', 'AGENTNAME']
     try :
       client = DataLoggingClient()
       seq = DLThreadPool.popDataLoggingSequence( current_thread().ident )
       for arg in extraArgsToGetFromEnviron :
         if os.environ.has_key( arg ):
           seq.addExtraArg( arg, os.environ[ arg ] )
-
 
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
     except Exception as e:

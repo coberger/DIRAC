@@ -48,7 +48,6 @@ for switch in Script.getUnprocessedSwitches():
     status = switch[1]
   elif switch[0] == "e" or switch[0].lower() == "extra":
     extra = switch[1]
-    print extra
   elif switch[0].lower() == "full":
     fullFlag = True
   else :
