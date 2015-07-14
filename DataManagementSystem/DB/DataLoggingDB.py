@@ -560,6 +560,8 @@ class DataLoggingDB( object ):
       seqs = query.distinct( DLSequence.sequenceID )
       print seqs
       print type( seqs )
+      print dir( seqs )
+      print '\n'
       if seqs :
         for seq in seqs :
           seq.extra = {}
@@ -569,6 +571,8 @@ class DataLoggingDB( object ):
           sequences.append( seq )
       print seqs
       print type( seqs )
+      print dir( seqs )
+      print '\n'
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -577,6 +581,8 @@ class DataLoggingDB( object ):
       session.close
     print seqs
     print type( seqs )
+    print dir( seqs )
+    print '\n'
     return S_OK( sequences )
 
   def getSequenceByID( self, IDSeq ):
