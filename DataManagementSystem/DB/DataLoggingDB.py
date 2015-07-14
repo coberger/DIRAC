@@ -551,12 +551,10 @@ class DataLoggingDB( object ):
       query = query.filter( DLAction.status == status )
 
     if extra :
-      print 'extra'
       extra = extra.split()
       query = query.join( DLSequenceAttributeValue )\
                    .join( DLSequenceAttribute )
       for i in range( len( extra ) / 2 ) :
-        print extra[i * 2] , extra[i * 2 + 1]
         query = query.filter( DLSequenceAttribute.name.like( extra[i * 2] ) )\
                      .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
     try :
@@ -575,10 +573,12 @@ class DataLoggingDB( object ):
 
     finally:
       session.close
-    print '\n\n\n\n\n\n\n'
+    print '\n\n'
+    print 'extra sequences'
     for seq in seqs :
       print seq.extra
-    print '\n\n\n\n\n\n\n'
+    print '\n\n'
+    print seqs
     return S_OK( seqs )
 
   def getSequenceByID( self, IDSeq ):
