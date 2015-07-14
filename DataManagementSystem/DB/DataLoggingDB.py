@@ -557,7 +557,7 @@ class DataLoggingDB( object ):
         query = query.filter( DLSequenceAttribute.name.like( extra[i * 2] ) )\
                      .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
     try :
-      seqs = query.distinct( DLSequence.sequenceID )
+      seqs = query.distinct( DLSequence.sequenceID ).all()
       print seqs
       print type( seqs )
       print dir( seqs )
