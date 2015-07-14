@@ -553,9 +553,9 @@ class DataLoggingDB( object ):
     if extra :
       query = query.join( DLSequenceAttributeValue )\
                    .join( DLSequenceAttribute )
-      for el in extra :
-        query = query.filter( DLSequenceAttribute.name.like( el[0] ) )\
-                     .filter( DLSequenceAttributeValue.value == el[1] )
+      for i in range( len( extra ) / 2 ) :
+        query = query.filter( DLSequenceAttribute.name.like( extra[i * 2] ) )\
+                     .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
     try :
       seqs = query.distinct( DLSequence.sequenceID )
 
@@ -631,9 +631,9 @@ class DataLoggingDB( object ):
     if extra :
       query = query.join( DLSequenceAttributeValue )\
                    .join( DLSequenceAttribute )
-      for el in extra :
-        query = query.filter( DLSequenceAttribute.name.like( el[0] ) )\
-                     .filter( DLSequenceAttributeValue.value == el[1] )
+      for i in range( len( extra ) / 2 ) :
+        query = query.filter( DLSequenceAttribute.name.like( extra[i * 2] ) )\
+                     .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
 
     try :
       seqs = query.distinct( DLSequence.sequenceID )

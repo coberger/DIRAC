@@ -13,21 +13,23 @@ callerName = None
 after = None
 before = None
 status = None
-extra = []
+extra = None
 
 Script.registerSwitch( '', 'Full', 'Print full method call' )
-Script.registerSwitch( 'f:', 'File=', 'Name of LFN [%s]' % lfn )
-Script.registerSwitch( 'i:', 'ID=', 'ID of sequence [%s]' % IDSeq )
-Script.registerSwitch( 'n:', 'Name=', 'Name of caller [%s]' % callerName )
-Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31 [%s]' % after )
-Script.registerSwitch( 'b:', 'Before=', 'Date, format be like 1999-12-31 [%s]' % before )
-Script.registerSwitch( 'w:', 'Status=', 'Failed, Successful or Unknown [%s]' % status )
+Script.registerSwitch( 'f:', 'File=', 'Name of LFN ' )
+Script.registerSwitch( 'i:', 'ID=', 'ID of sequence ' )
+Script.registerSwitch( 'n:', 'Name=', 'Name of caller ' )
+Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31' )
+Script.registerSwitch( 'b:', 'Before=', 'Date, format be like 1999-12-31' )
+Script.registerSwitch( 'w:', 'Status=', 'Failed, Successful or Unknown' )
+Script.registerSwitch( 'e:', 'Extra=', 'Failed, Successful or Unknown [%s]' % extra )
 Script.setUsageMessage( '\n'.join( [ __doc__,
-                                     'USAGE:',
-                                     ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
-                                     'ARGUMENTS:',
-                                     'At least one shall be given\nLFN: AN LFN NAME \ID : A sequence ID',
-                                     'You can pass some extra args but not with a shortcut example : --JobID 14500' ] ) )
+                         'USAGE:',
+                         ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
+                         'ARGUMENTS:',
+                         'At least one shall be given\nLFN: AN LFN NAME \ID : A sequence ID',
+                         'For extra you have to pass first the name of the argument and after the value',
+                         'You can pass as many duo as you want like this :\n -e "JobID 17 Path /local/foo/bar"' ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -44,6 +46,9 @@ for switch in Script.getUnprocessedSwitches():
     before = switch[1]
   elif switch[0] == "w" or switch[0].lower() == "status":
     status = switch[1]
+  elif switch[0] == "e" or switch[0].lower() == "extra":
+    extra = switch[1].split()
+    print extra
   elif switch[0].lower() == "full":
     fullFlag = True
   else :
