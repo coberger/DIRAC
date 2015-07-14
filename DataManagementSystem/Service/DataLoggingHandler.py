@@ -6,7 +6,7 @@ Created on May 5, 2015
 import zlib
 import json
 
-from types import StringTypes, NoneType, BooleanType, ListType
+from types import StringTypes, NoneType, BooleanType
 
 from DIRAC      import S_OK, gConfig, gLogger, S_ERROR
 
@@ -79,7 +79,7 @@ class DataLoggingHandler( RequestHandler ):
 
 
   types_getSequenceOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
-                             ( list( StringTypes ) + [NoneType] ), ListType]
+                             ( list( StringTypes ) + [NoneType] ), StringTypes]
   @classmethod
   def export_getSequenceOnFile( cls, fileName, before = None, after = None, status = None, extra = None ):
     """
@@ -117,7 +117,7 @@ class DataLoggingHandler( RequestHandler ):
     return S_OK( sequences )
 
   types_getSequenceByCaller = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ) \
-                                ( list( StringTypes ) + [NoneType] ), ListType ]
+                                ( list( StringTypes ) + [NoneType] ), StringTypes ]
   @classmethod
   def export_getSequenceByCaller( cls, callerName, before = None, after = None, status = None, extra = None ):
     """

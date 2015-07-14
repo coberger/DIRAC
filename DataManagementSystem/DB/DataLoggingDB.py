@@ -551,6 +551,7 @@ class DataLoggingDB( object ):
       query = query.filter( DLAction.status == status )
 
     if extra :
+      extra = extra.split()
       query = query.join( DLSequenceAttributeValue )\
                    .join( DLSequenceAttribute )
       for i in range( len( extra ) / 2 ) :
@@ -629,6 +630,7 @@ class DataLoggingDB( object ):
       query = query.filter( DLAction.status == status )
 
     if extra :
+      extra = extra.split()
       query = query.join( DLSequenceAttributeValue )\
                    .join( DLSequenceAttribute )
       for i in range( len( extra ) / 2 ) :
