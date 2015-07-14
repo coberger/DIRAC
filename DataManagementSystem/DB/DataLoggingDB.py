@@ -467,12 +467,10 @@ class DataLoggingDB( object ):
             return res
           action.targetSE = res['Value']
 
-      print '\n \n \nbefore sav'
       for key, value in sequence.extra.items():
         sav = DLSequenceAttributeValue( value )
         sav.sequence = sequence
         res = self.getOrCreate( session, DLSequenceAttribute, key, self.dictSequenceAttribute )
-        print res
         if not res['OK']:
           return res
         sav.sequenceAttribute = res['Value']
@@ -574,8 +572,6 @@ class DataLoggingDB( object ):
 
     finally:
       session.close
-
-    print sequences
     return S_OK( sequences )
 
   def getSequenceByID( self, IDSeq ):
@@ -658,7 +654,6 @@ class DataLoggingDB( object ):
       return S_ERROR( "getSequenceByCaller: unexpected exception %s" % e )
     finally:
       session.close
-    print sequences
     return S_OK( sequences )
 
   def getMethodCallOnFile( self, lfn, before, after, status ):

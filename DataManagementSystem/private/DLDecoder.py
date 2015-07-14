@@ -33,7 +33,6 @@ class DLDecoder( json.JSONDecoder ):
           if typeObj == 'DLAction':
             obj = DLAction( d['fileDL'], d['status'] , d['srcSE'], d['targetSE'], d['extra'], d['errorMessage'], ID = d['actionID'] )
           elif typeObj == 'DLSequence':
-            print d
             obj = DLSequence.fromJSON( d['methodCalls'][0], d['caller'], d['sequenceID'], d['userName'], d['group'], d['hostName'], d['extra'] )
           elif typeObj == 'DLFile':
             obj = DLFile( d['name'] )
@@ -57,8 +56,8 @@ class DLDecoder( json.JSONDecoder ):
             obj = d
           return obj
         except Exception as e:
-          print 'exception in decoder %s' % e
-          d['__type__'] = type
+          print 'exception in DLDecoder %s for type %s' % ( e, typeObj )
+          d['__type__'] = typeObj
           return d
 
 
