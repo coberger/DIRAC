@@ -531,7 +531,6 @@ class DataLoggingDB( object ):
 
       :return seqs: a list of DLSequence
     """
-    sequences = []
     session = self.DBSession()
 
     query =session.query( DLSequence )\
@@ -558,32 +557,19 @@ class DataLoggingDB( object ):
                      .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
     try :
       seqs = query.distinct( DLSequence.sequenceID ).all()
-      print seqs
-      print type( seqs )
-      print dir( seqs )
-      print '\n'
       if seqs :
         for seq in seqs :
           seq.extra = {}
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
-          sequences.append( seq )
-      print seqs
-      print type( seqs )
-      print dir( seqs )
-      print '\n'
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
 
     finally:
       session.close
-    print seqs
-    print type( seqs )
-    print dir( seqs )
-    print '\n'
-    return S_OK( sequences )
+    return S_OK( seqs )
 
   def getSequenceByID( self, IDSeq ):
     """
@@ -593,7 +579,6 @@ class DataLoggingDB( object ):
 
       :return seqs: a list of DLSequence
     """
-    sequences = []
     session = self.DBSession()
 
     try:
@@ -605,14 +590,13 @@ class DataLoggingDB( object ):
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
-          sequences.append( seq )
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
 
     finally:
       session.close
-    return S_OK( sequences )
+    return S_OK( seqs )
 
 
   def getSequenceByCaller( self, callerName, before, after, status, extra ):
@@ -627,7 +611,6 @@ class DataLoggingDB( object ):
 
       :return seqs: a list of DLSequence
     """
-    sequences = []
     session = self.DBSession()
     query = session.query( DLSequence )\
               .join( DLCaller )\
@@ -652,20 +635,19 @@ class DataLoggingDB( object ):
                      .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
 
     try :
-      seqs = query.distinct( DLSequence.sequenceID )
+      seqs = query.distinct( DLSequence.sequenceID ).all()
       if seqs :
         for seq in seqs :
           seq.extra = {}
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
-          sequences.append( seq )
     except Exception, e:
       gLogger.error( "getSequenceByCaller: unexpected exception %s" % e )
       return S_ERROR( "getSequenceByCaller: unexpected exception %s" % e )
     finally:
       session.close
-    return S_OK( sequences )
+    return S_OK( seqs )
 
   def getMethodCallOnFile( self, lfn, before, after, status ):
     """
