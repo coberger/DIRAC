@@ -424,50 +424,48 @@ class DataLoggingDB( object ):
         return res
       sequence.caller = res['Value']
 
-      print 'after caller'
       # we get the userName from db
       res = self.getOrCreate( session, DLUserName, sequence.userName.name, self.dictUserName )
       if not res['OK'] :
         return res
       sequence.userName = res['Value']
-      print 'after username'
+
       # we get the hostName from db
       res = self.getOrCreate( session, DLHostName, sequence.hostName.name, self.dictHostName )
       if not res['OK'] :
         return res
       sequence.hostName = res['Value']
-      print 'after hostname'
+
       # we get the group from db
       res = self.getOrCreate( session, DLGroup, sequence.group.name, self.dictGroup )
       if not res['OK'] :
         return res
       sequence.group = res['Value']
-      print 'after group'
+
       for mc in sequence.methodCalls:
 
         res = self.getOrCreate( session, DLMethodName, mc.name.name, self.dictMethodName )
         if not res['OK'] :
           return res
         mc.name = res['Value']
-        print 'after mc name'
+
         for action in mc.actions :
           # we get the DLFile from database
           res = self.getOrCreate( session, DLFile, action.fileDL.name, self.dictFile )
           if not res['OK'] :
             return res
           action.fileDL = res['Value']
-          print 'after file'
+
           # we get the DLStorageElement from database
           res = self.getOrCreate( session, DLStorageElement, action.srcSE.name, self.dictStorageElement )
           if not res['OK'] :
             return res
           action.srcSE = res['Value']
-          print 'after srcse'
+
           res = self.getOrCreate( session, DLStorageElement, action.targetSE.name, self.dictStorageElement )
           if not res['OK'] :
             return res
           action.targetSE = res['Value']
-          print 'after targetse'
 
       for key, value in sequence.extra.items():
         sav = DLSequenceAttributeValue( value )
