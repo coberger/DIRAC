@@ -13,6 +13,11 @@ AGENT_NAME = 'DataManagement/DataLoggingAgent'
 
 ########################################################################
 class DataLoggingAgent( AgentModule ):
+  def initialize( self ):
+    pass
+
+  def execute( self ):
+    self.test_agentName()
 
   def test_agentName(self):
     client = ClientB()
