@@ -575,8 +575,8 @@ class DataLoggingDB( object ):
     finally:
       session.close
 
-    print seqs
-    return S_OK( seqs )
+    print sequences
+    return S_OK( sequences )
 
   def getSequenceByID( self, IDSeq ):
     """
@@ -605,7 +605,7 @@ class DataLoggingDB( object ):
 
     finally:
       session.close
-    return S_OK( seqs )
+    return S_OK( sequences )
 
 
   def getSequenceByCaller( self, callerName, before, after, status, extra ):
@@ -658,8 +658,8 @@ class DataLoggingDB( object ):
       return S_ERROR( "getSequenceByCaller: unexpected exception %s" % e )
     finally:
       session.close
-    print seqs
-    return S_OK( seqs )
+    print sequences
+    return S_OK( sequences )
 
   def getMethodCallOnFile( self, lfn, before, after, status ):
     """
