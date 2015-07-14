@@ -48,6 +48,7 @@ for switch in Script.getUnprocessedSwitches():
     status = switch[1]
   elif switch[0] == "e" or switch[0].lower() == "extra":
     extra = switch[1]
+    print extra
   elif switch[0].lower() == "full":
     fullFlag = True
   else :
@@ -58,8 +59,9 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 def printSequence( seq, full = False ):
   seqLines = []
   line = 'Sequence %s Caller %s Extra : ' % ( seq.sequenceID, seq.caller.name )
-  for key, value in seq.extra.items() :
-    line += '%s = %s, ' % ( key, value )
+  if seq.extra :
+    for key, value in seq.extra.items() :
+      line += '%s = %s, ' % ( key, value )
   seqLines.append( line )
   stack = list()
   stack.append( [seq.methodCalls[0], 1] )
@@ -100,7 +102,11 @@ def printSequence( seq, full = False ):
 
 def printSequenceLFN( seq, lfn, full = False ):
   seqLines = []
-  seqLines.append( 'Sequence %s Caller %s' % ( seq.sequenceID, seq.caller.name ) )
+  line = 'Sequence %s Caller %s Extra : ' % ( seq.sequenceID, seq.caller.name )
+  if seq.extra :
+    for key, value in seq.extra.items() :
+      line += '%s = %s, ' % ( key, value )
+  seqLines.append( line )
   cpt = 1
   stack = list()
   stack.append( [seq.methodCalls[0], 1] )
