@@ -7,7 +7,7 @@ Created on May 6, 2015
 import json
 
 class DLEncoder( json.JSONEncoder ):
-  """ This class is an encoder for the Sequence, OperationFile, LFN and OperationStatus.
+  """ This class is an encoder for all clases for Data Logging System
   """
 
   def default( self, obj ):

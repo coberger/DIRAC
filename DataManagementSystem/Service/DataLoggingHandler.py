@@ -96,6 +96,9 @@ class DataLoggingHandler( RequestHandler ):
     res = cls.__dataLoggingDB.getSequenceOnFile( fileName, before, after, status, extra )
     if not res["OK"]:
       return res
+    print 'service \n\n\n\n'
+    for seq in res['Value']:
+      print seq.extra
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
     return S_OK( sequences )
 
