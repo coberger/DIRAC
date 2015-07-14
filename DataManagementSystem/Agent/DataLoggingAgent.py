@@ -18,7 +18,9 @@ class DataLoggingAgent( AgentModule ):
 
   def execute( self ):
     self.test_agentName()
+    return S_OK()
 
   def test_agentName(self):
     client = ClientB()
     client.doSomething()
+    return S_OK()
