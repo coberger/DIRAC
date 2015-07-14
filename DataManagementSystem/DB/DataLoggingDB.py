@@ -533,6 +533,7 @@ class DataLoggingDB( object ):
 
       :return seqs: a list of DLSequence
     """
+    sequences = []
     session = self.DBSession()
 
     query =session.query( DLSequence )\
@@ -566,6 +567,7 @@ class DataLoggingDB( object ):
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
+          sequences.append( seq )
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -584,6 +586,7 @@ class DataLoggingDB( object ):
 
       :return seqs: a list of DLSequence
     """
+    sequences = []
     session = self.DBSession()
 
     try:
@@ -595,6 +598,7 @@ class DataLoggingDB( object ):
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
             seq.extra[av.sequenceAttribute.name] = av.value
+          sequences.append( seq )
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
@@ -616,6 +620,7 @@ class DataLoggingDB( object ):
 
       :return seqs: a list of DLSequence
     """
+    sequences = []
     session = self.DBSession()
     query = session.query( DLSequence )\
               .join( DLCaller )\
@@ -646,8 +651,8 @@ class DataLoggingDB( object ):
           seq.extra = {}
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
-            print av.sequenceAttribute.name, av.value
             seq.extra[av.sequenceAttribute.name] = av.value
+          sequences.append( seq )
     except Exception, e:
       gLogger.error( "getSequenceByCaller: unexpected exception %s" % e )
       return S_ERROR( "getSequenceByCaller: unexpected exception %s" % e )
