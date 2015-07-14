@@ -321,7 +321,7 @@ class _DataLoggingDecorator( object ):
       for arg in extraArgsToGetFromEnviron :
         if os.environ.has_key( arg ):
           seq.addExtraArg( arg, os.environ[ arg ] )
-
+      print seq.extra
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )

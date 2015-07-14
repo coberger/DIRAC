@@ -8,6 +8,9 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
 from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
+from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
+from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
 
 
 class DLSequence( DLSerializable ) :
@@ -17,9 +20,9 @@ class DLSequence( DLSerializable ) :
   def __init__( self ):
     super( DLSequence, self ).__init__()
     self.caller = None
-    self.userName = None
-    self.hostName = None
-    self.group = None
+    self.userName = DLUserName( None )
+    self.hostName = DLHostName( None )
+    self.group = DLGroup( None )
     self.stack = []
     self.methodCalls = []
     self.extra = {}
