@@ -205,7 +205,7 @@ class DataLoggingDB( object ):
 
     runDebug = ( gLogger.getLevel() == 'DEBUG' )
     self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
-                                 echo = False )
+                                 echo = runDebug )
 
     metadata.bind = self.engine
     self.DBSession = sessionmaker( bind = self.engine, autoflush = False, expire_on_commit = False )
