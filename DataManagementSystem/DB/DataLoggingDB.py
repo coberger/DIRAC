@@ -565,7 +565,6 @@ class DataLoggingDB( object ):
           seq.extra = {}
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
-            print av.sequenceAttribute.name, av.value
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
@@ -573,11 +572,7 @@ class DataLoggingDB( object ):
 
     finally:
       session.close
-    print '\n\n'
-    print 'extra sequences'
-    for seq in seqs :
-      print seq.extra
-    print '\n\n'
+
     print seqs
     return S_OK( seqs )
 
@@ -651,12 +646,14 @@ class DataLoggingDB( object ):
           seq.extra = {}
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
+            print av.sequenceAttribute.name, av.value
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
       gLogger.error( "getSequenceByCaller: unexpected exception %s" % e )
       return S_ERROR( "getSequenceByCaller: unexpected exception %s" % e )
     finally:
       session.close
+    print seqs
     return S_OK( seqs )
 
   def getMethodCallOnFile( self, lfn, before, after, status ):
