@@ -556,6 +556,7 @@ class DataLoggingDB( object ):
       query = query.join( DLSequenceAttributeValue )\
                    .join( DLSequenceAttribute )
       for i in range( len( extra ) / 2 ) :
+        print extra[i * 2] , extra[i * 2 + 1]
         query = query.filter( DLSequenceAttribute.name.like( extra[i * 2] ) )\
                      .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
     try :
@@ -566,7 +567,7 @@ class DataLoggingDB( object ):
           seq.extra = {}
           # here we get the value and name of specific columns of this sequence into extra dictionary
           for av in seq.attributesValues :
-            print 'tototototto \n \n \n \n \n'
+            print av.sequenceAttribute.name, av.value
             seq.extra[av.sequenceAttribute.name] = av.value
     except Exception, e:
       gLogger.error( "getSequenceOnFile: unexpected exception %s" % e )
