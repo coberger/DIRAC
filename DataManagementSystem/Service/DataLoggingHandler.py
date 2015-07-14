@@ -79,7 +79,7 @@ class DataLoggingHandler( RequestHandler ):
 
 
   types_getSequenceOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
-                             ( list( StringTypes ) + [NoneType] ), StringTypes]
+                             ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
   def export_getSequenceOnFile( cls, fileName, before = None, after = None, status = None, extra = None ):
     """
@@ -117,7 +117,7 @@ class DataLoggingHandler( RequestHandler ):
     return S_OK( sequences )
 
   types_getSequenceByCaller = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
-                                ( list( StringTypes ) + [NoneType] ), StringTypes ]
+                                ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ) ]
   @classmethod
   def export_getSequenceByCaller( cls, callerName, before = None, after = None, status = None, extra = None ):
     """
