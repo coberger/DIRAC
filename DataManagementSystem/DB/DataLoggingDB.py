@@ -575,9 +575,10 @@ class DataLoggingDB( object ):
 
     finally:
       session.close
+    print '\n\n\n\n\n\n\n'
     for seq in seqs :
-      print '\n'
       print seq.extra
+    print '\n\n\n\n\n\n\n'
     return S_OK( seqs )
 
   def getSequenceByID( self, IDSeq ):
