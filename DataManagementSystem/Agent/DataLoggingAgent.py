@@ -3,7 +3,7 @@ Created on Jun 19, 2015
 
 @author: Corentin Berger
 '''
-
+from DIRAC import S_OK
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.Client.test.mockDirac import ClientB
@@ -14,7 +14,7 @@ AGENT_NAME = 'DataManagement/DataLoggingAgent'
 ########################################################################
 class DataLoggingAgent( AgentModule ):
   def initialize( self ):
-    pass
+    return S_OK()
 
   def execute( self ):
     self.test_agentName()
