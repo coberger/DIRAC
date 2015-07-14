@@ -6,6 +6,7 @@ Created on May 4, 2015
 
 import functools
 import types
+import os
 from types import StringTypes
 from threading import current_thread
 
@@ -313,9 +314,15 @@ class _DataLoggingDecorator( object ):
     """ this method call method named insertSequence from DLClient
         to insert a sequence into database
     """
+    extraArgsToGetFromEnviron = ['JOBID']
     try :
       client = DataLoggingClient()
       seq = DLThreadPool.popDataLoggingSequence( current_thread().ident )
+      for arg in extraArgsToGetFromEnviron :
+        if os.environ.has_key( arg ):
+          seq.addExtraArg( arg, os.environ[ arg ] )
+
+
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )

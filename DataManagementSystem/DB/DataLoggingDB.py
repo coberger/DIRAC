@@ -521,13 +521,15 @@ class DataLoggingDB( object ):
       return S_ERROR( "getOrCreate: unexpected exception %s" % e )
 
 
-  def getSequenceOnFile( self, lfn, before, after, status ):
+  def getSequenceOnFile( self, lfn, before, after, status, extra ):
     """
       get all sequence about a lfn's name
 
       :param lfn, a lfn name
       :param before, a date, can be None
       :param after, a date, can be None
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
+      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
 
       :return seqs: a list of DLSequence
     """
@@ -544,9 +546,16 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
-    elif status :
+
+    if status :
       query = query.filter( DLAction.status == status )
 
+    if extra :
+      query = query.join( DLSequenceAttributeValue )\
+                   .join( DLSequenceAttribute )
+      for el in extra :
+        query = query.filter( DLSequenceAttribute.name.like( el[0] ) )\
+                     .filter( DLSequenceAttributeValue.value == el[1] )
     try :
       seqs = query.distinct( DLSequence.sequenceID )
 
@@ -592,13 +601,15 @@ class DataLoggingDB( object ):
     return S_OK( seqs )
 
 
-  def getSequenceByCaller( self, callerName, before, after, status ):
+  def getSequenceByCaller( self, callerName, before, after, status, extra ):
     """
       get the sequence where the caller is callerName
 
       :param callerName, a caller name
       :param before, a date, can be None
       :param after, a date, can be None
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
+      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
 
       :return seqs: a list of DLSequence
     """
@@ -613,8 +624,16 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
-    elif status :
+
+    if status :
       query = query.filter( DLAction.status == status )
+
+    if extra :
+      query = query.join( DLSequenceAttributeValue )\
+                   .join( DLSequenceAttribute )
+      for el in extra :
+        query = query.filter( DLSequenceAttribute.name.like( el[0] ) )\
+                     .filter( DLSequenceAttributeValue.value == el[1] )
 
     try :
       seqs = query.distinct( DLSequence.sequenceID )
@@ -638,6 +657,7 @@ class DataLoggingDB( object ):
       :param lfn, a lfn name
       :param before, a date, can be None
       :param after, a date, can be None
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
 
       :return calls: a list of DLMethodCall
     """
@@ -653,7 +673,8 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
-    elif status :
+
+    if status :
       query = query.filter( DLAction.status == status )
 
     try:
@@ -674,6 +695,7 @@ class DataLoggingDB( object ):
       :param name, a method name
       :param before, a date, can be None
       :param after, a date, can be None
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
 
       :return calls: a list of DLMethodCall
     """
@@ -689,7 +711,8 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
-    elif status :
+
+    if status :
       query = query.filter( DLAction.status == status )
 
     try:

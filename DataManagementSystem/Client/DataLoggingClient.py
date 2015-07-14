@@ -33,17 +33,19 @@ class DataLoggingClient( Client ):
     res = self.dataLoggingManager.insertSequence( seq, directInsert )
     return res
 
-  def getSequenceOnFile( self, fileName, before = None, after = None, status = None ):
+  def getSequenceOnFile( self, fileName, before = None, after = None, status = None, extra = None ):
     """
       This select all Sequence about a file
 
       :param fileName, name of a file
       :param before, a date
       :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
+      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
 
       :return sequences, a list of sequence
     """
-    res = self.dataLoggingManager.getSequenceOnFile( fileName, before, after, status )
+    res = self.dataLoggingManager.getSequenceOnFile( fileName, before, after, status, extra )
     if not res["OK"]:
       return res
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
@@ -64,17 +66,19 @@ class DataLoggingClient( Client ):
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
     return S_OK( sequences )
 
-  def getSequenceByCaller( self, callerName, before = None, after = None, status = None ):
+  def getSequenceByCaller( self, callerName, before = None, after = None, status = None, extra = None ):
     """
       This select all Sequence about an ID
 
       :param callerName, name of a caller
       :param before, a date
       :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
+      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
 
       :return sequences, a list of sequence
     """
-    res = self.dataLoggingManager.getSequenceByCaller( callerName, before, after, status )
+    res = self.dataLoggingManager.getSequenceByCaller( callerName, before, after, status, extra )
     if not res["OK"]:
       return res
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
@@ -87,6 +91,7 @@ class DataLoggingClient( Client ):
       :param fileName, name of the file
       :param before, a date
       :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
 
       :return methodCalls, a list of method call
     """
@@ -103,6 +108,7 @@ class DataLoggingClient( Client ):
       :param name, name of the method
       :param before, a date
       :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
 
       :return methodCalls, a list of method call
     """

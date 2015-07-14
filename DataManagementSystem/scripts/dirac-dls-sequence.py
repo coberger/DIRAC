@@ -13,19 +13,21 @@ callerName = None
 after = None
 before = None
 status = None
+extra = []
 
-Script.registerSwitch( '', 'Full', '   Print full method call' )
+Script.registerSwitch( '', 'Full', 'Print full method call' )
 Script.registerSwitch( 'f:', 'File=', 'Name of LFN [%s]' % lfn )
 Script.registerSwitch( 'i:', 'ID=', 'ID of sequence [%s]' % IDSeq )
 Script.registerSwitch( 'n:', 'Name=', 'Name of caller [%s]' % callerName )
-Script.registerSwitch( 'a:', 'After=', 'date, format be like 1999-12-31 [%s]' % after )
-Script.registerSwitch( 'b:', 'Before=', 'date, format be like 1999-12-31 [%s]' % before )
-Script.registerSwitch( 'w:', 'Status=', 'date, format be like 1999-12-31 [%s]' % status )
+Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31 [%s]' % after )
+Script.registerSwitch( 'b:', 'Before=', 'Date, format be like 1999-12-31 [%s]' % before )
+Script.registerSwitch( 'w:', 'Status=', 'Failed, Successful or Unknown [%s]' % status )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'USAGE:',
                                      ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
                                      'ARGUMENTS:',
-                                     'At least one shall be given\nLFN: AN LFN NAME \ID : A sequence ID' ] ) )
+                                     'At least one shall be given\nLFN: AN LFN NAME \ID : A sequence ID',
+                                     'You can pass some extra args but not with a shortcut example : --JobID 14500' ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -44,6 +46,8 @@ for switch in Script.getUnprocessedSwitches():
     status = switch[1]
   elif switch[0].lower() == "full":
     fullFlag = True
+  else :
+    extra.append( ( switch[0], switch[1] ) )
 
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
@@ -132,7 +136,7 @@ if not lfn and not IDSeq and not callerName :
 else :
   dlc = DataLoggingClient()
   if lfn :
-    res = dlc.getSequenceOnFile( lfn, before, after, status )
+    res = dlc.getSequenceOnFile( lfn, before, after, status, extra )
     if res['OK']:
       if not res['Value'] :
         print 'no sequence to print'
@@ -156,7 +160,7 @@ else :
       print res['Message']
 
   elif callerName :
-    res = dlc.getSequenceByCaller( callerName, before, after, status )
+    res = dlc.getSequenceByCaller( callerName, before, after, status, extra )
     if res['OK']:
       if not res['Value'] :
         print 'no sequence to print'

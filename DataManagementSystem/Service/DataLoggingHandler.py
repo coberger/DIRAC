@@ -78,19 +78,22 @@ class DataLoggingHandler( RequestHandler ):
     return res
 
 
-  types_getSequenceOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  types_getSequenceOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
+                             ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getSequenceOnFile( cls, fileName, before = None, after = None, status = None ):
+  def export_getSequenceOnFile( cls, fileName, before = None, after = None, status = None, extra = None ):
     """
       this method call the getSequenceOnFile method of DataLoggingDB
 
       :param fileName, name of a file
       :param before, a date
       :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
+      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
 
       :return sequences, a list of sequence
     """
-    res = cls.__dataLoggingDB.getSequenceOnFile( fileName, before, after, status )
+    res = cls.__dataLoggingDB.getSequenceOnFile( fileName, before, after, status, extra )
     if not res["OK"]:
       return res
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
@@ -113,26 +116,30 @@ class DataLoggingHandler( RequestHandler ):
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
     return S_OK( sequences )
 
-  types_getSequenceByCaller = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  types_getSequenceByCaller = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
+                               ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getSequenceByCaller( cls, callerName, before = None, after = None, status = None ):
+  def export_getSequenceByCaller( cls, callerName, before = None, after = None, status = None, extra = None ):
     """
       this method call the getSequenceByCaller method of DataLoggingDB
 
       :param callerName, name of a caller
       :param before, a date
       :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
+      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
 
       :return sequences, a list of sequence
     """
-    res = cls.__dataLoggingDB.getSequenceByCaller( callerName, before, after, status )
+    res = cls.__dataLoggingDB.getSequenceByCaller( callerName, before, after, status, extra )
     if not res["OK"]:
       return res
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
     return S_OK( sequences )
 
 
-  types_getMethodCallOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  types_getMethodCallOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                               ( list( StringTypes ) + [NoneType] )]
   @classmethod
   def export_getMethodCallOnFile( cls, fileName, before = None, after = None, status = None ):
     """
@@ -141,6 +148,7 @@ class DataLoggingHandler( RequestHandler ):
       :param fileName, name of the file
       :param before, a date
       :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
 
       :return methodCalls, a list of method call
     """
@@ -151,7 +159,8 @@ class DataLoggingHandler( RequestHandler ):
     return S_OK( methodCalls )
 
 
-  types_getMethodCallByName = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  types_getMethodCallByName = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
+                               ( list( StringTypes ) + [NoneType] )]
   @classmethod
   def export_getMethodCallByName( cls, methodName, before = None, after = None, status = None ):
     """
@@ -160,6 +169,7 @@ class DataLoggingHandler( RequestHandler ):
       :param name, name of the method
       :param before, a date
       :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
 
       :return methodCalls, a list of method call
     """
