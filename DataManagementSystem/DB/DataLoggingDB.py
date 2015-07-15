@@ -522,13 +522,17 @@ class DataLoggingDB( object ):
   def getSequence( self, lfn = None, callerName = None, before = None, after = None, status = None, extra = None,
                      userName = None, hostName = None, group = None ):
     """
-      get all sequence about a lfn's name
+      get all sequence about some criteria
 
-      :param lfn, a lfn name
-      :param before, a date, can be None
-      :param after, a date, can be None
+      :param fileName, name of a file
+      :param callerName, a caller name
+      :param before, a date
+      :param after, a date
       :param status, a str in [ Failed, Successful, Unknown ], can be None
       :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
+      :param userName, a DIRAC user name
+      :param hostName, an host name
+      :param group, a DIRAC group
 
       :return seqs: a list of DLSequence
     """

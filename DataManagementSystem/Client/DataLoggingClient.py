@@ -39,11 +39,14 @@ class DataLoggingClient( Client ):
       This select all Sequence with  different criteria
 
       :param fileName, name of a file
-      :param callerName, name of a caller
+      :param callerName, a caller name
       :param before, a date
       :param after, a date
       :param status, a str in [ Failed, Successful, Unknown ], can be None
       :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
+      :param userName, a DIRAC user name
+      :param hostName, an host name
+      :param group, a DIRAC group
 
       :return sequences, a list of sequence
     """

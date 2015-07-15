@@ -85,13 +85,17 @@ class DataLoggingHandler( RequestHandler ):
   def export_getSequence( cls, fileName = None, callerName = None, before = None, after = None, status = None, extra = None,
                           userName = None, hostName = None, group = None ):
     """
-      this method call the getSequenceOnFile method of DataLoggingDB
+      this method call the getSequence method of DataLoggingDB
 
       :param fileName, name of a file
+      :param callerName, a caller name
       :param before, a date
       :param after, a date
       :param status, a str in [ Failed, Successful, Unknown ], can be None
       :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
+      :param userName, a DIRAC user name
+      :param hostName, an host name
+      :param group, a DIRAC group
 
       :return sequences, a list of sequence
     """
