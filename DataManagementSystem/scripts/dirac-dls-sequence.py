@@ -14,6 +14,9 @@ after = None
 before = None
 status = None
 extra = None
+group = None
+userName = None
+hostName = None
 
 Script.registerSwitch( '', 'Full', 'Print full method call' )
 Script.registerSwitch( 'f:', 'File=', 'Name of LFN ' )
@@ -21,8 +24,11 @@ Script.registerSwitch( 'i:', 'ID=', 'ID of sequence ' )
 Script.registerSwitch( 'n:', 'Name=', 'Name of caller ' )
 Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31' )
 Script.registerSwitch( 'b:', 'Before=', 'Date, format be like 1999-12-31' )
-Script.registerSwitch( 'w:', 'Status=', 'Failed, Successful or Unknown' )
-Script.registerSwitch( 'e:', 'Extra=', 'Failed, Successful or Unknown [%s]' % extra )
+Script.registerSwitch( 'g:', 'Group=', 'A DIRAC Group' )
+Script.registerSwitch( 'u:', 'UserName=', 'A DIRAC UserName' )
+Script.registerSwitch( 'y:', 'HostName=', 'A HostName' )
+Script.registerSwitch( 'z:', 'Status=', 'Failed, Successful or Unknown' )
+Script.registerSwitch( 'e:', 'Extra=', 'A string, see below for more informations' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                          'USAGE:',
                          ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
@@ -44,10 +50,16 @@ for switch in Script.getUnprocessedSwitches():
     after = switch[1]
   elif switch[0] == "b" or switch[0].lower() == "before":
     before = switch[1]
-  elif switch[0] == "w" or switch[0].lower() == "status":
+  elif switch[0] == "z" or switch[0].lower() == "status":
     status = switch[1]
   elif switch[0] == "e" or switch[0].lower() == "extra":
     extra = switch[1]
+  elif switch[0] == "g" or switch[0].lower() == "Group":
+    group = switch[1]
+  elif switch[0] == "u" or switch[0].lower() == "UserName":
+    userName = switch[1]
+  elif switch[0] == "y" or switch[0].lower() == "HostName":
+    hostName = switch[1]
   elif switch[0].lower() == "full":
     fullFlag = True
   else :
@@ -57,8 +69,12 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 
 def printSequence( seq, full = False ):
   seqLines = []
-  line = 'Sequence %s Caller %s Extra : ' % ( seq.sequenceID, seq.caller.name )
+  line = 'Sequence %s Caller %s %s %s %s ' % ( seq.sequenceID, seq.caller.name,
+                                                'UserName %s' % seq.userName.name if seq.userName else '',
+                                                'HostName %s' % seq.hostName.name if seq.hostName else '' ,
+                                                'Group %s' % seq.group.name if seq.group else '' )
   if seq.extra :
+    line += 'Extra '
     for key, value in seq.extra.items() :
       line += '%s = %s, ' % ( key, value )
   seqLines.append( line )
@@ -140,42 +156,33 @@ def printSequenceLFN( seq, lfn, full = False ):
   return '\n'.join( seqLines )
 
 
-if not lfn and not IDSeq and not callerName :
-  print 'you should give at least one lfn, one sequence ID or one caller name'
-else :
-  dlc = DataLoggingClient()
-  if lfn :
-    res = dlc.getSequenceOnFile( lfn, before, after, status, extra )
-    if res['OK']:
-      if not res['Value'] :
-        print 'no sequence to print'
-      else :
+
+dlc = DataLoggingClient()
+if lfn or callerName or after or before or status or extra or userName or hostName or group :
+  res = dlc.getSequence( lfn, callerName, before, after, status, extra, userName, hostName, group )
+  if res['OK']:
+    if not res['Value'] :
+      print 'no sequence to print'
+    else :
+      if lfn :
         for seq in res['Value'] :
           print printSequenceLFN( seq, lfn, full = fullFlag )
           print'\n'
-    else :
-      print res['Message']
-
-  elif IDSeq :
-    res = dlc.getSequenceByID( IDSeq )
-    if res['OK']:
-      if not res['Value'] :
-        print 'no sequence to print'
       else :
         for seq in res['Value'] :
           print printSequence( seq, full = fullFlag )
           print'\n'
-    else :
-      print res['Message']
+  else :
+    print res['Message']
 
-  elif callerName :
-    res = dlc.getSequenceByCaller( callerName, before, after, status, extra )
-    if res['OK']:
-      if not res['Value'] :
-        print 'no sequence to print'
-      else :
-        for seq in res['Value'] :
-          print printSequence( seq, full = fullFlag )
-          print'\n'
+elif IDSeq :
+  res = dlc.getSequenceByID( IDSeq )
+  if res['OK']:
+    if not res['Value'] :
+      print 'no sequence to print'
     else :
-      print res['Message']
+      for seq in res['Value'] :
+        print printSequence( seq, full = fullFlag )
+        print'\n'
+  else :
+    print res['Message']

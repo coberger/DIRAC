@@ -7,6 +7,8 @@ Created on May 4, 2015
 import functools
 import types
 import os
+import socket
+
 from types import StringTypes
 from threading import current_thread
 
@@ -326,11 +328,14 @@ class _DataLoggingDecorator( object ):
           seq.addExtraArg( arg, os.environ[ arg ] )
 
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
-      certFile, _keyFile = getHostCertificateAndKeyLocation()
-      chain = X509Chain()
-      chain.loadChainFromFile( certFile )
-      resultCert = chain.getCredentials()
-      print resultCert
+
+      #=========================================================================
+      # certFile, _keyFile = getHostCertificateAndKeyLocation()
+      # chain = X509Chain()
+      # chain.loadChainFromFile( certFile )
+      # resultCert = chain.getCredentials()
+      # print resultCert
+      #=========================================================================
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )
       raise

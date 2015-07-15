@@ -33,11 +33,13 @@ class DataLoggingClient( Client ):
     res = self.dataLoggingManager.insertSequence( seq, directInsert )
     return res
 
-  def getSequenceOnFile( self, fileName, before = None, after = None, status = None, extra = None ):
+  def getSequence( self, fileName = None, callerName = None, before = None, after = None, status = None, extra = None,
+                   userName = None, hostName = None, group = None ):
     """
-      This select all Sequence about a file
+      This select all Sequence with  different criteria
 
       :param fileName, name of a file
+      :param callerName, name of a caller
       :param before, a date
       :param after, a date
       :param status, a str in [ Failed, Successful, Unknown ], can be None
@@ -45,7 +47,7 @@ class DataLoggingClient( Client ):
 
       :return sequences, a list of sequence
     """
-    res = self.dataLoggingManager.getSequenceOnFile( fileName, before, after, status, extra )
+    res = self.dataLoggingManager.getSequence( fileName, callerName, before, after, status, extra, userName, hostName, group )
     if not res["OK"]:
       return res
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
@@ -61,24 +63,6 @@ class DataLoggingClient( Client ):
       :return sequences, a list of sequence
     """
     res = self.dataLoggingManager.getSequenceByID( IDSeq )
-    if not res["OK"]:
-      return res
-    sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
-    return S_OK( sequences )
-
-  def getSequenceByCaller( self, callerName, before = None, after = None, status = None, extra = None ):
-    """
-      This select all Sequence about an ID
-
-      :param callerName, name of a caller
-      :param before, a date
-      :param after, a date
-      :param status, a str in [ Failed, Successful, Unknown ], can be None
-      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
-
-      :return sequences, a list of sequence
-    """
-    res = self.dataLoggingManager.getSequenceByCaller( callerName, before, after, status, extra )
     if not res["OK"]:
       return res
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]

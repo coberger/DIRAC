@@ -78,10 +78,12 @@ class DataLoggingHandler( RequestHandler ):
     return res
 
 
-  types_getSequenceOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
-                             ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  types_getSequence = [( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                       ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                       ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getSequenceOnFile( cls, fileName, before = None, after = None, status = None, extra = None ):
+  def export_getSequence( cls, fileName = None, callerName = None, before = None, after = None, status = None, extra = None,
+                          userName = None, hostName = None, group = None ):
     """
       this method call the getSequenceOnFile method of DataLoggingDB
 
@@ -93,7 +95,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :return sequences, a list of sequence
     """
-    res = cls.__dataLoggingDB.getSequenceOnFile( fileName, before, after, status, extra )
+    res = cls.__dataLoggingDB.getSequence( fileName, callerName, before, after, status, extra, userName, hostName, group )
     if not res["OK"]:
       return res
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
@@ -115,28 +117,6 @@ class DataLoggingHandler( RequestHandler ):
       return res
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
     return S_OK( sequences )
-
-  types_getSequenceByCaller = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
-                                ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ) ]
-  @classmethod
-  def export_getSequenceByCaller( cls, callerName, before = None, after = None, status = None, extra = None ):
-    """
-      this method call the getSequenceByCaller method of DataLoggingDB
-
-      :param callerName, name of a caller
-      :param before, a date
-      :param after, a date
-      :param status, a str in [ Failed, Successful, Unknown ], can be None
-      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
-
-      :return sequences, a list of sequence
-    """
-    res = cls.__dataLoggingDB.getSequenceByCaller( callerName, before, after, status, extra )
-    if not res["OK"]:
-      return res
-    sequences = [seq.toJSON()['Value'] for seq in res['Value']]
-    return S_OK( sequences )
-
 
   types_getMethodCallOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
                                ( list( StringTypes ) + [NoneType] )]

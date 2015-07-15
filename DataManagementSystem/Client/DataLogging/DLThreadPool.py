@@ -3,7 +3,7 @@ Created on May 4, 2015
 
 @author: Corentin Berger
 '''
-
+import socket
 from threading  import Lock
 
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -44,7 +44,7 @@ class DLThreadPool :
         proxyInfo = res['Value']
         seq.userName = DLUserName( proxyInfo.get( 'username' ) )
         seq.group = DLGroup( proxyInfo.get( 'group' ) )
-        seq.hostName = DLHostName( proxyInfo.get( 'hostname' ) )
+      seq.hostName = DLHostName( socket.gethostname() )
       cls.pool[threadID] = seq
     res = cls.pool[threadID]
     cls.lock.release()

@@ -519,7 +519,8 @@ class DataLoggingDB( object ):
       return S_ERROR( "getOrCreate: unexpected exception %s" % e )
 
 
-  def getSequenceOnFile( self, lfn, before, after, status, extra ):
+  def getSequence( self, lfn = None, callerName = None, before = None, after = None, status = None, extra = None,
+                     userName = None, hostName = None, group = None ):
     """
       get all sequence about a lfn's name
 
@@ -537,7 +538,22 @@ class DataLoggingDB( object ):
                   .join( DLMethodCall )\
                   .join( DLAction )\
                   .join( DLFile )\
-                  .filter( DLFile.name == lfn )
+                  .join( DLCaller )\
+                  .join( DLUserName )\
+                  .join( DLGroup )\
+                  .join( DLHostName )
+
+    if lfn :
+      query = query.filter( DLFile.name == lfn )
+    if callerName :
+      query = query.filter( DLCaller.name == callerName )
+    if userName:
+      query = query.filter( DLUserName.name == userName )
+    if group :
+      query = query.filter( DLGroup.name == group )
+    if hostName:
+      query = query.filter( DLHostName.name == hostName )
+
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
     elif before :
@@ -598,56 +614,6 @@ class DataLoggingDB( object ):
       session.close
     return S_OK( seqs )
 
-
-  def getSequenceByCaller( self, callerName, before, after, status, extra ):
-    """
-      get the sequence where the caller is callerName
-
-      :param callerName, a caller name
-      :param before, a date, can be None
-      :param after, a date, can be None
-      :param status, a str in [ Failed, Successful, Unknown ], can be None
-      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
-
-      :return seqs: a list of DLSequence
-    """
-    session = self.DBSession()
-    query = session.query( DLSequence )\
-              .join( DLCaller )\
-              .join( DLMethodCall )\
-              .filter( DLCaller.name == callerName )
-    if before and after :
-      query = query.filter( DLMethodCall.creationTime.between( after, before ) )
-    elif before :
-      query = query.filter( DLMethodCall.creationTime <= before )
-    elif after :
-      query = query.filter( DLMethodCall.creationTime >= after )
-
-    if status :
-      query = query.filter( DLAction.status == status )
-
-    if extra :
-      extra = extra.split()
-      query = query.join( DLSequenceAttributeValue )\
-                   .join( DLSequenceAttribute )
-      for i in range( len( extra ) / 2 ) :
-        query = query.filter( DLSequenceAttribute.name.like( extra[i * 2] ) )\
-                     .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
-
-    try :
-      seqs = query.distinct( DLSequence.sequenceID ).all()
-      if seqs :
-        for seq in seqs :
-          seq.extra = {}
-          # here we get the value and name of specific columns of this sequence into extra dictionary
-          for av in seq.attributesValues :
-            seq.extra[av.sequenceAttribute.name] = av.value
-    except Exception, e:
-      gLogger.error( "getSequenceByCaller: unexpected exception %s" % e )
-      return S_ERROR( "getSequenceByCaller: unexpected exception %s" % e )
-    finally:
-      session.close
-    return S_OK( seqs )
 
   def getMethodCallOnFile( self, lfn, before, after, status ):
     """
