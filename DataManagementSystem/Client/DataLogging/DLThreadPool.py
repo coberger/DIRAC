@@ -8,6 +8,9 @@ from threading  import Lock
 
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
+from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
+from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
 
 class DLThreadPool :
   """

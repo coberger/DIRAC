@@ -10,6 +10,8 @@ import os
 from types import StringTypes
 from threading import current_thread
 
+from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
+from DIRAC.Core.Security.X509Chain import X509Chain
 
 from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import extractArgs, extractArgsExecuteFC, extractTupleArgs, extractArgsExecuteSE, caller_name
 from DIRAC.DataManagementSystem.Client.DataLogging.DLAction import DLAction
@@ -324,6 +326,11 @@ class _DataLoggingDecorator( object ):
           seq.addExtraArg( arg, os.environ[ arg ] )
 
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
+      certFile, _keyFile = getHostCertificateAndKeyLocation()
+      chain = X509Chain()
+      chain.loadChainFromFile( certFile )
+      resultCert = chain.getCredentials()
+      print resultCert
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )
       raise
