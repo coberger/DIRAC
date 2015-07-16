@@ -244,7 +244,7 @@ class _DataLoggingDecorator( object ):
   def popMethodCall( self ):
     """ pop a methodCall from the sequence corresponding to its thread """
     try :
-      DLThreadPool.getDataLoggingSequence( current_thread().ident ).popMethodCall()
+      _methodCall = DLThreadPool.getDataLoggingSequence( current_thread().ident ).popMethodCall()
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.popMethodCall %s' % e )
       raise DLException( e )
@@ -328,7 +328,6 @@ class _DataLoggingDecorator( object ):
           seq.addExtraArg( arg, os.environ[ arg ] )
 
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
-
       #=========================================================================
       # certFile, _keyFile = getHostCertificateAndKeyLocation()
       # chain = X509Chain()

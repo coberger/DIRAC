@@ -41,14 +41,15 @@ class DLSequence( DLSerializable ) :
     seq.methodCalls = list()
     seq.extra = extra
 
-    # depth first search
-    stack.append( methodCall )
-    while len( stack ) != 0 :
-      mc = stack.pop()
-      mc.sequence = seq
-      seq.methodCalls.append( mc )
-      for child in mc.children :
-        stack.append( child )
+    if methodCall :
+      # depth first search
+      stack.append( methodCall[0] )
+      while len( stack ) != 0 :
+        mc = stack.pop()
+        mc.sequence = seq
+        seq.methodCalls.append( mc )
+        for child in mc.children :
+          stack.append( child )
 
     return seq
 
