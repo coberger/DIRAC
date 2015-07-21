@@ -543,9 +543,9 @@ class DataLoggingDB( object ):
                   .join( DLAction )\
                   .join( DLFile )\
                   .join( DLCaller )\
-                  .join( DLUserName )\
-                  .join( DLGroup )\
-                  .join( DLHostName )
+                  .outerjoin( DLUserName )\
+                  .outerjoin( DLGroup )\
+                  .outerjoin( DLHostName )
 
     if lfn :
       query = query.filter( DLFile.name == lfn )
