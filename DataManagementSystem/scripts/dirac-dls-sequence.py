@@ -30,12 +30,13 @@ Script.registerSwitch( 'y:', 'HostName=', 'A HostName' )
 Script.registerSwitch( 'z:', 'Status=', 'Failed, Successful or Unknown' )
 Script.registerSwitch( 'e:', 'Extra=', 'A string, see below for more informations' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
-                         'USAGE:',
-                         ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
-                         'ARGUMENTS:',
-                         'At least one shall be given\nLFN: AN LFN NAME \ID : A sequence ID',
-                         'For extra you have to pass first the name of the argument and after the value',
-                         'You can pass as many duo as you want like this :\n -e "JobID 17 Path /local/foo/bar"' ] ) )
+                                    'WARNING : the maximum number of sequence to get from database is 500',
+                                    'USAGE:',
+                                    ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
+                                    'ARGUMENTS:',
+                                    'At least one shall be given\nLFN: AN LFN NAME \ID : A sequence ID',
+                                    'For extra you have to pass first the name of the argument and after the value',
+                                    'You can pass as many duo as you want like this :\n -e "JobID 17 Path /local/foo/bar"' ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 

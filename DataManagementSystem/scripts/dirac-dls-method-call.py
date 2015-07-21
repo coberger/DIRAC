@@ -19,6 +19,7 @@ Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31 [%s]' % 
 Script.registerSwitch( 'b:', 'Before=', 'Date, format be like 1999-12-31 [%s]' % before )
 Script.registerSwitch( 'w:', 'Status=', 'Failed, Successful or Unknown [%s]' % status )
 Script.setUsageMessage( '\n'.join( [ __doc__,
+                                    'WARNING : the maximum number of method call to get from database is 1000',
                                      'USAGE:',
                                      ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
                                      'ARGUMENTS:',

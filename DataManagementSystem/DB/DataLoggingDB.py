@@ -545,7 +545,8 @@ class DataLoggingDB( object ):
                   .join( DLCaller )\
                   .outerjoin( DLUserName )\
                   .outerjoin( DLGroup )\
-                  .outerjoin( DLHostName )
+                  .outerjoin( DLHostName )\
+                  .limit( 500 )
 
     if lfn :
       query = query.filter( DLFile.name == lfn )
@@ -635,7 +636,8 @@ class DataLoggingDB( object ):
                 .join( DLAction )\
                 .join( DLFile )\
                 .filter( DLFile.name == lfn )\
-                .order_by( DLMethodCall.sequenceID ).order_by( DLMethodCall.creationTime )
+                .order_by( DLMethodCall.sequenceID ).order_by( DLMethodCall.creationTime )\
+                .limit( 1000 )
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
     elif before :
@@ -672,7 +674,8 @@ class DataLoggingDB( object ):
     query = session.query( DLMethodCall )\
                 .join( DLMethodName )\
                 .filter( DLMethodName.name == name )\
-                .order_by( DLMethodCall.sequenceID )
+                .order_by( DLMethodCall.sequenceID )\
+                .limit( 1000 )
 
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
