@@ -545,9 +545,7 @@ class DataLoggingDB( object ):
                   .join( DLCaller )\
                   .outerjoin( DLUserName )\
                   .outerjoin( DLGroup )\
-                  .outerjoin( DLHostName )\
-                  .limit( 500 )
-
+                  .outerjoin( DLHostName )
     if lfn :
       query = query.filter( DLFile.name == lfn )
     if callerName :
@@ -577,7 +575,7 @@ class DataLoggingDB( object ):
         query = query.filter( DLSequenceAttribute.name.like( extra[i * 2] ) )\
                      .filter( DLSequenceAttributeValue.value == extra[i * 2 + 1] )
     try :
-      seqs = query.distinct( DLSequence.sequenceID ).all()
+      seqs = query.distinct( DLSequence.sequenceID ).limit( 500 ).all()
       if seqs :
         for seq in seqs :
           seq.extra = {}
@@ -636,8 +634,7 @@ class DataLoggingDB( object ):
                 .join( DLAction )\
                 .join( DLFile )\
                 .filter( DLFile.name == lfn )\
-                .order_by( DLMethodCall.sequenceID ).order_by( DLMethodCall.creationTime )\
-                .limit( 1000 )
+                .order_by( DLMethodCall.sequenceID ).order_by( DLMethodCall.creationTime )
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
     elif before :
@@ -649,7 +646,7 @@ class DataLoggingDB( object ):
       query = query.filter( DLAction.status == status )
 
     try:
-      calls = query.distinct( DLMethodCall.methodCallID )
+      calls = query.distinct( DLMethodCall.methodCallID ).limit( 1000 )
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
@@ -674,8 +671,7 @@ class DataLoggingDB( object ):
     query = session.query( DLMethodCall )\
                 .join( DLMethodName )\
                 .filter( DLMethodName.name == name )\
-                .order_by( DLMethodCall.sequenceID )\
-                .limit( 1000 )
+                .order_by( DLMethodCall.sequenceID )
 
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
@@ -688,7 +684,7 @@ class DataLoggingDB( object ):
       query = query.filter( DLAction.status == status )
 
     try:
-      calls = query.distinct( DLMethodCall.methodCallID )
+      calls = query.distinct( DLMethodCall.methodCallID ).limit( 1000 )
     except Exception, e:
       gLogger.error( "getLFNOperation: unexpected exception %s" % e )
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
