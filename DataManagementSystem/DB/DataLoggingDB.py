@@ -299,6 +299,7 @@ class DataLoggingDB( object ):
 
       :param maxSequenceToMove: the number of sequences to move per call of this method
     """
+    # different sets to save attributes names
     fileNames = set()
     storageNames = set()
     methodNames = set()
@@ -326,26 +327,25 @@ class DataLoggingDB( object ):
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
           # decode of the JSON
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
+          # we save in sequences dictionary
           sequences[sequenceCompressed] = sequence
         session.commit()
 
-
+        # we run through values of sequences dictionary
         for sequence in sequences.values() :
-          # decompression of the JSON repsentation of a DLSequence
-          callerNames.add( sequence.caller.name )
-          groupNames.add( sequence.group.name )
-          userNames.add( sequence.userName.name )
-          hostNames.add( sequence.hostName.name )
+          # if the attribute is not none we add his name value into the set corresponding to the name of the attribute
+          callerNames.add( '%s' % sequence.caller.name if sequence.caller else None )
+          groupNames.add( '%s' % sequence.group.name if sequence.group else None )
+          userNames.add( '%s' % sequence.userName.name if sequence.userName else None )
+          hostNames.add( '%s' % sequence.hostName.name if sequence.hostName else None )
           for mc in sequence.methodCalls :
-            methodNames.add( mc.name.name )
+            methodNames.add( '%s' % mc.name.name if mc.name else None )
             for action in mc.actions :
-              fileNames.add( action.fileDL.name )
-              storageNames.add( action.targetSE.name )
-              storageNames.add( action.srcSE.name )
+              fileNames.add( '%s' % action.fileDL.name if action.fileDL else None )
+              storageNames.add( '%s' % action.targetSE.name if action.targetSE else None )
+              storageNames.add( '%s' % action.srcSE.name if action.srcSE else None )
 
-
-
-
+        # calls of getOrCreate multiple with the different sets
         self.getOrCreateMultiple( session, DLCaller, callerNames, self.dictCaller )
         self.getOrCreateMultiple( session, DLGroup, groupNames, self.dictGroup )
         self.getOrCreateMultiple( session, DLUserName, userNames, self.dictUserName )
@@ -354,18 +354,51 @@ class DataLoggingDB( object ):
         self.getOrCreateMultiple( session, DLFile, fileNames, self.dictFile )
         self.getOrCreateMultiple( session, DLStorageElement, storageNames, self.dictStorageElement )
 
+        # we run through items of sequences dictionary
         for sequenceCompressed, sequence in sequences.items() :
-          print sequenceCompressed, sequence
-          sequence.caller = self.dictCaller[sequence.caller.name]
-          sequence.group = self.dictGroup[sequence.group.name]
-          sequence.userName = self.dictUserName[sequence.userName.name]
-          sequence.hostName = self.dictHostName[sequence.hostName.name]
+          # we set the differen attributes with the object get from Data Base
+          if sequence.caller:
+            sequence.caller = self.dictCaller[sequence.caller.name]
+          else :
+            sequence.caller = None
+
+          if sequence.group:
+            sequence.group = self.dictGroup[sequence.group.name]
+          else :
+            sequence.group = None
+
+          if sequence.userName:
+            sequence.userName = self.dictUserName[sequence.userName.name]
+          else :
+            sequence.userName = None
+
+          if sequence.hostName:
+            sequence.hostName = self.dictHostName[sequence.hostName.name]
+          else :
+            sequence.hostName = None
+
           for mc in sequence.methodCalls :
-            mc.name = self.dictMethodName[mc.name.name]
+            if mc.name :
+              mc.name = self.dictMethodName[mc.name.name]
+            else :
+              mc.name = None
+
             for action in mc.actions :
-              action.fileDL = self.dictFile[action.fileDL.name]
-              action.targetSE = self.dictStorageElement[action.targetSE.name]
-              action.srcSE = self.dictStorageElement[action.srcSE.name]
+              if action.fileDL :
+                action.fileDL = self.dictFile[action.fileDL.name]
+              else :
+                action.fileDL = None
+
+              if action.targetSE:
+                action.targetSE = self.dictStorageElement[action.targetSE.name]
+              else :
+                action.targetSE = None
+
+              if action.srcSE:
+                action.srcSE = self.dictStorageElement[action.srcSE.name]
+              else :
+                action.srcSE = None
+
           try :
             # put sequence into db
             ret = self.__putSequence( session, sequence )
@@ -408,9 +441,50 @@ class DataLoggingDB( object ):
       :param sequences: a list of DLSequence
 
     """
-    for sequenceCompressed in sequences :
-      sequenceJSON = zlib.decompress( sequenceCompressed.value )
-      sequence = json.loads( sequenceJSON , cls = DLDecoder )
+    for sequenceCompressed, sequence in sequences.items() :
+
+      if sequence.caller:
+        sequence.caller = self.dictCaller[sequence.caller.name]
+      else :
+        sequence.caller = None
+
+      if sequence.group:
+        sequence.group = self.dictGroup[sequence.group.name]
+      else :
+        sequence.group = None
+
+      if sequence.userName:
+        sequence.userName = self.dictUserName[sequence.userName.name]
+      else :
+        sequence.userName = None
+
+      if sequence.hostName:
+        sequence.hostName = self.dictHostName[sequence.hostName.name]
+      else :
+        sequence.hostName = None
+
+      for mc in sequence.methodCalls :
+        if mc.name :
+          mc.name = self.dictMethodName[mc.name.name]
+        else :
+          mc.name = None
+
+        for action in mc.actions :
+          if action.fileDL :
+            action.fileDL = self.dictFile[action.fileDL.name]
+          else :
+            action.fileDL = None
+
+          if action.targetSE:
+            action.targetSE = self.dictStorageElement[action.targetSE.name]
+          else :
+            action.targetSE = None
+
+          if action.srcSE:
+            action.srcSE = self.dictStorageElement[action.srcSE.name]
+          else :
+            action.srcSE = None
+
       try :
         ret = self.__putSequence( session, sequence )
         if not ret['OK']:
@@ -420,7 +494,7 @@ class DataLoggingDB( object ):
         session.merge( sequenceCompressed )
         session.commit()
       except Exception, e:
-        gLogger.error( "moveSequences: unexpected exception %s" % e )
+        gLogger.error( "moveSequencesOneByOne: unexpected exception %s" % e )
         session.rollback()
         sequenceCompressed.lastUpdate = datetime.now()
         sequenceCompressed.status = 'Waiting'
@@ -461,55 +535,6 @@ class DataLoggingDB( object ):
 
     """
     try:
-      # we get the caller from database
-      res = self.getOrCreate( session, DLCaller, sequence.caller.name, self.dictCaller )
-      if not res['OK'] :
-        return res
-      sequence.caller = res['Value']
-
-      # we get the userName from db
-      res = self.getOrCreate( session, DLUserName, sequence.userName.name, self.dictUserName )
-      if not res['OK'] :
-        return res
-      sequence.userName = res['Value']
-
-      # we get the hostName from db
-      res = self.getOrCreate( session, DLHostName, sequence.hostName.name, self.dictHostName )
-      if not res['OK'] :
-        return res
-      sequence.hostName = res['Value']
-
-      # we get the group from db
-      res = self.getOrCreate( session, DLGroup, sequence.group.name, self.dictGroup )
-      if not res['OK'] :
-        return res
-      sequence.group = res['Value']
-
-      for mc in sequence.methodCalls:
-
-        res = self.getOrCreate( session, DLMethodName, mc.name.name, self.dictMethodName )
-        if not res['OK'] :
-          return res
-        mc.name = res['Value']
-
-        for action in mc.actions :
-          # we get the DLFile from database
-          res = self.getOrCreate( session, DLFile, action.fileDL.name, self.dictFile )
-          if not res['OK'] :
-            return res
-          action.fileDL = res['Value']
-
-          # we get the DLStorageElement from database
-          res = self.getOrCreate( session, DLStorageElement, action.srcSE.name, self.dictStorageElement )
-          if not res['OK'] :
-            return res
-          action.srcSE = res['Value']
-
-          res = self.getOrCreate( session, DLStorageElement, action.targetSE.name, self.dictStorageElement )
-          if not res['OK'] :
-            return res
-          action.targetSE = res['Value']
-
       for key, value in sequence.extra.items():
         sav = DLSequenceAttributeValue( value )
         sav.sequence = sequence
@@ -576,16 +601,20 @@ class DataLoggingDB( object ):
       for val in values.copy() :
         if val in objDict:
           values.remove( val )
-      # select to know if the object is already in database
+      # select to know if values are already in database
       instances = session.query( model.name, model ).filter( model.name.in_( values ) ).all()
       for el in instances :
+        # we found some values, we save them into the dictionnary
         objDict[el[0]] = el[1]
         values.remove( el[0] )
-      for val in values.copy() :
-        instance = model( val )
-        session.add( instance )
-        objDict[val] = instance
-      session.commit()
+
+      if len( values ) > 0 :
+        # we have some values which are not into dat base, we need to insert them
+        for val in values :
+          instance = model( val )
+          session.add( instance )
+          objDict[val] = instance
+        session.commit()
       session.expunge_all()
       return  S_OK()
     except exc.IntegrityError as e :
