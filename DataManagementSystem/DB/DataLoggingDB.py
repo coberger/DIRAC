@@ -301,6 +301,8 @@ class DataLoggingDB( object ):
 
       :param maxSequenceToMove: the number of sequences to move per call of this method
     """
+    lines = []
+    lines2 = []
     # different sets to save attributes names
     fileNames = set()
     storageNames = set()
@@ -333,8 +335,10 @@ class DataLoggingDB( object ):
           # we save in sequences dictionary
           sequences[sequenceCompressed] = sequence
           end = time.time()
-          self.f2.write( "%s\t%s\t%s\n" % ( begin, end, end - begin ) )
+          lines2.append( "%s\t%s\t%s\n" % ( begin, end, end - begin ) )
         session.commit()
+
+        self.f2.writelines( lines2 )
 
         # we run through values of sequences dictionary
         for sequence in sequences.values() :
@@ -350,6 +354,7 @@ class DataLoggingDB( object ):
               storageNames.add( '%s' % action.targetSE.name if action.targetSE else None )
               storageNames.add( '%s' % action.srcSE.name if action.srcSE else None )
 
+        beginGet = time.time()
         # calls of getOrCreate multiple with the different sets
         self.getOrCreateMultiple( session, DLCaller, callerNames, self.dictCaller )
         self.getOrCreateMultiple( session, DLGroup, groupNames, self.dictGroup )
@@ -358,11 +363,13 @@ class DataLoggingDB( object ):
         self.getOrCreateMultiple( session, DLMethodName, methodNames, self.dictMethodName )
         self.getOrCreateMultiple( session, DLFile, fileNames, self.dictFile )
         self.getOrCreateMultiple( session, DLStorageElement, storageNames, self.dictStorageElement )
+        endGet = time.time()
+        timeGet = ( endGet - beginGet ) / len( sequences )
 
         # we run through items of sequences dictionary
         for sequenceCompressed, sequence in sequences.items() :
           begin = time.time()
-          # we set the differen attributes with the object get from Data Base
+          # we set the different attributes with the object get from Data Base
           if sequence.caller:
             sequence.caller = self.dictCaller[sequence.caller.name]
 
@@ -406,7 +413,7 @@ class DataLoggingDB( object ):
             if not res['OK']:
               return res
           end = time.time()
-          self.f1.write( "%s\t%s\t%s\n" % ( begin, end, end - begin ) )
+          lines.append( "%s\t%s\t%s\n" % ( begin, end, end - begin + timeGet ) )
         session.commit()
       else :
         return S_OK( "no sequence to insert" )
@@ -419,6 +426,7 @@ class DataLoggingDB( object ):
       session.close()
     endMove = datetime.utcnow()
     gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( endMove - beginMove ) ) )
+    self.f1.writelines( lines )
     return S_OK()
 
   def moveSequencesOneByOne(self, session, sequences):
