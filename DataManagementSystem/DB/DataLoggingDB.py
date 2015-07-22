@@ -211,14 +211,14 @@ class DataLoggingDB( object ):
     self.DBSession = sessionmaker( bind = self.engine, autoflush = False, expire_on_commit = False )
 
     # this dictionaries will serve to save object from database, like that we don't need to do a select all the time for the same object
-    self.dictStorageElement = {}
-    self.dictFile = {}
-    self.dictMethodName = {}
-    self.dictCaller = {}
-    self.dictUserName = {}
-    self.dictHostName = {}
-    self.dictGroup = {}
-    self.dictSequenceAttribute = {}
+    self.dictStorageElement = {None:None}
+    self.dictFile = {None:None}
+    self.dictMethodName = {None:None}
+    self.dictCaller = {None:None}
+    self.dictUserName = {None:None}
+    self.dictHostName = {None:None}
+    self.dictGroup = {None:None}
+    self.dictSequenceAttribute = {None:None}
 
 
   def createTables( self ):
@@ -299,8 +299,16 @@ class DataLoggingDB( object ):
 
       :param maxSequenceToMove: the number of sequences to move per call of this method
     """
+    fileNames = set()
+    storageNames = set()
+    methodNames = set()
+    callerNames = set()
+    groupNames = set()
+    hostNames = set()
+    userNames = set()
+
     session = None
-    sequences = []
+    sequences = {}
     begin = datetime.utcnow()
     try:
       session = self.DBSession()
@@ -310,19 +318,54 @@ class DataLoggingDB( object ):
       if rows:
         # if we have found some
         for sequenceCompressed in rows :
-          sequences.append( sequenceCompressed )
           # status update to Ongoing for each DLCompressedSequence
           sequenceCompressed.status = 'Ongoing'
           # we update the lastUpdate value
           sequenceCompressed.lastUpdate = datetime.now()
           session.merge( sequenceCompressed )
-        session.commit()
-
-        for sequenceCompressed in sequences :
-          # decompression of the JSON repsentation of a DLSequence
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
           # decode of the JSON
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
+          sequences[sequenceCompressed] = sequence
+        session.commit()
+
+
+        for sequence in sequences.values() :
+          # decompression of the JSON repsentation of a DLSequence
+          callerNames.add( sequence.caller.name )
+          groupNames.add( sequence.group.name )
+          userNames.add( sequence.userName.name )
+          hostNames.add( sequence.hostName.name )
+          for mc in sequence.methodCalls :
+            methodNames.add( mc.name.name )
+            for action in mc.actions :
+              fileNames.add( action.fileDL.name )
+              storageNames.add( action.targetSE.name )
+              storageNames.add( action.srcSE.name )
+
+
+
+
+        self.getOrCreateMultiple( session, DLCaller, callerNames, self.dictCaller )
+        self.getOrCreateMultiple( session, DLGroup, groupNames, self.dictGroup )
+        self.getOrCreateMultiple( session, DLUserName, userNames, self.dictUserName )
+        self.getOrCreateMultiple( session, DLHostName, hostNames, self.dictHostName )
+        self.getOrCreateMultiple( session, DLMethodName, methodNames, self.dictMethodName )
+        self.getOrCreateMultiple( session, DLFile, fileNames, self.dictFile )
+        self.getOrCreateMultiple( session, DLStorageElement, storageNames, self.dictStorageElement )
+
+        for sequenceCompressed, sequence in sequences.items() :
+          print sequenceCompressed, sequence
+          sequence.caller = self.dictCaller[sequence.caller.name]
+          sequence.group = self.dictGroup[sequence.group.name]
+          sequence.userName = self.dictUserName[sequence.userName.name]
+          sequence.hostName = self.dictHostName[sequence.hostName.name]
+          for mc in sequence.methodCalls :
+            mc.name = self.dictMethodName[mc.name.name]
+            for action in mc.actions :
+              action.fileDL = self.dictFile[action.fileDL.name]
+              action.targetSE = self.dictStorageElement[action.targetSE.name]
+              action.srcSE = self.dictStorageElement[action.srcSE.name]
           try :
             # put sequence into db
             ret = self.__putSequence( session, sequence )
@@ -519,6 +562,44 @@ class DataLoggingDB( object ):
       return S_ERROR( "getOrCreate: unexpected exception %s" % e )
 
 
+  def getOrCreateMultiple( self, session, model, values, objDict ):
+    """
+      get or create a database object
+
+      :param session: a database session
+      :param model: the model of object
+      :param values, a set of values to get from DB
+      :param objDict, the dictionary where object of model are saved
+
+    """
+    try:
+      for val in values.copy() :
+        if val in objDict:
+          values.remove( val )
+      # select to know if the object is already in database
+      instances = session.query( model.name, model ).filter( model.name.in_( values ) ).all()
+      for el in instances :
+        objDict[el[0]] = el[1]
+        values.remove( el[0] )
+      for val in values.copy() :
+        instance = model( val )
+        session.add( instance )
+        objDict[val] = instance
+      session.commit()
+      session.expunge_all()
+      return  S_OK()
+    except exc.IntegrityError as e :
+      gLogger.info( "IntegrityError: %s" % e )
+      session.rollback()
+      for val in values :
+        self.getOrCreate( session, model, val, objDict )
+      return S_OK()
+    except Exception, e:
+      session.rollback()
+      gLogger.error( "getOrCreate: unexpected exception %s" % e )
+      return S_ERROR( "getOrCreate: unexpected exception %s" % e )
+
+
   def getSequence( self, lfn = None, callerName = None, before = None, after = None, status = None, extra = None,
                      userName = None, hostName = None, group = None ):
     """
@@ -539,10 +620,10 @@ class DataLoggingDB( object ):
     session = self.DBSession()
 
     query =session.query( DLSequence )\
-                  .join( DLMethodCall )\
-                  .join( DLAction )\
-                  .join( DLFile )\
-                  .join( DLCaller )\
+                  .outerjoin( DLMethodCall )\
+                  .outerjoin( DLAction )\
+                  .outerjoin( DLFile )\
+                  .outerjoin( DLCaller )\
                   .outerjoin( DLUserName )\
                   .outerjoin( DLGroup )\
                   .outerjoin( DLHostName )
@@ -631,8 +712,8 @@ class DataLoggingDB( object ):
     """
     session = self.DBSession()
     query = session.query( DLMethodCall )\
-                .join( DLAction )\
-                .join( DLFile )\
+                .outerjoin( DLAction )\
+                .outerjoin( DLFile )\
                 .filter( DLFile.name == lfn )\
                 .order_by( DLMethodCall.sequenceID ).order_by( DLMethodCall.creationTime )
     if before and after :
@@ -669,7 +750,7 @@ class DataLoggingDB( object ):
     """
     session = self.DBSession()
     query = session.query( DLMethodCall )\
-                .join( DLMethodName )\
+                .outerjoin( DLMethodName )\
                 .filter( DLMethodName.name == name )\
                 .order_by( DLMethodCall.sequenceID )
 

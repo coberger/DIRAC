@@ -118,8 +118,9 @@ def printSequence( seq, full = False ):
 
 def printSequenceLFN( seq, lfn, full = False ):
   seqLines = []
-  line = 'Sequence %s Caller %s Extra : ' % ( seq.sequenceID, seq.caller.name )
+  line = 'Sequence %s Caller %s ' % ( seq.sequenceID, '%s' % seq.caller.name if seq.caller else 'None' )
   if seq.extra :
+    line += 'Extra : '
     for key, value in seq.extra.items() :
       line += '%s = %s, ' % ( key, value )
   seqLines.append( line )
