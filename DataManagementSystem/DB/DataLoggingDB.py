@@ -6,7 +6,7 @@ Created on May 4, 2015
 import zlib
 import json
 from datetime import datetime, timedelta
-
+import time
 # from DIRAC
 from DIRAC import S_OK, gLogger, S_ERROR
 
@@ -198,6 +198,8 @@ class DataLoggingDB( object ):
 
       :param self: self reference
     """
+    self.f1 = open( '/tmp/insertionTime.txt', 'a' )
+    self.f2 = open( '/tmp/betweenTime.txt', 'a' )
 
     self.log = gLogger.getSubLogger( 'DataLoggingDB' )
     # Initialize the connection info
@@ -310,7 +312,7 @@ class DataLoggingDB( object ):
 
     session = None
     sequences = {}
-    begin = datetime.utcnow()
+    beginMove = datetime.utcnow()
     try:
       session = self.DBSession()
       # selection of DLCompressedSequence with status 'Waiting' with a lock on rows that we are trying to select
@@ -322,6 +324,7 @@ class DataLoggingDB( object ):
           # status update to Ongoing for each DLCompressedSequence
           sequenceCompressed.status = 'Ongoing'
           # we update the lastUpdate value
+          begin = time.mktime( sequenceCompressed.lastUpdate.timetuple() ) + sequenceCompressed.lastUpdate.microsecond / 1E6
           sequenceCompressed.lastUpdate = datetime.now()
           session.merge( sequenceCompressed )
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
@@ -329,6 +332,8 @@ class DataLoggingDB( object ):
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
           # we save in sequences dictionary
           sequences[sequenceCompressed] = sequence
+          end = time.time()
+          self.f2.write( "%s\t%s\t%s\n" % ( begin, end, end - begin ) )
         session.commit()
 
         # we run through values of sequences dictionary
@@ -356,48 +361,33 @@ class DataLoggingDB( object ):
 
         # we run through items of sequences dictionary
         for sequenceCompressed, sequence in sequences.items() :
+          begin = time.time()
           # we set the differen attributes with the object get from Data Base
           if sequence.caller:
             sequence.caller = self.dictCaller[sequence.caller.name]
-          else :
-            sequence.caller = None
 
           if sequence.group:
             sequence.group = self.dictGroup[sequence.group.name]
-          else :
-            sequence.group = None
 
           if sequence.userName:
             sequence.userName = self.dictUserName[sequence.userName.name]
-          else :
-            sequence.userName = None
 
           if sequence.hostName:
             sequence.hostName = self.dictHostName[sequence.hostName.name]
-          else :
-            sequence.hostName = None
 
           for mc in sequence.methodCalls :
             if mc.name :
               mc.name = self.dictMethodName[mc.name.name]
-            else :
-              mc.name = None
 
             for action in mc.actions :
               if action.fileDL :
                 action.fileDL = self.dictFile[action.fileDL.name]
-              else :
-                action.fileDL = None
 
               if action.targetSE:
                 action.targetSE = self.dictStorageElement[action.targetSE.name]
-              else :
-                action.targetSE = None
 
               if action.srcSE:
                 action.srcSE = self.dictStorageElement[action.srcSE.name]
-              else :
-                action.srcSE = None
 
           try :
             # put sequence into db
@@ -415,6 +405,8 @@ class DataLoggingDB( object ):
             res = self.moveSequencesOneByOne( session, sequences )
             if not res['OK']:
               return res
+          end = time.time()
+          self.f1.write( "%s\t%s\t%s\n" % ( begin, end, end - begin ) )
         session.commit()
       else :
         return S_OK( "no sequence to insert" )
@@ -425,8 +417,8 @@ class DataLoggingDB( object ):
       raise DLException( "moveSequences: unexpected exception %s" % e )
     finally:
       session.close()
-    end = datetime.utcnow()
-    gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( end - begin ) ) )
+    endMove = datetime.utcnow()
+    gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( endMove - beginMove ) ) )
     return S_OK()
 
   def moveSequencesOneByOne(self, session, sequences):
@@ -445,45 +437,29 @@ class DataLoggingDB( object ):
 
       if sequence.caller:
         sequence.caller = self.dictCaller[sequence.caller.name]
-      else :
-        sequence.caller = None
 
       if sequence.group:
         sequence.group = self.dictGroup[sequence.group.name]
-      else :
-        sequence.group = None
 
       if sequence.userName:
         sequence.userName = self.dictUserName[sequence.userName.name]
-      else :
-        sequence.userName = None
 
       if sequence.hostName:
         sequence.hostName = self.dictHostName[sequence.hostName.name]
-      else :
-        sequence.hostName = None
 
       for mc in sequence.methodCalls :
         if mc.name :
           mc.name = self.dictMethodName[mc.name.name]
-        else :
-          mc.name = None
 
         for action in mc.actions :
           if action.fileDL :
             action.fileDL = self.dictFile[action.fileDL.name]
-          else :
-            action.fileDL = None
 
           if action.targetSE:
             action.targetSE = self.dictStorageElement[action.targetSE.name]
-          else :
-            action.targetSE = None
 
           if action.srcSE:
             action.srcSE = self.dictStorageElement[action.srcSE.name]
-          else :
-            action.srcSE = None
 
       try :
         ret = self.__putSequence( session, sequence )
