@@ -330,6 +330,7 @@ class DataLoggingDB( object ):
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
           # decode of the JSON
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
+          print ' COUCOU %s' % sequence
           try :
             # put sequence into db
             ret = self.__putSequence( session, sequence )
