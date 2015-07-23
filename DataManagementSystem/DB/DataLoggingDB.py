@@ -322,7 +322,7 @@ class DataLoggingDB( object ):
           sequenceCompressed.lastUpdate = datetime.now()
           session.merge( sequenceCompressed )
           end = time.time()
-          self.file2.write( "%s\t%s\t%s\n" % ( begin, end, end - begin ) )
+          self.f2.write( "%s\t%s\t%s\n" % ( begin, end, end - begin ) )
         session.commit()
 
         for sequenceCompressed in sequences :
