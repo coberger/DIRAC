@@ -65,6 +65,9 @@ def extractArgs( argsDecorator, *args, **kwargs ):
         break
       argName = argsPosition[i]
       if isinstance( argName, tuple ):
+        # if argname is a tuple is because the argument is named and can be passed in kwargs
+        # for example ('srcSE','sourceSE'), the first tuple's element is the name we want to get
+        # and the second is the real name of the argument in the function
         argName = argName[0]
       if argName in wantedArgs:
         if argName is 'files':
@@ -81,6 +84,9 @@ def extractArgs( argsDecorator, *args, **kwargs ):
       while i < len( argsPosition ) :
         argName = argsPosition[i]
         if isinstance( argName, tuple ):
+          # if argname is a tuple is because the argument is named and can be passed in kwargs
+          # for example ('srcSE','sourceSE'), the first tuple's element is the name we want to get
+          # and the second is the real name of the argument in the function
           keyToGet = argName[1]
           argName = argName[0]
         if argName in wantedArgs:
@@ -90,16 +96,19 @@ def extractArgs( argsDecorator, *args, **kwargs ):
           if value :
             extraList.append( "%s = %s" % ( argName, value ) )
         i += 1
+
     if extraList:
       opArgs['extra'] = ','.join( extraList )
     else:
       opArgs['extra'] = None
+
+    # we have all arguments so now we are going to create a list with as much dictionary as there is files
     actionArgs = []
     if 'files' in opArgs:
       for f in opArgs['files'] :
-        d = dict( opArgs )
-        d['file'] = f
-        actionArgs.append( d )
+        argDict = dict( opArgs )
+        argDict['file'] = f
+        actionArgs.append( argDict )
     else :
       opArgs['files'] = None
       actionArgs = [opArgs]
@@ -108,9 +117,9 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     actionArgs = []
     if 'files' in opArgs:
       for f in opArgs['files'] :
-        d = dict( opArgs )
-        d['file'] = f
-        actionArgs.append( d )
+        argDict = dict( opArgs )
+        argDict['file'] = f
+        actionArgs.append( argDict )
     else :
       opArgs['file'] = None
       actionArgs = [opArgs]
@@ -135,17 +144,20 @@ def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
     if kwargs:
       for key in kwargs:
         extraList.append( "%s = %s" % ( key, kwargs[key] ) )
+
+    # in args it should be only one argument, a dictionary
     for i in range( len( argsPosition ) ):
       if argsPosition[i] is 'files':
         for key, dictInfo in args[i].items():
           for key2, value in dictInfo.items():
-            d = dict( opArgs )
-            d['file'] = key
-            d['targetSE'] = key2
-            dextra = list( extraList )
-            dextra.append( 'PFN = %s' % value )
-            d['extra'] = ','.join( dextra )
-            actionArgs.append( d )
+            argDict = dict( opArgs )
+            argDict['file'] = key
+            argDict['targetSE'] = key2
+            argDictExtra = list( extraList )
+            argDictExtra.append( 'PFN = %s' % value )
+            argDict['extra'] = ','.join( argDictExtra )
+            actionArgs.append( argDict )
+
   except Exception as e:
     gLogger.error( 'unexpected error in DLFucntions.extractArgsSetReplicaProblematic %s' % e )
     ret = S_ERROR( 'unexpected error in DLFucntions.extractArgsSetReplicaProblematic %s' % e )
@@ -177,38 +189,38 @@ def extractArgsFromDict( info , *args, **kwargs ):
 
         if info['valueType'] == 'str':
           for key, value in args[i].items():
-            dextra = list( extraList )
-            d = dict( opArgs )
+            argDictExtra = list( extraList )
+            argDict = dict( opArgs )
             valueName = info['valueName']
             if valueName in wantedArgs:
-              d[valueName] = value
+              argDict[valueName] = value
             else:
-              dextra.append( "%s = %s" % ( valueName, value ) )
-            d['file'] = key
-            d['extra'] = ','.join( dextra )
-            actionArgs.append( d )
+              argDictExtra.append( "%s = %s" % ( valueName, value ) )
+            argDict['file'] = key
+            argDict['extra'] = ','.join( argDictExtra )
+            actionArgs.append( argDict )
 
         elif info['valueType'] == 'None':
           for key in args[i]:
-            dextra = list( extraList )
-            d = dict( opArgs )
-            d['file'] = key
-            d['extra'] = ','.join( dextra )
-            actionArgs.append( d )
+            argDictExtra = list( extraList )
+            argDict = dict( opArgs )
+            argDict['file'] = key
+            argDict['extra'] = ','.join( argDictExtra )
+            actionArgs.append( argDict )
 
         elif info['valueType'] == 'dict':
           keysToGet = info['dictKeys']
           for key, dictInfo in args[i].items():
-            dextra = list( extraList )
-            d = dict( opArgs )
-            d['file'] = key
+            argDictExtra = list( extraList )
+            argDict = dict( opArgs )
+            argDict['file'] = key
             for keyToget in keysToGet:
               if keyToget in wantedArgs:
-                d[keyToget] = dictInfo.get( keysToGet[keyToget], None )
+                argDict[keyToget] = dictInfo.get( keysToGet[keyToget], None )
               else :
-                dextra.append( "%s = %s" % ( keysToGet[keyToget], dictInfo.get( keysToGet[keyToget], None ) ) )
-            d['extra'] = ','.join( dextra )
-            actionArgs.append( d )
+                argDictExtra.append( "%s = %s" % ( keysToGet[keyToget], dictInfo.get( keysToGet[keyToget], None ) ) )
+            argDict['extra'] = ','.join( argDictExtra )
+            actionArgs.append( argDict )
         else :
           ret = S_ERROR( 'Error extractArgsFromDict, valueType should be none, dict or str' )
           ret['Value'] = actionArgs
@@ -340,8 +352,8 @@ def getArgFiles( args ):
     # if args is a dictionary
     elif isinstance( args , dict ):
       files = []
-      for el in args.keys() :
-        files.append( str( el ) )
+      for fl in args.keys() :
+        files.append( str( fl ) )
     else :
       files = [args]
   except Exception as e:
@@ -352,36 +364,36 @@ def getArgFiles( args ):
 def mergeDict( opArgs, tupleArgs, extraList ):
   """merge of the two dict wich contains arguments needed to create actions"""
   localExtraList = list( extraList )
-  d = dict()
-  for k in set( opArgs.keys() + tupleArgs.keys() ) :
-    l = list()
-    if k in opArgs:
-      if opArgs[k] is not None :
-        if isinstance( opArgs[k], list ):
-          for val in opArgs[k]:
-            l.append( val )
+  mergedDict = dict()
+  for key in set( opArgs.keys() + tupleArgs.keys() ) :
+    argList = list()
+    if key in opArgs:
+      if opArgs[key] is not None :
+        if isinstance( opArgs[key], list ):
+          for val in opArgs[key]:
+            argList.append( val )
         else :
-          l.append( opArgs[k] )
+          argList.append( opArgs[key] )
 
-    if k in tupleArgs :
-      if tupleArgs[k] is not None :
-        if isinstance( tupleArgs[k], list ):
-          for val in tupleArgs[k]:
-            l.append( val )
+    if key in tupleArgs :
+      if tupleArgs[key] is not None :
+        if isinstance( tupleArgs[key], list ):
+          for val in tupleArgs[key]:
+            argList.append( val )
         else :
-          l.append( tupleArgs[k] )
+          argList.append( tupleArgs[key] )
 
-    if k is'files' :
-      d['file'] = tupleArgs[k]
+    if key is'files' :
+      mergedDict['file'] = tupleArgs[key]
     else :
-      if len( l ) == 0 :
-        d[k] = None
+      if len( argList ) == 0 :
+        mergedDict[key] = None
       else :
-        d[k] = ','.join( l )
+        mergedDict[key] = ','.join( argList )
   localExtraList.append( tupleArgs['extra'] )
   if localExtraList:
-    d['extra'] = ','.join( localExtraList )
+    mergedDict['extra'] = ','.join( localExtraList )
   else:
-    d['extra'] = None
+    mergedDict['extra'] = None
 
-  return d
+  return mergedDict

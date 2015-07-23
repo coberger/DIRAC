@@ -191,11 +191,11 @@ class _DataLoggingDecorator( object ):
               successful = foncResult['Value']['Successful']
               failed = foncResult['Value']['Failed']
               for action in methodCall.actions :
-                if action.fileDL.name in successful :
+                if action.file.name in successful :
                   action.status = 'Successful'
-                elif action.fileDL.name in failed :
+                elif action.file.name in failed :
                   action.status = 'Failed'
-                  action.errorMessage = str( foncResult['Value']['Failed'][action.fileDL.name] )
+                  action.errorMessage = str( foncResult['Value']['Failed'][action.file.name] )
             else:
               for action in methodCall.actions :
                 action.status = 'Successful'

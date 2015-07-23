@@ -113,9 +113,9 @@ dataLoggingActionTable = Table( 'DLAction', metadata,
                    Column( 'errorMessage', String( 2048 ) ),
                    mysql_engine = 'InnoDB' )
 # Map the DLAction object to the dataLoggingActionTable, with two foreign key constraints,
-# and one relationship between attribute fileDL and table DLFile
+# and one relationship between attribute file and table DLFile
 mapper( DLAction, dataLoggingActionTable,
-        properties = { 'fileDL' : relationship( DLFile ),
+        properties = { 'file' : relationship( DLFile ),
                       'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.srcSEID ),
                       'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.targetSEID )} )
 
@@ -245,7 +245,9 @@ class DataLoggingDB( object ):
     start = currentTime - timedelta( minutes = expirationTime )
     try:
       session = self.DBSession()
-      rows = session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Ongoing', DLCompressedSequence.lastUpdate <= start ).with_for_update().all()
+      rows = session.query( DLCompressedSequence )\
+                .filter( DLCompressedSequence.status == 'Ongoing', DLCompressedSequence.lastUpdate <= start )\
+                .with_for_update().all()
       if rows:
         # if we found some DLCompressedSequence, we change their status
         gLogger.info( "DataLoggingDB.cleanStaledSequencesStatus found %s sequences with status Ongoing since %s minutes, try to insert them"
@@ -301,8 +303,6 @@ class DataLoggingDB( object ):
 
       :param maxSequenceToMove: the number of sequences to move per call of this method
     """
-    lines = []
-    lines2 = []
     # different sets to save attributes names
     fileNames = set()
     storageNames = set()
@@ -326,7 +326,6 @@ class DataLoggingDB( object ):
           # status update to Ongoing for each DLCompressedSequence
           sequenceCompressed.status = 'Ongoing'
           # we update the lastUpdate value
-          begin = time.mktime( sequenceCompressed.lastUpdate.timetuple() ) + sequenceCompressed.lastUpdate.microsecond / 1E6
           sequenceCompressed.lastUpdate = datetime.now()
           session.merge( sequenceCompressed )
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
@@ -334,11 +333,7 @@ class DataLoggingDB( object ):
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
           # we save in sequences dictionary
           sequences[sequenceCompressed] = sequence
-          end = time.time()
-          lines2.append( "%s\t%s\t%s\n" % ( begin, end, end - begin ) )
         session.commit()
-
-        self.f2.writelines( lines2 )
 
         # we run through values of sequences dictionary
         for sequence in sequences.values() :
@@ -350,11 +345,10 @@ class DataLoggingDB( object ):
           for mc in sequence.methodCalls :
             methodNames.add( '%s' % mc.name.name if mc.name else None )
             for action in mc.actions :
-              fileNames.add( '%s' % action.fileDL.name if action.fileDL else None )
+              fileNames.add( '%s' % action.file.name if action.file else None )
               storageNames.add( '%s' % action.targetSE.name if action.targetSE else None )
               storageNames.add( '%s' % action.srcSE.name if action.srcSE else None )
 
-        beginGet = time.time()
         # calls of getOrCreate multiple with the different sets
         self.getOrCreateMultiple( session, DLCaller, callerNames, self.dictCaller )
         self.getOrCreateMultiple( session, DLGroup, groupNames, self.dictGroup )
@@ -363,12 +357,9 @@ class DataLoggingDB( object ):
         self.getOrCreateMultiple( session, DLMethodName, methodNames, self.dictMethodName )
         self.getOrCreateMultiple( session, DLFile, fileNames, self.dictFile )
         self.getOrCreateMultiple( session, DLStorageElement, storageNames, self.dictStorageElement )
-        endGet = time.time()
-        timeGet = ( endGet - beginGet ) / len( sequences )
 
         # we run through items of sequences dictionary
         for sequenceCompressed, sequence in sequences.items() :
-          begin = time.time()
           # we set the different attributes with the object get from Data Base
           if sequence.caller:
             sequence.caller = self.dictCaller[sequence.caller.name]
@@ -387,8 +378,8 @@ class DataLoggingDB( object ):
               mc.name = self.dictMethodName[mc.name.name]
 
             for action in mc.actions :
-              if action.fileDL :
-                action.fileDL = self.dictFile[action.fileDL.name]
+              if action.file :
+                action.file = self.dictFile[action.file.name]
 
               if action.targetSE:
                 action.targetSE = self.dictStorageElement[action.targetSE.name]
@@ -412,8 +403,6 @@ class DataLoggingDB( object ):
             res = self.moveSequencesOneByOne( session, sequences )
             if not res['OK']:
               return res
-          end = time.time()
-          lines.append( "%s\t%s\t%s\n" % ( begin, end, end - begin + timeGet ) )
         session.commit()
       else :
         return S_OK( "no sequence to insert" )
@@ -426,7 +415,6 @@ class DataLoggingDB( object ):
       session.close()
     endMove = datetime.utcnow()
     gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( endMove - beginMove ) ) )
-    self.f1.writelines( lines )
     return S_OK()
 
   def moveSequencesOneByOne(self, session, sequences):
@@ -460,8 +448,8 @@ class DataLoggingDB( object ):
           mc.name = self.dictMethodName[mc.name.name]
 
         for action in mc.actions :
-          if action.fileDL :
-            action.fileDL = self.dictFile[action.fileDL.name]
+          if action.file :
+            action.file = self.dictFile[action.file.name]
 
           if action.targetSE:
             action.targetSE = self.dictStorageElement[action.targetSE.name]
@@ -582,22 +570,22 @@ class DataLoggingDB( object ):
 
     """
     try:
-      for val in values.copy() :
-        if val in objDict:
-          values.remove( val )
+      # we retrieve the keys in values present in objDict
+      # if key is in objDict, thats means that we already have the object from data base
+      values -= set( objDict.keys() )
       # select to know if values are already in database
       instances = session.query( model.name, model ).filter( model.name.in_( values ) ).all()
-      for el in instances :
-        # we found some values, we save them into the dictionnary
-        objDict[el[0]] = el[1]
-        values.remove( el[0] )
-
-      if len( values ) > 0 :
-        # we have some values which are not into dat base, we need to insert them
+      for name, obj in instances :
+        # we found some values, we save them into the dictionary
+        objDict[name] = obj
+        values.remove( name )
+      if values :
+        # we have some values which are not into data base and not into objDict, we need to insert them
         for val in values :
           instance = model( val )
           session.add( instance )
           objDict[val] = instance
+
         session.commit()
       session.expunge_all()
       return  S_OK()

@@ -49,7 +49,7 @@ def printMethodCallLFN( call, lfn, full = False, status = None ):
   line = '%s %s, ' % \
     ( call.name.name, 'SequenceID %s ' % call.sequenceID )
   for action in call.actions :
-    if action.fileDL.name == lfn:
+    if action.file.name == lfn:
       if status :
         if action.status == status :
           line += '%s%s%s%s'\
@@ -86,7 +86,7 @@ def printMethodCall( call, full = False, status = None ):
         if action.status == status :
           line = '\t%s%s%s%s'\
               % ( '%s ' % action.status,
-              ',file %s ' % action.fileDL.name if action.fileDL else '',
+              ',file %s ' % action.file.name if action.file else '',
               ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
               ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
           if full :
@@ -96,7 +96,7 @@ def printMethodCall( call, full = False, status = None ):
     else :
       line = '\t%s%s%s%s'\
               % ( '%s ' % action.status,
-              ',file %s ' % action.fileDL.name if action.fileDL else '',
+              ',file %s ' % action.file.name if action.file else '',
               ',sourceSE %s ' % action.srcSE.name if action.srcSE else '',
               ',targetSE %s ' % action.targetSE.name if action.targetSE else '' )
       if full :

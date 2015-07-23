@@ -12,11 +12,11 @@ class DLAction( DLSerializable ):
     an action is corresponding to one method call about one lfn
   """
 
-  attrNames = ['fileDL', 'status', 'srcSE', 'targetSE', 'extra', 'errorMessage', 'actionID']
+  attrNames = ['file', 'status', 'srcSE', 'targetSE', 'extra', 'errorMessage', 'actionID']
 
   def __init__( self, fileDL, status, srcSE, targetSE, extra, errorMessage, ID = None ):
     super( DLAction, self ).__init__()
-    self.fileDL = fileDL
+    self.file = fileDL
     self.status = status
     self.srcSE = srcSE
     self.targetSE = targetSE

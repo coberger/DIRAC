@@ -28,7 +28,7 @@ class DataLoggingHandler( RequestHandler ):
     # expirationTime is the maximum time for a Compressed Sequence to has its status at Ongoing, the time is in minutes
     cls.expirationTime = gConfig.getValue( '%s/ExpirationTime' % csSection, 3600 )
     # period between each call of moveSequences method, in second
-    cls.moveSequencesPeriod = gConfig.getValue( '%s/MoveSequencesPeriod' % csSection, 100 )
+    cls.moveSequencesPeriod = gConfig.getValue( '%s/MoveSequencesPeriod' % csSection, 10 )
     # period between each call of cleanExpiredCompressedSequence method, in second
     cls.cleanExpiredPeriod = gConfig.getValue( '%s/CleanExpiredPeriod' % csSection, 3600 )
 

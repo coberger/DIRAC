@@ -98,7 +98,7 @@ def printSequence( seq, full = False ):
       if full :
         line += '\t%s%s%s%s%s%s'\
           % ( '%s' % action.status,
-              ', file %s ' % action.fileDL.name if action.fileDL else '',
+              ', file %s ' % action.file.name if action.file else '',
               ', sourceSE %s ' % action.srcSE.name if action.srcSE else '',
               ', targetSE %s ' % action.targetSE.name if action.targetSE else '',
               ', extra %s ' % action.extra if action.extra else '',
@@ -106,7 +106,7 @@ def printSequence( seq, full = False ):
       else :
         line += '\t%s%s%s%s'\
             % ( '%s' % action.status,
-                ', file %s ' % action.fileDL.name if action.fileDL else '',
+                ', file %s ' % action.file.name if action.file else '',
                 ', sourceSE %s ' % action.srcSE.name if action.srcSE else '',
                 ', targetSE %s ' % action.targetSE.name if action.targetSE else '' )
       seqLines.append( line )
@@ -137,7 +137,7 @@ def printSequenceLFN( seq, lfn, full = False ):
     base += '%s %s, ' % \
     ( mc.name.name, mc.creationTime )
     for action in mc.actions :
-      if action.fileDL.name == lfn:
+      if action.file.name == lfn:
         line = base
         if full :
           line += '%s%s%s%s%s'\
