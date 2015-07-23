@@ -4,10 +4,19 @@ Created on May 5, 2015
 @author: Corentin Berger
 '''
 import json
+import os
+import socket
 import zlib
+
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Client               import Client
+
 from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
-from DIRAC import S_OK,gLogger
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
+from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
+from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+
 
 class DataLoggingClient( Client ):
 
@@ -24,6 +33,21 @@ class DataLoggingClient( Client ):
       :param sequence, the sequence to insert
       :param directInsert, a boolean, if we want to insert directly as a DLSequence and not a DLCompressedSequence
     """
+    # we get some informations from os environement
+    extraArgsToGetFromEnviron = ['JOBID', 'AGENTNAME']
+    for arg in extraArgsToGetFromEnviron :
+      if os.environ.has_key( arg ):
+        sequence.addExtraArg( arg, os.environ[ arg ] )
+
+    # we get some infos from proxy
+    res = getProxyInfo()
+    if res['OK']:
+      proxyInfo = res['Value']
+      sequence.userName = DLUserName( proxyInfo.get( 'username' ) )
+      sequence.group = DLGroup( proxyInfo.get( 'group' ) )
+    # we get the host name
+    sequence.hostName = DLHostName( socket.gethostname() )
+
     sequenceJSON = sequence.toJSON()
     if not sequenceJSON["OK"]:
       gLogger.error( sequenceJSON['Message'] )

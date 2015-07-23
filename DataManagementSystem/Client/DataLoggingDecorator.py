@@ -6,8 +6,7 @@ Created on May 4, 2015
 
 import functools
 import types
-import os
-import socket
+
 
 from types import StringTypes
 from threading import current_thread
@@ -318,15 +317,10 @@ class _DataLoggingDecorator( object ):
     """ this method call method named insertSequence from DLClient
         to insert a sequence into database
     """
-    extraArgsToGetFromEnviron = ['JOBID', 'AGENTNAME']
+
     try :
       client = DataLoggingClient()
       seq = DLThreadPool.popDataLoggingSequence( current_thread().ident )
-
-      for arg in extraArgsToGetFromEnviron :
-        if os.environ.has_key( arg ):
-          seq.addExtraArg( arg, os.environ[ arg ] )
-
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
       #=========================================================================
       # certFile, _keyFile = getHostCertificateAndKeyLocation()

@@ -3,15 +3,10 @@ Created on May 4, 2015
 
 @author: Corentin Berger
 '''
-import socket
 from threading  import Lock
 
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-
 from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
-from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
-from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
-from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
+
 
 class DLThreadPool :
   """
@@ -40,12 +35,7 @@ class DLThreadPool :
     cls.lock.acquire()
     if threadID not in cls.pool:
       seq = DLSequence()
-      res = getProxyInfo()
-      if res['OK']:
-        proxyInfo = res['Value']
-        seq.userName = DLUserName( proxyInfo.get( 'username' ) )
-        seq.group = DLGroup( proxyInfo.get( 'group' ) )
-      seq.hostName = DLHostName( socket.gethostname() )
+
       cls.pool[threadID] = seq
     res = cls.pool[threadID]
     cls.lock.release()
