@@ -73,19 +73,18 @@ class DLSequence( DLSerializable ) :
     :param self: self reference
     Pop an operation from the stack
     """
-    # if it's not  the first method call, we the element that we need to pop into the parent
+    # if it's not  the first method call, we add the element that we need to pop into the parent
     if len( self.stack ) != 1 :
       self.stack[len( self.stack ) - 2].addChild( self.stack[len( self.stack ) - 1] )
 
-    res = self.stack.pop()
-
+    mc = self.stack.pop()
     # we set the rank of children
     cpt = 0
-    for child in res.children :
+    for child in mc.children :
       child.rank = cpt
       cpt += 1
 
-    return res
+    return mc
 
 
   def isComplete( self ):

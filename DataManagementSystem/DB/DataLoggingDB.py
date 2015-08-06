@@ -273,8 +273,8 @@ class DataLoggingDB( object ):
 
   def insertCompressedSequence( self, sequence ):
     """
-      we insert a new compressed sequence
-      :param sequence, sequence is s DLSequence JSON which is compressed
+      insert a new compressed sequence
+      :param sequence, sequence is a DLSequence JSON representation which is compressed
     """
     session = None
     sequence = DLCompressedSequence( sequence )
@@ -312,6 +312,16 @@ class DataLoggingDB( object ):
     hostNames = set()
     userNames = set()
 
+    # flush of all dictionaries
+    self.dictStorageElement = {None:None}
+    self.dictFile = {None:None}
+    self.dictMethodName = {None:None}
+    self.dictCaller = {None:None}
+    self.dictUserName = {None:None}
+    self.dictHostName = {None:None}
+    self.dictGroup = {None:None}
+    self.dictSequenceAttribute = {None:None}
+
     session = None
     sequences = {}
     beginMove = datetime.utcnow()
@@ -335,7 +345,7 @@ class DataLoggingDB( object ):
           sequences[sequenceCompressed] = sequence
         session.commit()
 
-        # we run through values of sequences dictionary
+        # we run through values of sequences dictionary to save different values to get from databse
         for sequence in sequences.values() :
           # if the attribute is not none we add his name value into the set corresponding to the name of the attribute
           callerNames.add( '%s' % sequence.caller.name if sequence.caller else None )
@@ -585,7 +595,6 @@ class DataLoggingDB( object ):
           instance = model( val )
           session.add( instance )
           objDict[val] = instance
-
         session.commit()
       session.expunge_all()
       return  S_OK()

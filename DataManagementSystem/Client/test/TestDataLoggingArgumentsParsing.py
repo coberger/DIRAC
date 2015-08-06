@@ -142,7 +142,6 @@ class ExecuteFCCase ( DataLoggingArgumentsParsingTestCase ):
           {'files': None, 'targetSE': 'se1', 'extra': 'Size = 1,GUID = 100,Checksum = 10,PFN = PFN1', 'file': '/lhcb/sub/file1.data', 'srcSE': None}, \
           {'files': None, 'targetSE': 'se3', 'extra': 'Size = 3,GUID = 300,Checksum = 30,PFN = PFN3', 'file': '/lhcb/sub/file3.data', 'srcSE': None}]
     ret = extractArgsExecuteFC( argsDictExecuteFC , *argumentsExecuteFC )['Value']
-    print ret
     for x in range( len( ret ) ):
       self.assertEqual( ret[x]['file'], ok[x]['file'] )
       self.assertEqual( ret[x]['targetSE'], ok[x]['targetSE'] )

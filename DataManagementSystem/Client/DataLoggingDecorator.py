@@ -6,8 +6,6 @@ Created on May 4, 2015
 
 import functools
 import types
-import os
-import socket
 
 from types import StringTypes
 from threading import current_thread
@@ -49,24 +47,24 @@ def DataLoggingDecorator( function = None, **kwargs ):
 
 
 class _DataLoggingDecorator( object ):
-  """ decorator for data logging in Dirac
+  """ decorator for data logging in DIRAC
       the aim of this decorator is to know all operation done about a Dirac LFN
-      for this, the decorator get arguments from the called of the decorate method
+      for this, the decorator get arguments from the called of the decorated method
       create a DLMethodCall which is an operation on a single lfn or multiple lfn
-      then create as much DLAction as there is lfn
-      then call the decorate method and get the result to update the status of each action
-      if an exception is raised by the decorate function, the exception is raised by the decorator
-      if an exception is raised due to the decorator, it's like nothing happened for the decorate method
+      then create as much DLAction as lfn
+      then call the decorated method and get the result to update the status of each action
+      if an exception is raised by the decorated function, the exception is raised by the decorator
+      if an exception is raised due to the decorator, it's like nothing happened for the decorated method
       only works with method
 
 
       for this to work, you have to pass some arguments to the decorator
-      the first arguments to pass is a list with the arguments positions in the decorate method
+      the first arguments to pass is a list with the arguments positions in the decorated method
       for example for the putAndRegister method you have to pass argsPosition = ['self', 'files', 'localPath', 'targetSE' ]
       in the decorator
       some keywords are very important like files, targetSE and srcSE
-      so if the parameter of the decorate Function is 'sourceSE' you have to write 'srcSE' in the argsPosition's list
-      if the parameter of the decorate Function is 'lfns' you have to write 'files' in the argsPosition's list
+      so if the parameter of the decorated Function is 'sourceSE' you have to write 'srcSE' in the argsPosition's list
+      if the parameter of the decorated Function is 'lfns' you have to write 'files' in the argsPosition's list
 
       next you have to tell to the decorator which function you want to called to extract arguments
       for example getActionArgsFunction = 'tuple', there is a dictionary to map keywords with functions to extract arguments
@@ -76,7 +74,7 @@ class _DataLoggingDecorator( object ):
 
   def __init__( self, func , **kwargs ):
     """
-      func is the decorate function
+      func is the decorated function
       ** kwargs nominated arguments for the decorator
 
       *args is always empty, do not use it
@@ -101,19 +99,20 @@ class _DataLoggingDecorator( object ):
 
     # here we get the function to parse arguments to create action
     self.getActionArgsFunction = funcDict.get( self.argsDecorator['getActionArgsFunction'], funcDict['default'] )
+    # this permits to replace all special info like docstring of func in place of self, included the name
     functools.wraps( func )( self )
 
   def __get__( self, inst, owner = None ):
     """
-      inst is the instance of the object who called the decorate function
+      inst is the instance of the object who called the decorated function
     """
     self.inst = inst
-    # we bound the inst object to self object
+    # bind the new function ( the decorated function) to the instance
     return types.MethodType( self, inst )
 
   def __call__( self, *args, **kwargs ):
-    """ method called each time when a decorate function is called
-        get information about the function and create a sequence of method called
+    """ method called each time when a decorated function is called
+        get information about the function and create a sequence of method calls
     """
     result = None
     exception = None
@@ -121,17 +120,16 @@ class _DataLoggingDecorator( object ):
     isMethodCallCreate = False
 
     try:
-      # print 'args %s kwargs %s' % ( args, kwargs )
       # we set the caller
       self.setCaller()
-      # sometime we need an attribute into the object who called the decorate method
+      # sometimes we need an attribute into the object who called the decorated method
       # we will get it here and add it in the local argsDecorator dictionary
       # we need a local dictionary because of the different called from different thread
-      # for example when the decorate method is _execute , the real method called is contained into the object
+      # for example when the decorated method is _execute , the real method called is contained into the object
       # this will not work with a function because the first arguments in args should be the self reference of the object
       localArgsDecorator = self.getAttribute( args[0] )
 
-      # we get the arguments from the call of the decorate method to create the DLMethodCall object
+      # we get the arguments from the call of the decorated method to create the DLMethodCall object
       methodCallArgsDict = self.getMethodCallArgs( localArgsDecorator, *args )
 
       # get args for the DLAction objects
@@ -146,7 +144,7 @@ class _DataLoggingDecorator( object ):
 
       try :
         isCalled = True
-        # call of the func, result is the return of the decorate function
+        # call of the func, result is the return of the decorated function
         result = self.func( *args, **kwargs )
       except Exception as e:
         exception = e
@@ -162,7 +160,7 @@ class _DataLoggingDecorator( object ):
       if isMethodCallCreate :
         # now we set the status ( failed or successful) of methodCall's actions
         self.setActionStatus( result, methodCall, exception )
-        # pop of the methodCall corresponding to the decorate method
+        # pop of the methodCall corresponding to the decorated method
         self.popMethodCall()
       # if the sequence is complete we insert it into DB
       if self.isSequenceComplete() :
@@ -171,7 +169,7 @@ class _DataLoggingDecorator( object ):
 
   def setActionStatus( self, foncResult, methodCall, exception ):
     """ set the status of each action of a method call
-      :param foncResult: result of a decorate function
+      :param foncResult: result of a decorated function
       :param methodCall: methodCall in which we have to update the status of its actions
 
 
@@ -301,7 +299,7 @@ class _DataLoggingDecorator( object ):
     return d
 
   def getActionArgs( self, argsDecorator, *args, **kwargs ):
-    """ this method is here to call the function to get arguments of the decorate function
+    """ this method is here to call the function to get arguments of the decorated function
         we don't call directly this function because if an exception is raised we need to raise a specific exception
     """
     try :
@@ -318,15 +316,9 @@ class _DataLoggingDecorator( object ):
     """ this method call method named insertSequence from DLClient
         to insert a sequence into database
     """
-    extraArgsToGetFromEnviron = ['JOBID', 'AGENTNAME']
     try :
       client = DataLoggingClient()
       seq = DLThreadPool.popDataLoggingSequence( current_thread().ident )
-
-      for arg in extraArgsToGetFromEnviron :
-        if os.environ.has_key( arg ):
-          seq.addExtraArg( arg, os.environ[ arg ] )
-
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
       #=========================================================================
       # certFile, _keyFile = getHostCertificateAndKeyLocation()

@@ -18,8 +18,8 @@ group = None
 userName = None
 hostName = None
 
-Script.registerSwitch( '', 'Full', 'Print full method call' )
-Script.registerSwitch( 'f:', 'File=', 'Name of LFN ' )
+Script.registerSwitch( '', 'Full', 'Full print option' )
+Script.registerSwitch( 'f:', 'File=', 'A LFN ' )
 Script.registerSwitch( 'i:', 'ID=', 'ID of sequence ' )
 Script.registerSwitch( 'n:', 'Name=', 'Name of caller ' )
 Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31' )
