@@ -240,10 +240,10 @@ def extractArgsExecuteFC( argsDecorator, *args, **kwargs ):
       are not passed in the decorate function like the function's name called
       to get the argument's position of the function that we really want to call
   """
-
   try :
-    funcName = argsDecorator['call']
+    funcName = argsDecorator['methodName']
     if funcName in argsDecorator['methods_to_log']:
+
       info = argsDecorator['methods_to_log_arguments'][funcName]
       argsDecorator['argsPosition'] = argsDecorator['methods_to_log_arguments'][funcName]['Arguments']
       if info.get( 'specialFunction', '' ) == 'setReplicaProblematic' :
@@ -257,6 +257,7 @@ def extractArgsExecuteFC( argsDecorator, *args, **kwargs ):
   except Exception as e:
     ret = S_ERROR( 'unexpected error in DLFucntions.getArgsExecuteFC %s' % e )
     ret['Value'] = args
+
   return S_OK( args )
 
 def extractTupleArgs( argsDecorator, *args, **kwargs ):
@@ -327,7 +328,7 @@ def extractArgsExecuteSE( argsDecorator, *args, **kwargs ):
       elif info['type'] == 'dict' :
         actionArgs = extractArgsFromDict( info , *args, **kwargs )['Value']
       for arg in actionArgs :
-        arg['targetSE'] = argsDecorator['name']
+        arg['targetSE'] = argsDecorator['nameSE']
     else:
       raise NoLogException( 'Method %s is not into the list of method to log' % funcName )
   except NoLogException :
@@ -362,7 +363,7 @@ def getArgFiles( args ):
     return files
 
 def mergeDict( opArgs, tupleArgs, extraList ):
-  """merge of the two dict wich contains arguments needed to create actions"""
+  """merge of two dict which contains arguments needed to create actions"""
   localExtraList = list( extraList )
   mergedDict = dict()
   for key in set( opArgs.keys() + tupleArgs.keys() ) :

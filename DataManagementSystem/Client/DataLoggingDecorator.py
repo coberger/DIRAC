@@ -25,7 +25,6 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLExceptio
 
 # this dictionary is here to map a string with a function when we precise in the decorator which method we want to use to get arguments for actions
 funcDict = {
-  'normal':extractArgs,
   'default':extractArgs,
   'executeFC': extractArgsExecuteFC,
   'tuple': extractTupleArgs,
@@ -98,7 +97,7 @@ class _DataLoggingDecorator( object ):
         self.argsDecorator[key] = value
 
     # here we get the function to parse arguments to create action
-    self.getActionArgsFunction = funcDict.get( self.argsDecorator['getActionArgsFunction'], funcDict['default'] )
+    self.getActionArgsFunction = funcDict.get( self.argsDecorator.get( 'getActionArgsFunction' ), funcDict['default'] )
     # this permits to replace all special info like docstring of func in place of self, included the name
     functools.wraps( func )( self )
 
@@ -269,14 +268,8 @@ class _DataLoggingDecorator( object ):
     """
     try :
       methodCallDict = {}
-      if localArgsDecorator['getActionArgsFunction'] == 'executeFC':
-        localArgsDecorator['funcName'] = localArgsDecorator['call']
-        methodCallDict['name'] = DLMethodName( 'FileCatalog.' + args[0].call )
-      elif localArgsDecorator['getActionArgsFunction'] == 'executeSE':
-        localArgsDecorator['funcName'] = localArgsDecorator['methodName']
-        methodCallDict['name'] = DLMethodName( 'StorageElement.' + args[0].methodName )
-      else:
-        methodCallDict['name'] = DLMethodName( self.inst.__class__ .__name__ + '.' + self.name )
+      methodCallDict['name'] = DLMethodName( localArgsDecorator.get( 'className', self.inst.__class__ .__name__ )\
+                                      + '.' + localArgsDecorator.get( 'methodName', self.name ) )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.getMethodCallArgs %s' % e )
       raise DLException( e )
@@ -289,10 +282,8 @@ class _DataLoggingDecorator( object ):
     """
     d = dict( self.argsDecorator )
     try :
-      if 'attributesToGet' in self.argsDecorator:
-        for attrName in self.argsDecorator['attributesToGet']:
-          attr = getattr( obj, attrName, None )
-          d[attrName] = attr
+      for keyword, attrName in self.argsDecorator.get( 'attributesToGet', {} ).items():
+        d[keyword] = getattr( obj, attrName, None )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.getAttribute %s' % e )
       raise DLException( e )

@@ -635,8 +635,8 @@ class StorageElementItem( object ):
 #     res['Failed'] = failed
     return res
 
-  @DataLoggingDecorator( argsPosition = ['self', 'datalogging_files'], getActionArgsFunction = 'executeSE',
-                          attributesToGet = ['methodName', 'name' ], methods_to_log = writeMethods + removeMethods,
+  @DataLoggingDecorator( getActionArgsFunction = 'executeSE', attributesToGet = {'methodName' : 'methodName', 'nameSE' : 'name' },
+                          className = 'StorageElement', methods_to_log = writeMethods + removeMethods,
                           methods_to_log_arguments = dataLoggingMethodsToLogArguments )
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.

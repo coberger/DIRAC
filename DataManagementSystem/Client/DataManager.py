@@ -129,7 +129,7 @@ class DataManager( object ):
   #
   # These are the bulk removal methods
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'files'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files'] )
   def cleanLogicalDirectory( self, lfnDir ):
     """ Clean the logical directory from the catalog and storage
     """
@@ -409,7 +409,7 @@ class DataManager( object ):
     sortedSEs += randomize( [se for se in ses if se not in sortedSEs] )
     return S_OK( sortedSEs )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'fileName', 'targetSE', 'guid', 'path', 'checksum'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'fileName', 'targetSE', 'guid', 'path', 'checksum'] )
   def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, checksum = None ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
@@ -541,8 +541,7 @@ class DataManager( object ):
     self.log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
     return S_OK( {'Successful': successful, 'Failed': failed } )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', ( 'srcSE', 'sourceSE' ), 'destPath', 'localCache', 'catalog' ], \
-                        getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', ( 'srcSE', 'sourceSE' ), 'destPath', 'localCache', 'catalog' ] )
   def replicateAndRegister( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' , catalog = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 
@@ -592,8 +591,7 @@ class DataManager( object ):
         failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
     return S_OK( {'Successful': successful, 'Failed': failed} )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', ( 'srcSE', 'sourceSE' ), 'destPath', 'localCache' ], \
-                         getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', ( 'srcSE', 'sourceSE' ), 'destPath', 'localCache' ] )
   def replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 
@@ -1032,7 +1030,7 @@ class DataManager( object ):
   #
   # These are the removal methods for physical and catalogue removal
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'force'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'force'] )
   def removeFile( self, lfn, force = None ):
     """ Remove the file (all replicas) from Storage Elements and file catalogue
 
@@ -1139,7 +1137,7 @@ class DataManager( object ):
         successful = res['Value']['Successful']
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'targetSE', 'files'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'targetSE', 'files'] )
   def removeReplica( self, storageElementName, lfn ):
     """ Remove replica at the supplied Storage Element from Storage Element then file catalogue
 
@@ -1254,7 +1252,7 @@ class DataManager( object ):
       successful = res['Value']['Successful']
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'targetSE', 'files'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'targetSE', 'files'] )
   def removeReplicaFromCatalog( self, storageElementName, lfn ):
     """ remove :lfn: replica from :storageElementName: SE
 
@@ -1481,7 +1479,7 @@ class DataManager( object ):
   #
   # File transfer methods
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'fileName', 'targetSE', 'path'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'fileName', 'targetSE', 'path'] )
   def put( self, lfn, fileName, diracSE, path = None ):
     """ Put a local file to a Storage Element
 
