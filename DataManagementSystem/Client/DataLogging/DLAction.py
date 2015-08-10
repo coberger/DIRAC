@@ -9,19 +9,18 @@ from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 class DLAction( DLSerializable ):
   """
     this is the DLAction class for data logging system
-    an action is corresponding to one method call about one lfn
+    an action is corresponding to one method call on one lfn
   """
 
   attrNames = ['file', 'status', 'srcSE', 'targetSE', 'extra', 'errorMessage', 'actionID']
 
-  def __init__( self, fileDL, status, srcSE, targetSE, extra, errorMessage, ID = None ):
+  def __init__( self, fileDL, status, srcSE, targetSE, extra, errorMessage ):
     super( DLAction, self ).__init__()
     self.file = fileDL
     self.status = status
     self.srcSE = srcSE
     self.targetSE = targetSE
     self.extra = extra
-    self.actionID = ID
     self.methodCallID = None
     self.errorMessage = errorMessage
 

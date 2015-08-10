@@ -303,14 +303,6 @@ class DataLoggingDB( object ):
 
       :param maxSequenceToMove: the number of sequences to move per call of this method
     """
-    # different sets to save attributes names
-    fileNames = set()
-    storageNames = set()
-    methodNames = set()
-    callerNames = set()
-    groupNames = set()
-    hostNames = set()
-    userNames = set()
 
     # flush of all dictionaries
     self.dictStorageElement = {None:None}
@@ -333,40 +325,20 @@ class DataLoggingDB( object ):
       if rows:
         # if we have found some
         for sequenceCompressed in rows :
-          # status update to Ongoing for each DLCompressedSequence
-          sequenceCompressed.status = 'Ongoing'
-          # we update the lastUpdate value
-          sequenceCompressed.lastUpdate = datetime.now()
-          session.merge( sequenceCompressed )
+
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
           # decode of the JSON
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
           # we save in sequences dictionary
           sequences[sequenceCompressed] = sequence
+          # status update to Ongoing for each DLCompressedSequence
+          sequenceCompressed.status = 'Ongoing'
+          # we update the lastUpdate value
+          sequenceCompressed.lastUpdate = datetime.now()
+          session.merge( sequenceCompressed )
         session.commit()
 
-        # we run through values of sequences dictionary to save different values to get from databse
-        for sequence in sequences.values() :
-          # if the attribute is not none we add his name value into the set corresponding to the name of the attribute
-          callerNames.add( '%s' % sequence.caller.name if sequence.caller else None )
-          groupNames.add( '%s' % sequence.group.name if sequence.group else None )
-          userNames.add( '%s' % sequence.userName.name if sequence.userName else None )
-          hostNames.add( '%s' % sequence.hostName.name if sequence.hostName else None )
-          for mc in sequence.methodCalls :
-            methodNames.add( '%s' % mc.name.name if mc.name else None )
-            for action in mc.actions :
-              fileNames.add( '%s' % action.file.name if action.file else None )
-              storageNames.add( '%s' % action.targetSE.name if action.targetSE else None )
-              storageNames.add( '%s' % action.srcSE.name if action.srcSE else None )
-
-        # calls of getOrCreate multiple with the different sets
-        self.getOrCreateMultiple( session, DLCaller, callerNames, self.dictCaller )
-        self.getOrCreateMultiple( session, DLGroup, groupNames, self.dictGroup )
-        self.getOrCreateMultiple( session, DLUserName, userNames, self.dictUserName )
-        self.getOrCreateMultiple( session, DLHostName, hostNames, self.dictHostName )
-        self.getOrCreateMultiple( session, DLMethodName, methodNames, self.dictMethodName )
-        self.getOrCreateMultiple( session, DLFile, fileNames, self.dictFile )
-        self.getOrCreateMultiple( session, DLStorageElement, storageNames, self.dictStorageElement )
+        self.getOrCreateMultiple( session, sequences.values() )
 
         # we run through items of sequences dictionary
         for sequenceCompressed, sequence in sequences.items() :
@@ -416,9 +388,15 @@ class DataLoggingDB( object ):
         session.commit()
       else :
         return S_OK( "no sequence to insert" )
-    except Exception, e:
-      if session :
-        session.rollback()
+    except Exception, e :
+      session.rollback()
+      for sequenceCompressed in sequences :
+        # status update to Ongoing for each DLCompressedSequence
+        sequenceCompressed.status = 'Waiting'
+        # we update the lastUpdate value
+        sequenceCompressed.lastUpdate = datetime.now()
+        session.merge( sequenceCompressed )
+      session.commit()
       gLogger.error( "moveSequences: unexpected exception %s" % e )
       raise DLException( "moveSequences: unexpected exception %s" % e )
     finally:
@@ -494,6 +472,35 @@ class DataLoggingDB( object ):
     session = None
     try:
       session = self.DBSession()
+      self.getOrCreateMultiple( session, [sequence] )
+
+      if sequence.caller:
+          sequence.caller = self.dictCaller[sequence.caller.name]
+
+      if sequence.group:
+        sequence.group = self.dictGroup[sequence.group.name]
+
+      if sequence.userName:
+        sequence.userName = self.dictUserName[sequence.userName.name]
+
+      if sequence.hostName:
+        sequence.hostName = self.dictHostName[sequence.hostName.name]
+
+      for mc in sequence.methodCalls :
+        if mc.name :
+          mc.name = self.dictMethodName[mc.name.name]
+
+        for action in mc.actions :
+          if action.file :
+            action.file = self.dictFile[action.file.name]
+
+          if action.targetSE:
+            action.targetSE = self.dictStorageElement[action.targetSE.name]
+
+          if action.srcSE:
+            action.srcSE = self.dictStorageElement[action.srcSE.name]
+
+
       ret = self.__putSequence( session, sequence )
       if not ret['OK']:
         return S_ERROR( ret['Value'] )
@@ -568,8 +575,41 @@ class DataLoggingDB( object ):
       gLogger.error( "getOrCreate: unexpected exception %s" % e )
       return S_ERROR( "getOrCreate: unexpected exception %s" % e )
 
+  def getOrCreateMultiple( self, session, sequences ):
+    # different sets to save attributes names
+    fileNames = set()
+    storageNames = set()
+    methodNames = set()
+    callerNames = set()
+    groupNames = set()
+    hostNames = set()
+    userNames = set()
 
-  def getOrCreateMultiple( self, session, model, values, objDict ):
+    # we run through values of sequences dictionary to save different values to get from databse
+    for sequence in sequences :
+      # if the attribute is not none we add his name value into the set corresponding to the name of the attribute
+      callerNames.add( '%s' % sequence.caller.name if sequence.caller else None )
+      groupNames.add( '%s' % sequence.group.name if sequence.group else None )
+      userNames.add( '%s' % sequence.userName.name if sequence.userName else None )
+      hostNames.add( '%s' % sequence.hostName.name if sequence.hostName else None )
+      for mc in sequence.methodCalls :
+        methodNames.add( '%s' % mc.name.name if mc.name else None )
+        for action in mc.actions :
+          fileNames.add( '%s' % action.file.name if action.file else None )
+          storageNames.add( '%s' % action.targetSE.name if action.targetSE else None )
+          storageNames.add( '%s' % action.srcSE.name if action.srcSE else None )
+
+    # calls of getOrCreate multiple with the different sets
+    self._getOrCreateMultiple( session, DLCaller, callerNames, self.dictCaller )
+    self._getOrCreateMultiple( session, DLGroup, groupNames, self.dictGroup )
+    self._getOrCreateMultiple( session, DLUserName, userNames, self.dictUserName )
+    self._getOrCreateMultiple( session, DLHostName, hostNames, self.dictHostName )
+    self._getOrCreateMultiple( session, DLMethodName, methodNames, self.dictMethodName )
+    self._getOrCreateMultiple( session, DLFile, fileNames, self.dictFile )
+    self._getOrCreateMultiple( session, DLStorageElement, storageNames, self.dictStorageElement )
+
+
+  def _getOrCreateMultiple( self, session, model, values, objDict ):
     """
       get or create a database object
 

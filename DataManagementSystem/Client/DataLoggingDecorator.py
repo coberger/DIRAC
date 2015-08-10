@@ -13,7 +13,8 @@ from threading import current_thread
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
 
-from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import extractArgs, extractArgsExecuteFC, extractTupleArgs, extractArgsExecuteSE, caller_name
+import DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities as DLUtilities
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import caller_name
 from DIRAC.DataManagementSystem.Client.DataLogging.DLAction import DLAction
 from DIRAC.DataManagementSystem.Client.DataLogging.DLThreadPool import DLThreadPool
 from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
@@ -25,10 +26,10 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLExceptio
 
 # this dictionary is here to map a string with a function when we precise in the decorator which method we want to use to get arguments for actions
 funcDict = {
-  'default':extractArgs,
-  'executeFC': extractArgsExecuteFC,
-  'tuple': extractTupleArgs,
-  'executeSE': extractArgsExecuteSE
+  'default': 'extractArgs',
+  'executeFC': 'extractArgsExecuteFC',
+  'tuple': 'extractArgsTuple',
+  'executeSE': 'extractArgsExecuteSE'
 }
 
 
@@ -97,7 +98,8 @@ class _DataLoggingDecorator( object ):
         self.argsDecorator[key] = value
 
     # here we get the function to parse arguments to create action
-    self.getActionArgsFunction = funcDict.get( self.argsDecorator.get( 'getActionArgsFunction' ), funcDict['default'] )
+    self.getActionArgsFunction = getattr( DLUtilities, funcDict.get( self.argsDecorator.get( 'getActionArgsFunction', 'default' ),
+                                                                      funcDict['default' ] ) )
     # this permits to replace all special info like docstring of func in place of self, included the name
     functools.wraps( func )( self )
 

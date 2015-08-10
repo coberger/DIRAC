@@ -35,58 +35,40 @@ class FileCatalog( object ):
 
   write_methods += write_meta_methods
 
-  dataLoggingMethodsToLogArguments = {
+  dataLoggingMethodsToLog = {
               'addFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'dict',
-                 'dictKeys' : { 'PFN':'PFN', 'Size':'Size', 'targetSE':'SE', 'GUID':'GUID', 'Checksum':'Checksum'} },
+                {'argsPosition' : ['self', 'files'],
+                 'keysToGet' : { 'PFN':'PFN', 'Size':'Size', 'targetSE':'SE', 'GUID':'GUID', 'Checksum':'Checksum'} },
               'setFileStatus' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'str',
+                {'argsPosition' : ['self', 'files'],
                  'valueName' : 'Status'},
               'addReplica' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'dict',
-                 'dictKeys' : { 'PFN':'PFN', 'targetSE':'SE'} },
+                {'argsPosition' : ['self', 'files'],
+                 'keysToGet' : { 'PFN':'PFN', 'targetSE':'SE'} },
               'removeReplica' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'dict',
-                 'dictKeys' : { 'PFN':'PFN', 'targetSE':'SE'} },
+                {'argsPosition' : ['self', 'files'],
+                 'keysToGet' : { 'PFN':'PFN', 'targetSE':'SE'} },
               'removeFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type':'unknown' },
+                {'argsPosition' : ['self', 'files'] },
               'setReplicaStatus' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'dict',
-                 'dictKeys' : { 'PFN':'PFN', 'targetSE':'SE', 'Status':'Status'} },
+                {'argsPosition' : ['self', 'files'],
+                 'keysToGet' : { 'PFN':'PFN', 'targetSE':'SE', 'Status':'Status'} },
               'setReplicaHost' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'dict',
-                 'dictKeys' : { 'PFN':'PFN', 'targetSE':'NewSE', 'srcSE':'SE', 'Status':'Status'} },
+                {'argsPosition' : ['self', 'files'],
+                 'keysToGet' : { 'PFN':'PFN', 'targetSE':'NewSE', 'srcSE':'SE', 'Status':'Status'} },
               'setReplicaProblematic' :
-                {'Arguments' : ['self', 'files'],
+                {'argsPosition' : ['self', 'files'],
                  'specialFunction' : 'setReplicaProblematic' },
               'createDirectory' :
-                {'Arguments' : ['self', 'files'],
-                 'type':'unknown' },
+                {'argsPosition' : ['self', 'files'] },
               'removeDirectory' :
-                {'Arguments' : ['self', 'files'],
-                 'type':'unknown' },
+                {'argsPosition' : ['self', 'files']},
               'changePathMode' :
-                {'Arguments' : ['self', 'files'],
-                 'type':'unknown' },
+                {'argsPosition' : ['self', 'files'] },
               'changePathOwner' :
-                {'Arguments' : ['self', 'files'],
-                 'type':'unknown' },
+                {'argsPosition' : ['self', 'files']},
               'changePathGroup' :
-                {'Arguments' : ['self', 'files'],
-                 'type':'unknown' },
+                {'argsPosition' : ['self', 'files'] },
               }
 
 
@@ -146,8 +128,7 @@ class FileCatalog( object ):
       raise AttributeError
 
   @DataLoggingDecorator( getActionArgsFunction = 'executeFC', attributesToGet = {'methodName' : 'call'},
-                            methods_to_log = write_methods,
-                            methods_to_log_arguments = dataLoggingMethodsToLogArguments )
+                            methods_to_log = dataLoggingMethodsToLog )
   def w_execute( self, *parms, **kws ):
     """ Write method executor.
     """

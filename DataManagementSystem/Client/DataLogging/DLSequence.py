@@ -8,51 +8,44 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
 from DIRAC.DataManagementSystem.Client.DataLogging.DLCaller import DLCaller
-from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
-from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
-from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
 
 
 class DLSequence( DLSerializable ) :
   """ Describe a sequence, used to know sequence of MethodCall"""
   attrNames = ['sequenceID', 'caller', 'methodCalls', 'userName', 'hostName', 'group', 'extra']
 
-  def __init__( self ):
+  def __init__( self, methodCalls = None, caller = None, sequenceID = None, userName = None, group = None, hostName = None, extra = {} ):
+    """
+    :param self: self reference
+    :param methodCalls: a list of method call
+    :param caller : the caller of the sequence
+    :param sequenceID: id of the sequence
+    :param userName: DLUserName object, can be none
+    :param group: DLGroup object, can be none
+    :param hostName: DLHostName object, can be none
+    :param extra: dictionary with extra specific to the sequence
+    """
     super( DLSequence, self ).__init__()
-    self.caller = None
-    self.userName = DLUserName( None )
-    self.hostName = DLHostName( None )
-    self.group = DLGroup( None )
+    self.sequenceID = sequenceID
+    self.caller = caller
+    self.userName = userName
+    self.hostName = hostName
+    self.group = group
     self.stack = []
-    self.methodCalls = []
-    self.extra = {}
+    self.extra = extra
     self.attributesValues = []
+    self.methodCalls = []
 
-  @staticmethod
-  def fromJSON( methodCall, caller, sequenceID, userName, group, hostName, extra ):
-    """ create a sequence from a JSON representation"""
-    seq = DLSequence()
-    stack = list()
-    seq.sequenceID = sequenceID
-    seq.caller = caller
-    seq.userName = userName
-    seq.hostName = hostName
-    seq.group = group
-    seq.methodCalls = list()
-    seq.extra = extra
-
-    if methodCall :
-      # depth first search
-      stack.append( methodCall[0] )
-      while len( stack ) != 0 :
-        mc = stack.pop()
-        mc.sequence = seq
-        seq.methodCalls.append( mc )
+    if methodCalls :
+      # we have to do this because when objects are deserialize from JSON
+      # references about same objects are not saved and two objects are created instead of one
+      self.stack.append( methodCalls[0] )
+      while len( self.stack ) != 0 :
+        mc = self.stack.pop()
+        mc.sequence = self
+        self.methodCalls.append( mc )
         for child in mc.children :
-          stack.append( child )
-
-    return seq
-
+          self.stack.append( child )
 
   def appendMethodCall( self, args ):
     """
@@ -62,11 +55,11 @@ class DLSequence( DLSerializable ) :
     """
     methodCall = DLMethodCall( args )
     methodCall.sequence = self
+
     self.methodCalls.append( methodCall )
     self.stack.append( methodCall )
 
     return methodCall
-
 
   def popMethodCall( self ):
     """
@@ -88,10 +81,7 @@ class DLSequence( DLSerializable ) :
 
 
   def isComplete( self ):
-    toInsert = False
-    if len( self.stack ) == 0 :
-      toInsert = True
-    return toInsert
+    return not self.stack
 
   def setCaller( self, caller ):
     self.caller = DLCaller( caller )

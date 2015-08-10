@@ -15,7 +15,7 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
 class DLThreadPool :
   """
     contains all DLSequence needed by different thread
-    this class serve to have one sequence by thread
+    this class help to have one sequence by thread
     pool is a dictionary with key thread id and with value a DLSequence
   """
   pool = dict()

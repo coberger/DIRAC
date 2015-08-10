@@ -17,7 +17,10 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
 from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-
+"""
+  Client for Data Logging System
+  forward calls to DLS service
+"""
 class DataLoggingClient( Client ):
 
   def __init__( self, url = None, **kwargs ):

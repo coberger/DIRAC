@@ -17,6 +17,7 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLSto
 from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
 from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
 from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
+from DIRAC import gLogger
 
 
 class DLDecoder( json.JSONDecoder ):
@@ -26,38 +27,38 @@ class DLDecoder( json.JSONDecoder ):
                              *args, **kargs )
 
     def dict_to_object( self, d ):
-        if '__type__' not in d:
-            return d
-        typeObj = d.pop( '__type__' )
-        try:
-          if typeObj == 'DLAction':
-            obj = DLAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['extra'], d['errorMessage'], d['actionID'] )
-          elif typeObj == 'DLSequence':
-            obj = DLSequence.fromJSON( d['methodCalls'], d['caller'], d['sequenceID'], d['userName'], d['group'], d['hostName'], d['extra'] )
-          elif typeObj == 'DLFile':
-            obj = DLFile( d['name'] )
-          elif typeObj == 'DLMethodCall':
-            obj = DLMethodCall( d )
-            obj.actions = d['actions']
-            obj.children = d['children']
-          elif typeObj == 'DLCaller':
-            obj = DLCaller( d['name'] )
-          elif typeObj == 'DLMethodName':
-            obj = DLMethodName( d['name'] )
-          elif typeObj == 'DLStorageElement':
-            obj = DLStorageElement( d['name'] )
-          elif typeObj == 'DLUserName':
-            obj = DLUserName( d['name'] )
-          elif typeObj == 'DLGroup':
-            obj = DLGroup( d['name'] )
-          elif typeObj == 'DLHostName':
-            obj = DLHostName( d['name'] )
-          else:
-            obj = d
-          return obj
-        except Exception as e:
-          print 'exception in DLDecoder %s for type %s' % ( e, typeObj )
-          d['__type__'] = typeObj
+      if '__type__' not in d:
           return d
+      typeObj = d.pop( '__type__' )
+      try:
+        if typeObj == 'DLAction':
+          obj = DLAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['extra'], d['errorMessage'] )
+        elif typeObj == 'DLSequence':
+          obj = DLSequence( d['methodCalls'], d['caller'], d['sequenceID'], d['userName'], d['group'], d['hostName'], d['extra'] )
+        elif typeObj == 'DLFile':
+          obj = DLFile( d['name'] )
+        elif typeObj == 'DLMethodCall':
+          obj = DLMethodCall( d )
+          obj.actions = d['actions']
+          obj.children = d['children']
+        elif typeObj == 'DLCaller':
+          obj = DLCaller( d['name'] )
+        elif typeObj == 'DLMethodName':
+          obj = DLMethodName( d['name'] )
+        elif typeObj == 'DLStorageElement':
+          obj = DLStorageElement( d['name'] )
+        elif typeObj == 'DLUserName':
+          obj = DLUserName( d['name'] )
+        elif typeObj == 'DLGroup':
+          obj = DLGroup( d['name'] )
+        elif typeObj == 'DLHostName':
+          obj = DLHostName( d['name'] )
+        else:
+          obj = d
+        return obj
+      except Exception as e:
+        gLogger.error( 'exception in DLDecoder %s for type %s' % ( e, typeObj ) )
+        d['__type__'] = typeObj
+        return d
 
 

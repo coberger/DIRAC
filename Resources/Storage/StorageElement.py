@@ -148,46 +148,30 @@ class StorageElementItem( object ):
                      'getTransportURL',
                      'isLocalSE' ]
 
-  dataLoggingMethodsToLogArguments = {
+  dataLoggingMethodsToLog = {
               'retransferOnlineFile' :
-                {'Arguments' : ['self', 'link'] },
+                {'argsPosition' : ['self', 'link'] },
               'putFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'str',
+                {'argsPosition' : ['self', 'files'],
                  'valueName' : 'src_file'},
               'replicateFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'str',
+                {'argsPosition' : ['self', 'files'],
                  'valueName' : 'src_file'},
               'pinFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'str',
+                {'argsPosition' : ['self', 'files'],
                  'valueName' : 'srmRequestID'},
               'releaseFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'str',
+                {'argsPosition' : ['self', 'files'],
                  'valueName' : 'srmRequestID'},
               'createDirectory' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'None'},
+                {'argsPosition' : ['self', 'files']},
               'putDirectory' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'str',
+                {'argsPosition' : ['self', 'files'],
                  'valueName' : 'sourceDir'},
               'removeFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'None'},
+                {'argsPosition' : ['self', 'files']},
               'removeDirectory' :
-                {'Arguments' : ['self', 'files'],
-                   'type' : 'dict',
-                   'valueType' : 'None'},
+                {'argsPosition' : ['self', 'files']},
               }
 
 
@@ -635,9 +619,8 @@ class StorageElementItem( object ):
 #     res['Failed'] = failed
     return res
 
-  @DataLoggingDecorator( getActionArgsFunction = 'executeSE', attributesToGet = {'methodName' : 'methodName', 'nameSE' : 'name' },
-                          className = 'StorageElement', methods_to_log = writeMethods + removeMethods,
-                          methods_to_log_arguments = dataLoggingMethodsToLogArguments )
+  @DataLoggingDecorator( getActionArgsFunction = 'executeSE', attributesToGet = {'methodName' : 'methodName', 'targetSE' : 'name' },
+                          className = 'StorageElement', methods_to_log = dataLoggingMethodsToLog )
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName

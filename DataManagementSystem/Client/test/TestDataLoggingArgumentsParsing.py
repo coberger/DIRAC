@@ -6,7 +6,7 @@ Created on May 20, 2015
 import unittest
 
 from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import extractArgs, extractArgsExecuteFC, \
-                    extractArgsExecuteSE, extractTupleArgs
+                    extractArgsExecuteSE, extractArgsTuple
 
 
 """
@@ -37,14 +37,11 @@ lfnsFC = {'/lhcb/sub/file1.data':{'PFN':'PFN1', 'Size':1, 'SE':'se1', 'GUID':100
           '/lhcb/sub/file2.data':{'PFN':'PFN2', 'Size':2, 'SE':'se2', 'GUID':200, 'Checksum':20},
           '/lhcb/sub/file3.data':{'PFN':'PFN3', 'Size':3, 'SE':'se3', 'GUID':300, 'Checksum': 30 }}
 argumentsExecuteFC = ( 'self', lfnsFC )
-argsDictExecuteFC['call'] = 'addFile'
-argsDictExecuteFC['methods_to_log'] = ['addFile']
-argsDictExecuteFC['methods_to_log_arguments'] = {
+argsDictExecuteFC['methodName'] = 'addFile'
+argsDictExecuteFC['methods_to_log'] = {
               'addFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'dict',
-                 'dictKeys' : { 'PFN':'PFN', 'Size':'Size', 'targetSE':'SE', 'GUID':'GUID', 'Checksum':'Checksum'} }
+                {'argsPosition' : ['self', 'files'],
+                 'keysToGet' : { 'PFN':'PFN', 'Size':'Size', 'targetSE':'SE', 'GUID':'GUID', 'Checksum':'Checksum'} }
               }
 
 argsDictSetReplicaProblematic = {}
@@ -52,11 +49,10 @@ lfnsSetReplicaProblematic = {'/lhcb/sub/file2.data': {'S20': 'P20'}, \
                             '/lhcb/sub/file3.data': {'S30': 'P30', 'S31': 'P31', 'S32': 'P32'}, \
                             '/lhcb/sub/file1.data': {'S10': 'P10', 'S11': 'P11'}}
 argumentsSetReplicaProblematic = ( 'self', lfnsSetReplicaProblematic )
-argsDictSetReplicaProblematic['call'] = 'setReplicaProblematic'
-argsDictSetReplicaProblematic['methods_to_log'] = ['setReplicaProblematic']
-argsDictSetReplicaProblematic['methods_to_log_arguments'] = {
+argsDictSetReplicaProblematic['methodName'] = 'setReplicaProblematic'
+argsDictSetReplicaProblematic['methods_to_log'] = {
               'setReplicaProblematic' :
-                {'Arguments' : ['self', 'files'],
+                {'argsPosition' : ['self', 'files'],
                  'specialFunction' : 'setReplicaProblematic' }
               }
 
@@ -65,13 +61,10 @@ argsDictExecuteSE = {}
 lfnsSE = {'/lhcb/sub/file1.data':'src_file1', '/lhcb/sub/file2.data':'src_file2', '/lhcb/sub/file3.data':'src_file3' }
 argumentsExecuteSE = ( 'self', lfnsSE )
 argsDictExecuteSE['methodName'] = 'putFile'
-argsDictExecuteSE['name'] = 'targetSE1'
-argsDictExecuteSE['methods_to_log'] = ['putFile']
-argsDictExecuteSE['methods_to_log_arguments'] = {
+argsDictExecuteSE['targetSE'] = 'targetSE1'
+argsDictExecuteSE['methods_to_log'] = {
               'putFile' :
-                {'Arguments' : ['self', 'files'],
-                 'type' : 'dict',
-                 'valueType' : 'str',
+                {'argsPosition' : ['self', 'files'],
                  'valueName' : 'src_file'},
               }
 
@@ -93,6 +86,9 @@ class DefaultCase ( DataLoggingArgumentsParsingTestCase ):
           {'file': '/lhcb/sub/file3.data', 'targetSE': 'destSE', 'extra': 'localPath = /local/path/', 'srcSE': None}]
 
     ret = extractArgs( argsDictDefault , *argumentsDefault )['Value']
+    ret = sorted( ret, key = lambda k: k['file'] )
+    ok = sorted( ok, key = lambda k: k['file'] )
+
     for x in range( len( ret ) ):
       self.assertEqual( ret[x]['file'], ok[x]['file'] )
       self.assertEqual( ret[x]['targetSE'], ok[x]['targetSE'] )
@@ -100,6 +96,8 @@ class DefaultCase ( DataLoggingArgumentsParsingTestCase ):
       self.assertEqual( ret[x]['extra'], ok[x]['extra'] )
 
     ret = extractArgs( argsDictDefault , *argumentsDefaultWhenOptionnal, **argumentsDefaultoptionnal )['Value']
+    ret = sorted( ret, key = lambda k: k['file'] )
+
     for x in range( len( ret ) ):
       self.assertEqual( ret[x]['file'], ok[x]['file'] )
       self.assertEqual( ret[x]['targetSE'], ok[x]['targetSE'] )
@@ -109,7 +107,7 @@ class DefaultCase ( DataLoggingArgumentsParsingTestCase ):
   def test_Error( self ):
     ret = extractArgsExecuteSE( argsDictDefault, *argumentsDefault )
     self.assertEqual( ret['OK'], False )
-    ret = extractTupleArgs ( argsDictDefault , *argumentsDefault )
+    ret = extractArgsTuple ( argsDictDefault , *argumentsDefault )
     self.assertEqual( ret['OK'], False )
 
 
@@ -121,7 +119,9 @@ class TupleCase ( DataLoggingArgumentsParsingTestCase ):
               'extra': 'physicalFile = /local/file1.data,fileSize = 150,fileGuid = 40,checksum = 108524789', 'srcSE': None}, \
           {'file': '/lhcb/sub/file2.data', 'targetSE': 'TargetSE', \
              'extra': 'physicalFile = /local/file2.data,fileSize = 7855,fileGuid = 14,checksum = 155', 'srcSE': None}]
-    ret = extractTupleArgs( argsDictTuple, *argumentsTuple )['Value']
+    ret = extractArgsTuple( argsDictTuple, *argumentsTuple )['Value']
+    ret = sorted( ret, key = lambda k: k['file'] )
+    ok = sorted( ok, key = lambda k: k['file'] )
     for x in range( len( ret ) ):
       self.assertEqual( ret[x]['file'], ok[x]['file'] )
       self.assertEqual( ret[x]['targetSE'], ok[x]['targetSE'] )
@@ -133,15 +133,19 @@ class TupleCase ( DataLoggingArgumentsParsingTestCase ):
     self.assertEqual( ret['OK'], False )
 
   def test_TupleAsNone( self ):
-    ret = extractTupleArgs( argsDictTuple , [None] )
+    ret = extractArgsTuple( argsDictTuple , [None] )
     self.assertEqual( ret['OK'], False )
 
 class ExecuteFCCase ( DataLoggingArgumentsParsingTestCase ):
   def test_DictEqual( self ):
-    ok = [{'files': None, 'targetSE': 'se2', 'extra': 'Size = 2,GUID = 200,Checksum = 20,PFN = PFN2', 'file': '/lhcb/sub/file2.data', 'srcSE': None}, \
-          {'files': None, 'targetSE': 'se1', 'extra': 'Size = 1,GUID = 100,Checksum = 10,PFN = PFN1', 'file': '/lhcb/sub/file1.data', 'srcSE': None}, \
-          {'files': None, 'targetSE': 'se3', 'extra': 'Size = 3,GUID = 300,Checksum = 30,PFN = PFN3', 'file': '/lhcb/sub/file3.data', 'srcSE': None}]
+    ok = [{'targetSE': 'se2', 'extra': 'Size = 2,GUID = 200,Checksum = 20,PFN = PFN2', 'file': '/lhcb/sub/file2.data', 'srcSE': None}, \
+          {'targetSE': 'se1', 'extra': 'Size = 1,GUID = 100,Checksum = 10,PFN = PFN1', 'file': '/lhcb/sub/file1.data', 'srcSE': None}, \
+          { 'targetSE': 'se3', 'extra': 'Size = 3,GUID = 300,Checksum = 30,PFN = PFN3', 'file': '/lhcb/sub/file3.data', 'srcSE': None}]
+
     ret = extractArgsExecuteFC( argsDictExecuteFC , *argumentsExecuteFC )['Value']
+    ret = sorted( ret, key = lambda k: k['file'] )
+    ok = sorted( ok, key = lambda k: k['file'] )
+
     for x in range( len( ret ) ):
       self.assertEqual( ret[x]['file'], ok[x]['file'] )
       self.assertEqual( ret[x]['targetSE'], ok[x]['targetSE'] )
@@ -149,7 +153,7 @@ class ExecuteFCCase ( DataLoggingArgumentsParsingTestCase ):
       self.assertEqual( ret[x]['extra'], ok[x]['extra'] )
 
   def test_Error( self ):
-    ret = extractTupleArgs( argsDictExecuteFC, *argumentsExecuteFC )
+    ret = extractArgsTuple( argsDictExecuteFC, *argumentsExecuteFC )
     self.assertEqual( ret['OK'], False )
 
 class SetReplicaProblematicCase( DataLoggingArgumentsParsingTestCase ):
@@ -162,6 +166,10 @@ class SetReplicaProblematicCase( DataLoggingArgumentsParsingTestCase ):
           {'file': '/lhcb/sub/file3.data', 'targetSE': 'S30', 'extra': 'PFN = P30', 'srcSE': None}, \
           {'file': '/lhcb/sub/file3.data', 'targetSE': 'S32', 'extra': 'PFN = P32', 'srcSE': None}]
     ret = extractArgsExecuteFC( argsDictSetReplicaProblematic, *argumentsSetReplicaProblematic )['Value']
+
+    ret = sorted( ret, key = lambda k: k['file'] )
+    ok = sorted( ok, key = lambda k: k['file'] )
+
     for x in range( len( ret ) ):
       self.assertEqual( ret[x]['file'], ok[x]['file'] )
       self.assertEqual( ret[x]['targetSE'], ok[x]['targetSE'] )
@@ -173,7 +181,12 @@ class ExecuteSECase ( DataLoggingArgumentsParsingTestCase ):
     ok = [{'file': '/lhcb/sub/file2.data', 'targetSE': 'targetSE1', 'extra': 'src_file = src_file2', 'srcSE': None}, \
           {'file': '/lhcb/sub/file1.data', 'targetSE': 'targetSE1', 'extra': 'src_file = src_file1', 'srcSE': None}, \
           {'file': '/lhcb/sub/file3.data', 'targetSE': 'targetSE1', 'extra': 'src_file = src_file3', 'srcSE': None}]
+
     ret = extractArgsExecuteSE( argsDictExecuteSE , *argumentsExecuteSE )['Value']
+
+    ret = sorted( ret, key = lambda k: k['file'] )
+    ok = sorted( ok, key = lambda k: k['file'] )
+
     for x in range( len( ret ) ):
       self.assertEqual( ret[x]['file'], ok[x]['file'] )
       self.assertEqual( ret[x]['targetSE'], ok[x]['targetSE'] )
@@ -181,7 +194,7 @@ class ExecuteSECase ( DataLoggingArgumentsParsingTestCase ):
       self.assertEqual( ret[x]['extra'], ok[x]['extra'] )
 
   def test_Error( self ):
-    ret = extractTupleArgs( argsDictExecuteSE, *argumentsExecuteSE )
+    ret = extractArgsTuple( argsDictExecuteSE, *argumentsExecuteSE )
     self.assertEqual( ret['OK'], False )
     ret = extractArgs( argsDictExecuteSE , *argumentsExecuteSE )
     self.assertEqual( ret['OK'], False )
@@ -190,11 +203,11 @@ class ExecuteSECase ( DataLoggingArgumentsParsingTestCase ):
 
 if __name__ == "__main__":
 
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( DefaultCase )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TupleCase )
 
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ExecuteFCCase ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ExecuteSECase ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TupleCase ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SetReplicaProblematicCase ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( DefaultCase ) )
 
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
