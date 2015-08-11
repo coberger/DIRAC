@@ -956,6 +956,7 @@ class DataManager( object ):
       self.log.debug( errStr, res['Message'] )
 
     return res
+
   @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'tuple', \
                          tupleArgsPosition = ['files', 'PFN', 'targetSE' ] )
   def registerReplica( self, replicaTuple, catalog = '' ):

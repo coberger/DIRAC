@@ -10,8 +10,7 @@ import types
 from types import StringTypes
 from threading import current_thread
 
-from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC import gLogger
 
 import DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities as DLUtilities
 from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import caller_name
@@ -20,7 +19,7 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLThreadPool import DLThreadP
 from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
 from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
-from DIRAC import gLogger
+
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException, NoLogException
 
@@ -48,7 +47,7 @@ def DataLoggingDecorator( function = None, **kwargs ):
 
 class _DataLoggingDecorator( object ):
   """ decorator for data logging in DIRAC
-      the aim of this decorator is to know all operation done about a Dirac LFN
+      the aim of this decorator is to know all operations done about a Dirac LFN
       for this, the decorator get arguments from the called of the decorated method
       create a DLMethodCall which is an operation on a single lfn or multiple lfn
       then create as much DLAction as lfn
@@ -62,14 +61,20 @@ class _DataLoggingDecorator( object ):
       the first arguments to pass is a list with the arguments positions in the decorated method
       for example for the putAndRegister method you have to pass argsPosition = ['self', 'files', 'localPath', 'targetSE' ]
       in the decorator
-      some keywords are very important like files, targetSE and srcSE
+      some keywords are very important like files, targetSE and srcSE, keywords are in DLUtilities file
       so if the parameter of the decorated Function is 'sourceSE' you have to write 'srcSE' in the argsPosition's list
       if the parameter of the decorated Function is 'lfns' you have to write 'files' in the argsPosition's list
 
       next you have to tell to the decorator which function you want to called to extract arguments
       for example getActionArgsFunction = 'tuple', there is a dictionary to map keywords with functions to extract arguments
 
-      you can pass much argument as you want to the decorator
+      you can pass as much arguments as you want to the decorator
+
+      Common arguments are :
+        _argsPosition : a list of arguments names, to know which argument it is on each position, if the argument can be passed in kwargs
+                        and its key is not the same name we want to save, you need to pass a tuple ( 'specialKeyWord', 'keyInKwargs' )
+        _getActionArgsFunction : a string to know which function will be used to extract args, possibilities are in funcDict
+        _tupelPostion : a list of arguments names, to describe tuple
   """
 
   def __init__( self, func , **kwargs ):
