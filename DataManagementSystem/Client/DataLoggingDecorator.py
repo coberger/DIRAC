@@ -13,7 +13,7 @@ from threading import current_thread
 from DIRAC import gLogger
 
 import DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities as DLUtilities
-from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import caller_name
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import getCallerName
 from DIRAC.DataManagementSystem.Client.DataLogging.DLAction import DLAction
 from DIRAC.DataManagementSystem.Client.DataLogging.DLThreadPool import DLThreadPool
 from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
@@ -32,17 +32,17 @@ funcDict = {
 }
 
 
-# wrap _DLDecorator to allow for deferred calling
+# wrap _DLDecorator to allow passing some arguments to the decorator
 def DataLoggingDecorator( function = None, **kwargs ):
-    if function:
-      # with no argument for the decorator the call is like decorator(func)
-        return _DataLoggingDecorator( function )
-    else:
-      # if the decorator has some arguments, the call is like that decorator(args)(func)
-      # so function will be none, we can get it with a wrapper
-      def wrapper( function ):
-        return _DataLoggingDecorator( function, **kwargs )
-      return wrapper
+  if function:
+    # with no argument for the decorator the call is like decorator(func)
+      return _DataLoggingDecorator( function )
+  else:
+    # if the decorator has some arguments, the call is like that decorator(args)(func)
+    # so function will be none, we can get it with a wrapper
+    def wrapper( function ):
+      return _DataLoggingDecorator( function, **kwargs )
+    return wrapper
 
 
 class _DataLoggingDecorator( object ):
@@ -123,32 +123,34 @@ class _DataLoggingDecorator( object ):
     result = None
     exception = None
     isCalled = False
-    isMethodCallCreate = False
+    isMethodCallCreated = False
 
     try:
       # we set the caller
       self.setCaller()
       # sometimes we need an attribute into the object who called the decorated method
       # we will get it here and add it in the local argsDecorator dictionary
-      # we need a local dictionary because of the different called from different thread
+      # we need a local dictionary because of the different calls from different threads
       # for example when the decorated method is _execute , the real method called is contained into the object
       # this will not work with a function because the first arguments in args should be the self reference of the object
-      localArgsDecorator = self.getAttribute( args[0] )
+      localArgsDecorator = self.getAttributeFromObject( args[0] )
 
       # we get the arguments from the call of the decorated method to create the DLMethodCall object
-      methodCallArgsDict = self.getMethodCallArgs( localArgsDecorator, *args )
+      methodCallArgsDict = self.getMethodCallArgs( localArgsDecorator )
 
       # get args for the DLAction objects
       actionArgs = self.getActionArgs( localArgsDecorator, *args, **kwargs )
 
       # create and append methodCall into the sequence of the thread
       methodCall = self.createMethodCall( methodCallArgsDict )
-      isMethodCallCreate = True
+      isMethodCallCreated = True
 
       # initialization of the DLActions with the different arguments, set theirs status to 'unknown'
-      self.initializeAction( methodCall, actionArgs )
+      self.initializeActions( methodCall, actionArgs )
 
       try :
+        # isCalled is False until the decorated method is called
+        # like that if there is an exception, we know if we have to call it or no
         isCalled = True
         # call of the func, result is the return of the decorated function
         result = self.func( *args, **kwargs )
@@ -163,14 +165,17 @@ class _DataLoggingDecorator( object ):
         result = self.func( *args, **kwargs )
       gLogger.error( 'unexpected Exception in DLDecorator.call %s' % e )
     finally:
-      if isMethodCallCreate :
-        # now we set the status ( failed or successful) of methodCall's actions
-        self.setActionStatus( result, methodCall, exception )
-        # pop of the methodCall corresponding to the decorated method
-        self.popMethodCall()
-      # if the sequence is complete we insert it into DB
-      if self.isSequenceComplete() :
-        self.insertSequence()
+      try :
+        if isMethodCallCreated :
+          # now we set the status ( failed or successful) of methodCall's actions
+          self.setActionStatus( result, methodCall, exception )
+          # pop of the methodCall corresponding to the decorated method
+          self.popMethodCall()
+        # if the sequence is complete we insert it into DB
+        if self.isSequenceComplete() :
+          self.insertSequence()
+      except Exception as e :
+        gLogger.error( 'unexpected Exception in DLDecorator.call %s' % e )
     return result
 
   def setActionStatus( self, foncResult, methodCall, exception ):
@@ -190,7 +195,9 @@ class _DataLoggingDecorator( object ):
       if not exception  :
         if isinstance( foncResult, dict ):
           if foncResult['OK']:
-            if isinstance( foncResult['Value'], dict ) and ( 'Successful' in foncResult['Value'] ) and ( 'Failed' in foncResult['Value'] ) :
+            if isinstance( foncResult['Value'], dict ) and \
+               ( 'Successful' in foncResult['Value'] ) and \
+               ( 'Failed' in foncResult['Value'] ) :
             # get the success and the fail
               successful = foncResult['Value']['Successful']
               failed = foncResult['Value']['Failed']
@@ -212,6 +219,7 @@ class _DataLoggingDecorator( object ):
         else :  # if not a dict
           gLogger.error( 'the result of a function is not a dict, you have to use S_OK and S_ERROR' )
       else :
+        # exception not None
         for action in methodCall.actions :
           action.status = 'Failed'
           action.errorMessage = str( exception )
@@ -219,7 +227,7 @@ class _DataLoggingDecorator( object ):
       gLogger.error( 'unexpected Exception in DLDecorator.getActionStatus %s' % e )
       raise DLException( e )
 
-  def initializeAction( self, methodCall, actionsArgs ):
+  def initializeActions( self, methodCall, actionsArgs ):
     """ create all action for a method call and initialize their status to value 'Unknown'
 
         :param methodCall : methodCall in which we have to initialize action
@@ -231,7 +239,7 @@ class _DataLoggingDecorator( object ):
               DLStorageElement( actionArgs['srcSE'] ), DLStorageElement( actionArgs['targetSE'] ),
               actionArgs['extra'], None ) )
     except Exception as e:
-      gLogger.error( 'unexpected Exception in DLDecorator.initializeAction %s' % e )
+      gLogger.error( 'unexpected Exception in DLDecorator.initializeActions %s' % e )
       raise DLException( e )
 
   def createMethodCall( self, args ):
@@ -264,12 +272,12 @@ class _DataLoggingDecorator( object ):
     try :
       res = DLThreadPool.getDataLoggingSequence( current_thread().ident ).isCallerSet()
       if not res["OK"]:
-        DLThreadPool.getDataLoggingSequence( current_thread().ident ).setCaller( caller_name( 3 ) )
+        DLThreadPool.getDataLoggingSequence( current_thread().ident ).setCaller( getCallerName() )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DataLoggingDecorator.setCaller %s' % e )
       raise DLException( e )
 
-  def getMethodCallArgs( self, localArgsDecorator, *args ):
+  def getMethodCallArgs( self, localArgsDecorator ):
     """ get arguments to create a method call
         :return methodCallDict : contains all the arguments to create a method call
     """
@@ -283,18 +291,18 @@ class _DataLoggingDecorator( object ):
     return methodCallDict
 
 
-  def getAttribute( self, obj ) :
+  def getAttributeFromObject( self, obj ) :
     """ get attributes from an object
         add this attributes to the dict which contains all arguments of the decorator
     """
-    d = dict( self.argsDecorator )
+    localDict = dict( self.argsDecorator )
     try :
       for keyword, attrName in self.argsDecorator.get( 'attributesToGet', {} ).items():
-        d[keyword] = getattr( obj, attrName, None )
+        localDict[keyword] = getattr( obj, attrName, None )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.getAttribute %s' % e )
       raise DLException( e )
-    return d
+    return localDict
 
   def getActionArgs( self, argsDecorator, *args, **kwargs ):
     """ this method is here to call the function to get arguments of the decorated function
@@ -318,13 +326,6 @@ class _DataLoggingDecorator( object ):
       client = DataLoggingClient()
       seq = DLThreadPool.popDataLoggingSequence( current_thread().ident )
       client.insertSequence( seq, self.argsDecorator['directInsert'] )
-      #=========================================================================
-      # certFile, _keyFile = getHostCertificateAndKeyLocation()
-      # chain = X509Chain()
-      # chain.loadChainFromFile( certFile )
-      # resultCert = chain.getCredentials()
-      # print resultCert
-      #=========================================================================
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )
       raise

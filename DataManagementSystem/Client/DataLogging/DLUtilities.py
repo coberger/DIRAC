@@ -18,7 +18,7 @@ dl_targetSE = 'targetSE'
 dl_tuple = 'tuple'
 wantedArgs = [dl_files, dl_srcSE, dl_targetSE ]
 
-def caller_name( skip = 2 ):
+def getCallerName( skip = 3 ):
   """Get a name of a caller in the format module.class.method
 
      `skip` specifies how many levels of stack to skip while getting caller
@@ -118,18 +118,22 @@ def extractArgs( argsDecorator, *args, **kwargs ):
                 argDict['extra'] = ','.join( argDictExtra )
                 actionArgs.append( argDict )
             else :
+              # else there is no value associated to key
               for lfn in files:
                 argDict = {}
                 argDict['file'] = lfn
                 actionArgs.append( argDict )
           else :
+            # else the argument is wanted but not dl_files
             commonArgs[argName] = args[i]
         else:
+          # the argument is not wanted, we save it in extra list
           if argName is not 'self':
             if args[i]:
               extraList.append( "%s = %s" % ( argName, args[i] ) )
 
       else :
+        # argument is passed in kwargs
         argName = argsPosition[i]
         if isinstance( argName, tuple ):
           # if argname is a tuple is because the argument is named and can be passed in kwargs
@@ -141,23 +145,20 @@ def extractArgs( argsDecorator, *args, **kwargs ):
           keyToGet = argName
 
         if argName in wantedArgs:
+          # wanted argument
           commonArgs[argName] = kwargs.pop( keyToGet, None )
         else :
+          # not wanted argument, save it in extra list
           value = kwargs.pop( argName, None )
           if value :
             extraList.append( "%s = %s" % ( argName, value ) )
       i += 1
-
-    if extraList:
-      commonArgs['extra'] = ','.join( extraList )
-    else:
-      commonArgs['extra'] = None
-
   except Exception as e:
     gLogger.error( 'unexpected error in DLFucntions.extractArgs %s' % e )
     ret = S_ERROR( 'unexpected error in DLFucntions.extractArgs %s' % e )
 
   finally :
+    commonArgs['extra'] = ','.join( extraList ) if extraList else None
     # we have all arguments so now we are going to create a list with as much dictionary as there is files
     if not ret :
       ret = S_OK()
@@ -329,7 +330,7 @@ def mergeDictTuple( opArgs, tupleArgs, extraList ):
       argList = list()
 
       if key in opArgs:
-        if opArgs[key] is not None :
+        if opArgs[key] :
           if isinstance( opArgs[key], list ):
             for val in opArgs[key]:
               argList.append( val )
@@ -337,7 +338,7 @@ def mergeDictTuple( opArgs, tupleArgs, extraList ):
             argList.append( opArgs[key] )
 
       if key in tupleArgs :
-        if tupleArgs[key] is not None :
+        if tupleArgs[key] :
           if isinstance( tupleArgs[key], list ):
             for val in tupleArgs[key]:
               argList.append( val )

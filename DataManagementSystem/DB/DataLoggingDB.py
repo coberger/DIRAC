@@ -6,7 +6,6 @@ Created on May 4, 2015
 import zlib
 import json
 from datetime import datetime, timedelta
-import time
 # from DIRAC
 from DIRAC import S_OK, gLogger, S_ERROR
 
@@ -26,10 +25,9 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException
-
 # from sqlalchemy
-from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc, between
-from sqlalchemy.orm     import mapper, sessionmaker, relationship
+from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc
+from sqlalchemy.orm     import mapper, sessionmaker, relationship, aliased
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 
 # Metadata instance that is used to bind the engine, Object and tables
@@ -115,9 +113,9 @@ dataLoggingActionTable = Table( 'DLAction', metadata,
 # Map the DLAction object to the dataLoggingActionTable, with two foreign key constraints,
 # and one relationship between attribute file and table DLFile
 mapper( DLAction, dataLoggingActionTable,
-        properties = { 'file' : relationship( DLFile ),
-                      'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.srcSEID ),
-                      'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.targetSEID )} )
+        properties = { 'file' : relationship( DLFile ,lazy='joined'),
+                      'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.srcSEID,lazy='joined' ),
+                      'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.targetSEID,lazy='joined' )} )
 
 # Description of the DLSequence table
 dataLoggingSequenceTable = Table( 'DLSequence', metadata,
@@ -130,12 +128,12 @@ dataLoggingSequenceTable = Table( 'DLSequence', metadata,
 # Map the DLSequence object to the dataLoggingSequenceTable with one relationship between attribute methodCalls and table DLMethodCall
 # an other relationship between attribute attributesValues and table DLSequenceAttributeValue
 # and one foreign key for attribute caller
-mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DLMethodCall ),
-                                                             'caller' : relationship( DLCaller ),
-                                                             'group' : relationship( DLGroup ),
-                                                             'userName' : relationship( DLUserName ),
-                                                             'hostName' : relationship( DLHostName ),
-                                                             'attributesValues': relationship( DLSequenceAttributeValue ) } )
+mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DLMethodCall, lazy='joined' ),
+                                                             'caller' : relationship( DLCaller, lazy='joined' ),
+                                                             'group' : relationship( DLGroup, lazy='joined' ),
+                                                             'userName' : relationship( DLUserName, lazy='joined' ),
+                                                             'hostName' : relationship( DLHostName, lazy='joined' ),
+                                                             'attributesValues': relationship( DLSequenceAttributeValue, lazy='joined' ) } )
 
 # Description of the DLMethodCall table
 dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
@@ -149,9 +147,9 @@ dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
 # Map the DLMethodCall object to the dataLoggingMethodCallTable with one relationship between attribute children and table DLMethodCall
 # one foreign key for attribute name on table DLMethodName
 # and an other relationship between attribute actions and table DLAction
-mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : relationship( DLMethodCall ),
-                                                                           'name': relationship( DLMethodName ),
-                                                                           'actions': relationship( DLAction ) } )
+mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : relationship( DLMethodCall, lazy='joined', join_depth=2 ),
+                                                                    'name': relationship( DLMethodName, lazy='joined' ),
+                                                                    'actions': relationship( DLAction, lazy='joined' ) } )
 # Description of the DLSequenceAttribute table
 dataLoggingSequenceAttribute = Table( 'DLSequenceAttribute', metadata,
                    Column( 'sequenceAttributeID', Integer, primary_key = True ),
@@ -169,8 +167,8 @@ dataLoggingSequenceAttributeValue = Table( 'DLSequenceAttributeValue', metadata,
 # Map the DLSequenceAttributeValue object to the dataLoggingSequenceAttributeValue
 # two foreign key on tables DLSequence and DLSequenceAttribute
 mapper( DLSequenceAttributeValue, dataLoggingSequenceAttributeValue,
-                      properties = { 'sequence' : relationship( DLSequence ),
-                                     'sequenceAttribute' : relationship( DLSequenceAttribute ) } )
+                      properties = { 'sequence' : relationship( DLSequence, lazy='joined' ),
+                                     'sequenceAttribute' : relationship( DLSequenceAttribute, lazy='joined' ) } )
 
 class DataLoggingDB( object ):
 
@@ -667,16 +665,21 @@ class DataLoggingDB( object ):
 
       :return seqs: a list of DLSequence
     """
+    targetSE_alias = aliased(DLStorageElement)
     session = self.DBSession()
-
-    query =session.query( DLSequence )\
-                  .outerjoin( DLMethodCall )\
-                  .outerjoin( DLAction )\
-                  .outerjoin( DLFile )\
-                  .outerjoin( DLCaller )\
-                  .outerjoin( DLUserName )\
-                  .outerjoin( DLGroup )\
-                  .outerjoin( DLHostName )
+    mc_child = aliased(DLMethodCall)
+    query = session.query( DLSequence )\
+              .outerjoin( DLCaller )\
+              .outerjoin( DLUserName )\
+              .outerjoin( DLGroup )\
+              .outerjoin( DLHostName )\
+              .outerjoin( DLMethodCall )\
+              .outerjoin( DLMethodName )\
+              .outerjoin( DLAction )\
+              .outerjoin( DLFile )\
+              .outerjoin( DLAction.srcSE)\
+              .outerjoin(targetSE_alias,  DLAction.targetSE)
+              
     if lfn :
       query = query.filter( DLFile.name == lfn )
     if callerName :
@@ -694,6 +697,7 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
+
 
     if status :
       query = query.filter( DLAction.status == status )
@@ -718,7 +722,8 @@ class DataLoggingDB( object ):
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
 
     finally:
-      session.close
+      session.expunge_all()
+      session.close()
     return S_OK( seqs )
 
   def getSequenceByID( self, IDSeq ):
@@ -727,13 +732,23 @@ class DataLoggingDB( object ):
 
       :param IDSeq, an id of a sequence
 
-      :return seqs: a list of DLSequence
+      :return seqs: a list with one DLSequence
     """
+    targetSE_alias = aliased(DLStorageElement)
     session = self.DBSession()
-
+    query = session.query( DLSequence )\
+              .outerjoin( DLCaller )\
+              .outerjoin( DLUserName )\
+              .outerjoin( DLGroup )\
+              .outerjoin( DLHostName )\
+              .outerjoin( DLMethodCall )\
+              .outerjoin( DLMethodName )\
+              .outerjoin( DLAction )\
+              .outerjoin( DLFile )\
+              .outerjoin( DLAction.srcSE)\
+              .outerjoin(targetSE_alias,  DLAction.targetSE)
     try:
-      seqs = session.query( DLSequence )\
-                  .filter( DLSequence.sequenceID == IDSeq ).all()
+      seqs = query.filter( DLSequence.sequenceID == IDSeq ).all()
       if seqs :
         for seq in seqs :
           seq.extra = {}
@@ -745,7 +760,8 @@ class DataLoggingDB( object ):
       return S_ERROR( "getSequenceOnFile: unexpected exception %s" % e )
 
     finally:
-      session.close
+      session.expunge_all()
+      session.close()
     return S_OK( seqs )
 
 
@@ -760,10 +776,14 @@ class DataLoggingDB( object ):
 
       :return calls: a list of DLMethodCall
     """
+    targetSE_alias = aliased(DLStorageElement)
     session = self.DBSession()
     query = session.query( DLMethodCall )\
+                .outerjoin( DLMethodName )\
                 .outerjoin( DLAction )\
                 .outerjoin( DLFile )\
+                .outerjoin( DLAction.srcSE)\
+                .outerjoin(targetSE_alias,  DLAction.targetSE)\
                 .filter( DLFile.name == lfn )\
                 .order_by( DLMethodCall.sequenceID ).order_by( DLMethodCall.creationTime )
     if before and after :
@@ -783,7 +803,8 @@ class DataLoggingDB( object ):
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
 
     finally:
-      session.close
+      session.expunge_all()
+      session.close()
 
     return S_OK( calls )
 
@@ -798,9 +819,14 @@ class DataLoggingDB( object ):
 
       :return calls: a list of DLMethodCall
     """
+    targetSE_alias = aliased(DLStorageElement)
     session = self.DBSession()
     query = session.query( DLMethodCall )\
                 .outerjoin( DLMethodName )\
+                .outerjoin( DLAction )\
+                .outerjoin( DLFile )\
+                .outerjoin( DLAction.srcSE)\
+                .outerjoin(targetSE_alias,  DLAction.targetSE)\
                 .filter( DLMethodName.name == name )\
                 .order_by( DLMethodCall.sequenceID )
 
@@ -821,6 +847,7 @@ class DataLoggingDB( object ):
       return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
 
     finally:
-      session.close
+      session.expunge_all()
+      session.close()
 
     return S_OK( calls )

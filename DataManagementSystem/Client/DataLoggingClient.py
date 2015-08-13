@@ -25,7 +25,10 @@ class DataLoggingClient( Client ):
 
   def __init__( self, url = None, **kwargs ):
     Client.__init__( self, **kwargs )
-    self.setServer( "DataManagement/DataLogging" )
+    if url :
+      self.setServer( url )
+    else :
+      self.setServer( "DataManagement/DataLogging" )
     self.dataLoggingManager = self._getRPC()
 
 
@@ -64,7 +67,7 @@ class DataLoggingClient( Client ):
     """
       This select all Sequence with  different criterias
 
-      :param fileName, name of a file
+      :param fileName, a LFN
       :param callerName, a caller name
       :param before, a date
       :param after, a date
@@ -85,11 +88,11 @@ class DataLoggingClient( Client ):
 
   def getSequenceByID( self, IDSeq ):
     """
-      This select all Sequence about an ID
+      Get the sequence with the id passed in parameter
 
       :param IDSeq, ID of the sequence
 
-      :return sequences, a list of sequence
+      :return sequence, a list with one sequence
     """
     res = self.dataLoggingManager.getSequenceByID( IDSeq )
     if not res["OK"]:
@@ -99,9 +102,9 @@ class DataLoggingClient( Client ):
 
   def getMethodCallOnFile( self, fileName, before = None, after = None, status = None ):
     """
-      This select all method call about a file, you can precise a date before, a date after and both to make a between
+      This select all method call about a file, you can specify a date before, a date after and both to make a between
 
-      :param fileName, name of the file
+      :param fileName, a LFN
       :param before, a date
       :param after, a date
       :param status, a str in [ Failed, Successful, Unknown ], can be None
@@ -116,7 +119,7 @@ class DataLoggingClient( Client ):
 
   def getMethodCallByName( self, name, before = None, after = None, status = None ):
     """
-      This select all method call about a specific method name, you can precise a date before, a date after and both to make a between
+      This select all method call about a specific method name, you can specify a date before, a date after and both to make a between
 
       :param name, name of the method
       :param before, a date

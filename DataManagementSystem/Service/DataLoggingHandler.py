@@ -114,7 +114,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :param IDSeq, ID of the sequence
 
-      :return sequences, a list of sequence
+      :return sequence, a list with one sequence
     """
     res = cls.__dataLoggingDB.getSequenceByID( IDSeq )
     if not res["OK"]:

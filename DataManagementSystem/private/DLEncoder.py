@@ -11,7 +11,6 @@ class DLEncoder( json.JSONEncoder ):
   """
 
   def default( self, obj ):
-
     if hasattr( obj, '_getJSONData' ):
       return obj._getJSONData()
     else:
