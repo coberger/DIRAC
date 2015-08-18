@@ -13,7 +13,6 @@ before = None
 status = None
 
 Script.registerSwitch( '', 'Full', 'Print full method call' )
-Script.registerSwitch( 'f:', 'File=', 'Name of LFN [%s]' % lfn )
 Script.registerSwitch( 'm:', 'MethodName=', 'Name of method [%s]' % name )
 Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31 [%s]' % after )
 Script.registerSwitch( 'b:', 'Before=', 'Date, format be like 1999-12-31 [%s]' % before )
