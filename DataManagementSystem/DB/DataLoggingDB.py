@@ -567,6 +567,7 @@ class DataLoggingDB( object ):
       session.rollback()
       instance = session.query( model ).filter_by( name = value ).first()
       objDict[value] = instance
+      session.expunge( instance )
       return S_OK( instance )
     except Exception, e:
       session.rollback()
@@ -667,7 +668,6 @@ class DataLoggingDB( object ):
     """
     targetSE_alias = aliased(DLStorageElement)
     session = self.DBSession()
-    mc_child = aliased(DLMethodCall)
     query = session.query( DLSequence )\
               .outerjoin( DLCaller )\
               .outerjoin( DLUserName )\
@@ -677,8 +677,8 @@ class DataLoggingDB( object ):
               .outerjoin( DLMethodName )\
               .outerjoin( DLAction )\
               .outerjoin( DLFile )\
-              .outerjoin( DLAction.srcSE)\
-              .outerjoin(targetSE_alias,  DLAction.targetSE)
+              .outerjoin( DLAction.srcSE )\
+              .outerjoin( targetSE_alias, DLAction.targetSE )
               
     if lfn :
       query = query.filter( DLFile.name == lfn )

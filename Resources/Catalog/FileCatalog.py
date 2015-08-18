@@ -127,7 +127,7 @@ class FileCatalog( object ):
     else:
       raise AttributeError
 
-  @DataLoggingDecorator( getActionArgsFunction = 'executeFC', attributesToGet = {'methodName' : 'call'},
+  @DataLoggingDecorator( getActionArgsFunction = 'ExecuteFC', attributesToGet = {'methodName' : 'call'},
                             methods_to_log = dataLoggingMethodsToLog )
   def w_execute( self, *parms, **kws ):
     """ Write method executor.

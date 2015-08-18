@@ -65,9 +65,9 @@ def extractArgs( argsDecorator, *args, **kwargs ):
   files = {}
   actionArgs = []
   ret = None
+  extraList = []
   try :
     argsPosition = argsDecorator['argsPosition']
-    extraList = []
     i = 0
     while i < len( argsPosition ) :
       if i < len( args ):

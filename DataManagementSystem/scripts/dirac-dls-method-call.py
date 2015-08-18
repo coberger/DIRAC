@@ -21,16 +21,14 @@ Script.registerSwitch( 'w:', 'Status=', 'Failed, Successful or Unknown [%s]' % s
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                     'WARNING : the maximum number of method call to get from database is 1000',
                                      'USAGE:',
-                                     ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
+                                     ' %s [OPTION|CFGFILE] LFN ' % Script.scriptName,
                                      'ARGUMENTS:',
                                      'At least one shall be given\nLFN: AN LFN NAME \nNAME : A method name' ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
 for switch in Script.getUnprocessedSwitches():
-  if switch[0] == "f" or switch[0].lower() == "file":
-    lfn = switch[1]
-  elif switch[0] == "m" or switch[0].lower() == "methodname":
+  if switch[0] == "m" or switch[0].lower() == "methodname":
     name = switch[1]
   elif switch[0] == "a" or switch[0].lower() == "after":
     after = switch[1]
@@ -41,6 +39,8 @@ for switch in Script.getUnprocessedSwitches():
   elif switch[0].lower() == "full":
     fullFlag = True
 
+args = Script.getPositionalArgs()
+lfn = args[0]
 
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 

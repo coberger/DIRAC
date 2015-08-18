@@ -907,7 +907,7 @@ class DataManager( object ):
   #
   # These are the file catalog write methods
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'tuple', \
+  @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'Tuple', \
                          tupleArgsPosition = ['files', 'physicalFile', 'fileSize', 'targetSE', 'fileGuid', 'checksum' ] )
   def registerFile( self, fileTuple, catalog = '' ):
     """ Register a file or a list of files
@@ -957,7 +957,7 @@ class DataManager( object ):
 
     return res
 
-  @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'tuple', \
+  @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'Tuple', \
                          tupleArgsPosition = ['files', 'PFN', 'targetSE' ] )
   def registerReplica( self, replicaTuple, catalog = '' ):
     """ Register a replica (or list of) supplied in the replicaTuples.
@@ -1306,7 +1306,7 @@ class DataManager( object ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'tuple'], getActionArgsFunction = 'tuple', \
+  @DataLoggingDecorator( argsPosition = ['self', 'tuple'], getActionArgsFunction = 'Tuple', \
                          tupleArgsPosition = ['files', 'PFN', 'targetSE' ] )
   def removeCatalogPhysicalFileNames( self, replicaTuple ):
     """ Remove replicas from the file catalog specified by replica tuple
@@ -1728,7 +1728,7 @@ class DataManager( object ):
     return self.__executeIfReplicaExists( storageElementName, lfn,
                                                   "pinFile", lifetime = lifetime )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE'], getActionArgsFunction = 'normal' )
+  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE'])
   def releaseReplica( self, lfn, storageElementName ):
     """ release pins for the lfns at the supplied StorageElement
 

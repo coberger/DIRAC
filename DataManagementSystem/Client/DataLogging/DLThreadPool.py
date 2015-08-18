@@ -8,10 +8,6 @@ from threading  import Lock
 
 
 from DIRAC.DataManagementSystem.Client.DataLogging.DLSequence import DLSequence
-from DIRAC.DataManagementSystem.Client.DataLogging.DLUserName import DLUserName
-from DIRAC.DataManagementSystem.Client.DataLogging.DLGroup import DLGroup
-from DIRAC.DataManagementSystem.Client.DataLogging.DLHostName import DLHostName
-
 class DLThreadPool :
   """
     contains all DLSequence needed by different thread

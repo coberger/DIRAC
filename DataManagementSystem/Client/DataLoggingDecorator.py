@@ -6,6 +6,7 @@ Created on May 4, 2015
 
 import functools
 import types
+import sys
 
 from types import StringTypes
 from threading import current_thread
@@ -22,14 +23,6 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodN
 
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException, NoLogException
-
-# this dictionary is here to map a string with a function when we precise in the decorator which method we want to use to get arguments for actions
-funcDict = {
-  'default': 'extractArgs',
-  'executeFC': 'extractArgsExecuteFC',
-  'tuple': 'extractArgsTuple',
-  'executeSE': 'extractArgsExecuteSE'
-}
 
 
 # wrap _DLDecorator to allow passing some arguments to the decorator
@@ -103,8 +96,10 @@ class _DataLoggingDecorator( object ):
         self.argsDecorator[key] = value
 
     # here we get the function to parse arguments to create action
-    self.getActionArgsFunction = getattr( DLUtilities, funcDict.get( self.argsDecorator.get( 'getActionArgsFunction', 'default' ),
-                                                                      funcDict['default' ] ) )
+    try :
+      self.getActionArgsFunction = getattr( DLUtilities, 'extractArgs' + self.argsDecorator.get( 'getActionArgsFunction', '' ) )
+    except :
+      self.getActionArgsFunction = getattr( DLUtilities, 'extractArgs' )
     # this permits to replace all special info like docstring of func in place of self, included the name
     functools.wraps( func )( self )
 
@@ -114,7 +109,8 @@ class _DataLoggingDecorator( object ):
     """
     self.inst = inst
     # bind the new function ( the decorated function) to the instance
-    return types.MethodType( self, inst )
+    ret = types.MethodType( self, inst )
+    return ret
 
   def __call__( self, *args, **kwargs ):
     """ method called each time when a decorated function is called
@@ -270,8 +266,7 @@ class _DataLoggingDecorator( object ):
         next if the caller is not set, we set it
     """
     try :
-      res = DLThreadPool.getDataLoggingSequence( current_thread().ident ).isCallerSet()
-      if not res["OK"]:
+      if not DLThreadPool.getDataLoggingSequence( current_thread().ident ).isCallerSet():
         DLThreadPool.getDataLoggingSequence( current_thread().ident ).setCaller( getCallerName() )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DataLoggingDecorator.setCaller %s' % e )
@@ -283,8 +278,14 @@ class _DataLoggingDecorator( object ):
     """
     try :
       methodCallDict = {}
-      methodCallDict['name'] = DLMethodName( localArgsDecorator.get( 'className', self.inst.__class__ .__name__ )\
-                                      + '.' + localArgsDecorator.get( 'methodName', self.name ) )
+      if hasattr( self, 'inst' ) :
+        # the decorated function is a method
+        methodCallDict['name'] = DLMethodName( localArgsDecorator.get( 'className', self.inst.__class__ .__name__ )\
+                                    + '.' + localArgsDecorator.get( 'methodName', self.name ) )
+      else :
+        # the decorated function is a function
+        module = sys.modules[self.func.__module__]
+        methodCallDict['name'] = DLMethodName( module.__name__ + '.' + self.func.__name__ )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.getMethodCallArgs %s' % e )
       raise DLException( e )

@@ -19,7 +19,6 @@ userName = None
 hostName = None
 
 Script.registerSwitch( '', 'Full', 'Full print option' )
-Script.registerSwitch( 'f:', 'File=', 'A LFN ' )
 Script.registerSwitch( 'i:', 'ID=', 'ID of sequence ' )
 Script.registerSwitch( 'n:', 'Name=', 'Name of caller ' )
 Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31' )
@@ -32,18 +31,15 @@ Script.registerSwitch( 'e:', 'Extra=', 'A string, see below for more information
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                     'WARNING : the maximum number of sequence to get from database is 500',
                                     'USAGE:',
-                                    ' %s [OPTION|CFGFILE] -l LFN -m NAME' % Script.scriptName,
+                                    ' %s [OPTION|CFGFILE] LFN ' % Script.scriptName,
                                     'ARGUMENTS:',
-                                    'At least one shall be given\nLFN: AN LFN NAME \ID : A sequence ID',
                                     'For extra you have to pass first the name of the argument and after the value',
                                     'You can pass as many duo as you want like this :\n -e "JobID 17 Path /local/foo/bar"' ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
 for switch in Script.getUnprocessedSwitches():
-  if switch[0] == "f" or switch[0].lower() == "file":
-    lfn = switch[1]
-  elif switch[0] == "i" or switch[0].lower() == "id":
+  if switch[0] == "i" or switch[0].lower() == "id":
     IDSeq = switch[1]
   elif switch[0] == "n" or switch[0].lower() == "name":
     callerName = switch[1]
@@ -65,6 +61,9 @@ for switch in Script.getUnprocessedSwitches():
     fullFlag = True
   else :
     extra.append( ( switch[0], switch[1] ) )
+
+args = Script.getPositionalArgs()
+lfn = args[0]
 
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 

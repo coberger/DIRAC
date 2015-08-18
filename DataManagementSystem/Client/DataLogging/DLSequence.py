@@ -92,10 +92,7 @@ class DLSequence( DLSerializable ) :
 
 
   def isCallerSet( self ):
-    if not self.caller :
-      return S_ERROR( "caller not set" )
-
-    return S_OK()
+    return self.caller
 
   def addExtraArg( self, name, value ):
     self.extra[name] = value
