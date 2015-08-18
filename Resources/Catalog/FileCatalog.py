@@ -10,6 +10,7 @@ from DIRAC.Core.Security.ProxyInfo                          import getVOfromProx
 from DIRAC.Resources.Utilities                              import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
 from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import dl_files, dl_srcSE, dl_targetSE
 
 class FileCatalog( object ):
 
@@ -37,38 +38,38 @@ class FileCatalog( object ):
 
   dataLoggingMethodsToLog = {
               'addFile' :
-                {'argsPosition' : ['self', 'files'],
-                 'keysToGet' : { 'PFN':'PFN', 'Size':'Size', 'targetSE':'SE', 'GUID':'GUID', 'Checksum':'Checksum'} },
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', 'Size':'Size', dl_targetSE:'SE', 'GUID':'GUID', 'Checksum':'Checksum'} },
               'setFileStatus' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'valueName' : 'Status'},
               'addReplica' :
-                {'argsPosition' : ['self', 'files'],
-                 'keysToGet' : { 'PFN':'PFN', 'targetSE':'SE'} },
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', dl_targetSE:'SE'} },
               'removeReplica' :
-                {'argsPosition' : ['self', 'files'],
-                 'keysToGet' : { 'PFN':'PFN', 'targetSE':'SE'} },
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', dl_targetSE:'SE'} },
               'removeFile' :
-                {'argsPosition' : ['self', 'files'] },
+                {'argsPosition' : ['self', dl_files] },
               'setReplicaStatus' :
-                {'argsPosition' : ['self', 'files'],
-                 'keysToGet' : { 'PFN':'PFN', 'targetSE':'SE', 'Status':'Status'} },
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', dl_targetSE:'SE', 'Status':'Status'} },
               'setReplicaHost' :
-                {'argsPosition' : ['self', 'files'],
-                 'keysToGet' : { 'PFN':'PFN', 'targetSE':'NewSE', 'srcSE':'SE', 'Status':'Status'} },
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', dl_targetSE:'NewSE', dl_srcSE:'SE', 'Status':'Status'} },
               'setReplicaProblematic' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'specialFunction' : 'setReplicaProblematic' },
               'createDirectory' :
-                {'argsPosition' : ['self', 'files'] },
+                {'argsPosition' : ['self', dl_files] },
               'removeDirectory' :
-                {'argsPosition' : ['self', 'files']},
+                {'argsPosition' : ['self', dl_files]},
               'changePathMode' :
-                {'argsPosition' : ['self', 'files'] },
+                {'argsPosition' : ['self', dl_files] },
               'changePathOwner' :
-                {'argsPosition' : ['self', 'files']},
+                {'argsPosition' : ['self', dl_files]},
               'changePathGroup' :
-                {'argsPosition' : ['self', 'files'] },
+                {'argsPosition' : ['self', dl_files] },
               }
 
 

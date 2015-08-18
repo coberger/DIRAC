@@ -32,6 +32,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import dl_files, dl_srcSE, dl_targetSE, dl_tuple
 
 def _isOlderThan( stringTime, days ):
   timeDelta = timedelta( days = days )
@@ -105,7 +106,7 @@ class DataManager( object ):
     """
     self.accountingClient = client
 
-  def __hasAccess(self, opType, path):
+  def __hasAccess( self, opType, path ):
     """  Check if we have permission to execute given operation on the given file (if exists) or its directory
     """
     if isinstance( path, basestring ):
@@ -129,7 +130,7 @@ class DataManager( object ):
   #
   # These are the bulk removal methods
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'files'] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_files] )
   def cleanLogicalDirectory( self, lfnDir ):
     """ Clean the logical directory from the catalog and storage
     """
@@ -409,7 +410,7 @@ class DataManager( object ):
     sortedSEs += randomize( [se for se in ses if se not in sortedSEs] )
     return S_OK( sortedSEs )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'fileName', 'targetSE', 'guid', 'path', 'checksum'] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_files, 'fileName', dl_targetSE, 'guid', 'path', 'checksum'] )
   def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, checksum = None ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
@@ -541,7 +542,7 @@ class DataManager( object ):
     self.log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
     return S_OK( {'Successful': successful, 'Failed': failed } )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', ( 'srcSE', 'sourceSE' ), 'destPath', 'localCache', 'catalog' ] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_files, dl_targetSE, ( dl_srcSE, 'sourceSE' ), 'destPath', 'localCache', 'catalog' ] )
   def replicateAndRegister( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' , catalog = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 
@@ -591,7 +592,7 @@ class DataManager( object ):
         failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
     return S_OK( {'Successful': successful, 'Failed': failed} )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE', ( 'srcSE', 'sourceSE' ), 'destPath', 'localCache' ] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_files, dl_targetSE, ( dl_srcSE, 'sourceSE' ), 'destPath', 'localCache' ] )
   def replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 
@@ -907,8 +908,8 @@ class DataManager( object ):
   #
   # These are the file catalog write methods
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'Tuple', \
-                         tupleArgsPosition = ['files', 'physicalFile', 'fileSize', 'targetSE', 'fileGuid', 'checksum' ] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_tuple, 'catalog'], getActionArgsFunction = 'Tuple', \
+                         tupleArgsPosition = [dl_files, 'physicalFile', 'fileSize', dl_targetSE, 'fileGuid', 'checksum' ] )
   def registerFile( self, fileTuple, catalog = '' ):
     """ Register a file or a list of files
 
@@ -957,8 +958,8 @@ class DataManager( object ):
 
     return res
 
-  @DataLoggingDecorator( argsPosition = ['self', 'tuple', 'catalog'], getActionArgsFunction = 'Tuple', \
-                         tupleArgsPosition = ['files', 'PFN', 'targetSE' ] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_tuple, 'catalog'], getActionArgsFunction = 'Tuple', \
+                         tupleArgsPosition = [dl_files, 'PFN', dl_targetSE ] )
   def registerReplica( self, replicaTuple, catalog = '' ):
     """ Register a replica (or list of) supplied in the replicaTuples.
 
@@ -1031,7 +1032,7 @@ class DataManager( object ):
   #
   # These are the removal methods for physical and catalogue removal
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'force'] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_files, 'force'] )
   def removeFile( self, lfn, force = None ):
     """ Remove the file (all replicas) from Storage Elements and file catalogue
 
@@ -1138,7 +1139,7 @@ class DataManager( object ):
         successful = res['Value']['Successful']
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'targetSE', 'files'] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_targetSE, dl_files] )
   def removeReplica( self, storageElementName, lfn ):
     """ Remove replica at the supplied Storage Element from Storage Element then file catalogue
 
@@ -1253,7 +1254,7 @@ class DataManager( object ):
       successful = res['Value']['Successful']
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'targetSE', 'files'] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_targetSE, dl_files] )
   def removeReplicaFromCatalog( self, storageElementName, lfn ):
     """ remove :lfn: replica from :storageElementName: SE
 
@@ -1306,8 +1307,8 @@ class DataManager( object ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'tuple'], getActionArgsFunction = 'Tuple', \
-                         tupleArgsPosition = ['files', 'PFN', 'targetSE' ] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_tuple], getActionArgsFunction = 'Tuple', \
+                         tupleArgsPosition = [dl_files, 'PFN', dl_targetSE ] )
   def removeCatalogPhysicalFileNames( self, replicaTuple ):
     """ Remove replicas from the file catalog specified by replica tuple
 
@@ -1480,7 +1481,7 @@ class DataManager( object ):
   #
   # File transfer methods
   #
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'fileName', 'targetSE', 'path'] )
+  @DataLoggingDecorator( argsPosition = ['self', dl_files, 'fileName', dl_targetSE, 'path'] )
   def put( self, lfn, fileName, diracSE, path = None ):
     """ Put a local file to a Storage Element
 
@@ -1728,7 +1729,7 @@ class DataManager( object ):
     return self.__executeIfReplicaExists( storageElementName, lfn,
                                                   "pinFile", lifetime = lifetime )
 
-  @DataLoggingDecorator( argsPosition = ['self', 'files', 'targetSE'])
+  @DataLoggingDecorator( argsPosition = ['self', dl_files, dl_targetSE] )
   def releaseReplica( self, lfn, storageElementName ):
     """ release pins for the lfns at the supplied StorageElement
 

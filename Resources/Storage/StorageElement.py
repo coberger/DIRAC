@@ -17,6 +17,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import dl_files, dl_srcSE, dl_targetSE
 
 class StorageElementCache( object ):
 
@@ -152,26 +153,26 @@ class StorageElementItem( object ):
               'retransferOnlineFile' :
                 {'argsPosition' : ['self', 'link'] },
               'putFile' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'valueName' : 'src_file'},
               'replicateFile' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'valueName' : 'src_file'},
               'pinFile' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'valueName' : 'srmRequestID'},
               'releaseFile' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'valueName' : 'srmRequestID'},
               'createDirectory' :
-                {'argsPosition' : ['self', 'files']},
+                {'argsPosition' : ['self', dl_files]},
               'putDirectory' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'valueName' : 'sourceDir'},
               'removeFile' :
-                {'argsPosition' : ['self', 'files']},
+                {'argsPosition' : ['self', dl_files]},
               'removeDirectory' :
-                {'argsPosition' : ['self', 'files']},
+                {'argsPosition' : ['self', dl_files]},
               }
 
 

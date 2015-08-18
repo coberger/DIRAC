@@ -16,6 +16,7 @@ dl_files = 'files'
 dl_srcSE = 'srcSE'
 dl_targetSE = 'targetSE'
 dl_tuple = 'tuple'
+dl_ignore_argument = 'ignore_argument'
 wantedArgs = [dl_files, dl_srcSE, dl_targetSE ]
 
 def getCallerName( skip = 3 ):
@@ -72,6 +73,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     while i < len( argsPosition ) :
       if i < len( args ):
         argName = argsPosition[i]
+
         if isinstance( argName, tuple ):
           # if argName is a tuple, it's because the argument is named and can be passed in kwargs
           # for example ('srcSE','sourceSE'), the first tuple's element is the name we want to get
@@ -128,7 +130,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
             commonArgs[argName] = args[i]
         else:
           # the argument is not wanted, we save it in extra list
-          if argName is not 'self':
+          if argName is not 'self' and not dl_ignore_argument:
             if args[i]:
               extraList.append( "%s = %s" % ( argName, args[i] ) )
 
@@ -148,10 +150,11 @@ def extractArgs( argsDecorator, *args, **kwargs ):
           # wanted argument
           commonArgs[argName] = kwargs.pop( keyToGet, None )
         else :
-          # not wanted argument, save it in extra list
-          value = kwargs.pop( argName, None )
-          if value :
-            extraList.append( "%s = %s" % ( argName, value ) )
+          if argName is not dl_ignore_argument:
+            # not wanted argument, save it in extra list
+            value = kwargs.pop( argName, None )
+            if value :
+              extraList.append( "%s = %s" % ( argName, value ) )
       i += 1
   except Exception as e:
     gLogger.error( 'unexpected error in DLFucntions.extractArgs %s' % e )
@@ -176,7 +179,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     ret['Value'] = actionArgs
   return ret
 
-def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs):
+def extractArgsSetReplicaProblematic( argsDecorator, *args, **kwargs ):
   """ this is the special function to extract args for the SetReplicaProblematic method from StorageElement
       the structure of args is { 'lfn':{'targetse' : 'PFN',....} , ...}
   """
