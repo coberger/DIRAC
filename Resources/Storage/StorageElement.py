@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
-from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import dl_files, dl_srcSE, dl_targetSE
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import dl_files
 
 class StorageElementCache( object ):
 

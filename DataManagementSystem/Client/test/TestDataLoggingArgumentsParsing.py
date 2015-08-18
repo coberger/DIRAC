@@ -7,7 +7,7 @@ import unittest
 
 from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import extractArgs, extractArgsExecuteFC, \
                     extractArgsExecuteSE, extractArgsTuple
-
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import dl_files, dl_srcSE, dl_targetSE
 
 """
 this is what we need to test if the system parses correctly arguments from a method call
@@ -20,14 +20,14 @@ there is 5 different case :
   ExecuteSE is when the call is about a method from StorageElement
 """
 argsDictDefault = {}
-argsDictDefault['argsPosition'] = [ 'files', 'localPath', ('targetSE', 'dstSE') ]
+argsDictDefault['argsPosition'] = [ dl_files, 'localPath', ( dl_targetSE, 'dstSE' ) ]
 argumentsDefault = ( ['/lhcb/sub/file1.data', '/lhcb/sub/file2.data', '/lhcb/sub/file3.data'], '/local/path/', 'destSE' )
 argumentsDefaultWhenOptionnal = ( ['/lhcb/sub/file1.data', '/lhcb/sub/file2.data', '/lhcb/sub/file3.data'], )
 argumentsDefaultoptionnal = {'localPath' :'/local/path/', 'dstSE':'destSE'}
 
 argsDictTuple = {}
 argsDictTuple['argsPosition'] = ( ['tuple' ] )
-argsDictTuple['tupleArgsPosition'] = ['files', 'physicalFile', 'fileSize', 'targetSE', 'fileGuid', 'checksum' ]
+argsDictTuple['tupleArgsPosition'] = [dl_files, 'physicalFile', 'fileSize', dl_targetSE, 'fileGuid', 'checksum' ]
 argumentsTuple = [( ( '/lhcb/sub/file1.data', '/local/file1.data', 150, 'destinationSE', 40, 108524789 ),
                  ( '/lhcb/sub/file2.data', '/local/file2.data', 7855, 'TargetSE', 14, 155 ) )]
 
@@ -40,8 +40,8 @@ argumentsExecuteFC = ( 'self', lfnsFC )
 argsDictExecuteFC['methodName'] = 'addFile'
 argsDictExecuteFC['methods_to_log'] = {
               'addFile' :
-                {'argsPosition' : ['self', 'files'],
-                 'keysToGet' : { 'PFN':'PFN', 'Size':'Size', 'targetSE':'SE', 'GUID':'GUID', 'Checksum':'Checksum'} }
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', 'Size':'Size', dl_targetSE:'SE', 'GUID':'GUID', 'Checksum':'Checksum'} }
               }
 
 argsDictSetReplicaProblematic = {}
@@ -52,7 +52,7 @@ argumentsSetReplicaProblematic = ( 'self', lfnsSetReplicaProblematic )
 argsDictSetReplicaProblematic['methodName'] = 'setReplicaProblematic'
 argsDictSetReplicaProblematic['methods_to_log'] = {
               'setReplicaProblematic' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'specialFunction' : 'setReplicaProblematic' }
               }
 
@@ -61,10 +61,10 @@ argsDictExecuteSE = {}
 lfnsSE = {'/lhcb/sub/file1.data':'src_file1', '/lhcb/sub/file2.data':'src_file2', '/lhcb/sub/file3.data':'src_file3' }
 argumentsExecuteSE = ( 'self', lfnsSE )
 argsDictExecuteSE['methodName'] = 'putFile'
-argsDictExecuteSE['targetSE'] = 'targetSE1'
+argsDictExecuteSE[dl_targetSE] = 'targetSE1'
 argsDictExecuteSE['methods_to_log'] = {
               'putFile' :
-                {'argsPosition' : ['self', 'files'],
+                {'argsPosition' : ['self', dl_files],
                  'valueName' : 'src_file'},
               }
 

@@ -73,7 +73,6 @@ def extractArgs( argsDecorator, *args, **kwargs ):
     while i < len( argsPosition ) :
       if i < len( args ):
         argName = argsPosition[i]
-
         if isinstance( argName, tuple ):
           # if argName is a tuple, it's because the argument is named and can be passed in kwargs
           # for example ('srcSE','sourceSE'), the first tuple's element is the name we want to get
@@ -130,7 +129,7 @@ def extractArgs( argsDecorator, *args, **kwargs ):
             commonArgs[argName] = args[i]
         else:
           # the argument is not wanted, we save it in extra list
-          if argName is not 'self' and not dl_ignore_argument:
+          if argName is not 'self' and argName is not dl_ignore_argument:
             if args[i]:
               extraList.append( "%s = %s" % ( argName, args[i] ) )
 
