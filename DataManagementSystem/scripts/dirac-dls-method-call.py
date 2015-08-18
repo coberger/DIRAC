@@ -40,7 +40,8 @@ for switch in Script.getUnprocessedSwitches():
     fullFlag = True
 
 args = Script.getPositionalArgs()
-lfn = args[0]
+if args :
+  lfn = args[0]
 
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 

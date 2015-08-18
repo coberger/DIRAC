@@ -63,7 +63,8 @@ for switch in Script.getUnprocessedSwitches():
     extra.append( ( switch[0], switch[1] ) )
 
 args = Script.getPositionalArgs()
-lfn = args[0]
+if args :
+  lfn = args[0]
 
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
