@@ -113,9 +113,9 @@ dataLoggingActionTable = Table( 'DLAction', metadata,
 # Map the DLAction object to the dataLoggingActionTable, with two foreign key constraints,
 # and one relationship between attribute file and table DLFile
 mapper( DLAction, dataLoggingActionTable,
-        properties = { 'file' : relationship( DLFile ,lazy='joined'),
-                      'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.srcSEID,lazy='joined' ),
-                      'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.targetSEID,lazy='joined' )} )
+        properties = { 'file' : relationship( DLFile , lazy = 'joined' ),
+                      'srcSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.srcSEID, lazy = 'joined' ),
+                      'targetSE' : relationship( DLStorageElement, foreign_keys = dataLoggingActionTable.c.targetSEID, lazy = 'joined' )} )
 
 # Description of the DLSequence table
 dataLoggingSequenceTable = Table( 'DLSequence', metadata,
@@ -128,12 +128,12 @@ dataLoggingSequenceTable = Table( 'DLSequence', metadata,
 # Map the DLSequence object to the dataLoggingSequenceTable with one relationship between attribute methodCalls and table DLMethodCall
 # an other relationship between attribute attributesValues and table DLSequenceAttributeValue
 # and one foreign key for attribute caller
-mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DLMethodCall, lazy='joined' ),
-                                                             'caller' : relationship( DLCaller, lazy='joined' ),
-                                                             'group' : relationship( DLGroup, lazy='joined' ),
-                                                             'userName' : relationship( DLUserName, lazy='joined' ),
-                                                             'hostName' : relationship( DLHostName, lazy='joined' ),
-                                                             'attributesValues': relationship( DLSequenceAttributeValue, lazy='joined' ) } )
+mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : relationship( DLMethodCall, lazy = 'joined' ),
+                                                             'caller' : relationship( DLCaller, lazy = 'joined' ),
+                                                             'group' : relationship( DLGroup, lazy = 'joined' ),
+                                                             'userName' : relationship( DLUserName, lazy = 'joined' ),
+                                                             'hostName' : relationship( DLHostName, lazy = 'joined' ),
+                                                             'attributesValues': relationship( DLSequenceAttributeValue, lazy = 'joined' ) } )
 
 # Description of the DLMethodCall table
 dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
@@ -147,9 +147,9 @@ dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
 # Map the DLMethodCall object to the dataLoggingMethodCallTable with one relationship between attribute children and table DLMethodCall
 # one foreign key for attribute name on table DLMethodName
 # and an other relationship between attribute actions and table DLAction
-mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : relationship( DLMethodCall, lazy='joined', join_depth=2 ),
-                                                                    'name': relationship( DLMethodName, lazy='joined' ),
-                                                                    'actions': relationship( DLAction, lazy='joined' ) } )
+mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : relationship( DLMethodCall, lazy = 'joined', join_depth = 2 ),
+                                                                    'name': relationship( DLMethodName, lazy = 'joined' ),
+                                                                    'actions': relationship( DLAction, lazy = 'joined' ) } )
 # Description of the DLSequenceAttribute table
 dataLoggingSequenceAttribute = Table( 'DLSequenceAttribute', metadata,
                    Column( 'sequenceAttributeID', Integer, primary_key = True ),
@@ -167,8 +167,8 @@ dataLoggingSequenceAttributeValue = Table( 'DLSequenceAttributeValue', metadata,
 # Map the DLSequenceAttributeValue object to the dataLoggingSequenceAttributeValue
 # two foreign key on tables DLSequence and DLSequenceAttribute
 mapper( DLSequenceAttributeValue, dataLoggingSequenceAttributeValue,
-                      properties = { 'sequence' : relationship( DLSequence, lazy='joined' ),
-                                     'sequenceAttribute' : relationship( DLSequenceAttribute, lazy='joined' ) } )
+                      properties = { 'sequence' : relationship( DLSequence, lazy = 'joined' ),
+                                     'sequenceAttribute' : relationship( DLSequenceAttribute, lazy = 'joined' ) } )
 
 class DataLoggingDB( object ):
 
@@ -403,7 +403,7 @@ class DataLoggingDB( object ):
     gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( endMove - beginMove ) ) )
     return S_OK()
 
-  def moveSequencesOneByOne(self, session, sequences):
+  def moveSequencesOneByOne( self, session, sequences ):
     """
       move DLCompressedSequence in DLSequence
       sequences is a list of DLSequence
@@ -461,7 +461,7 @@ class DataLoggingDB( object ):
     return S_OK()
 
 
-  def insertSequenceDirectly(self, sequence):
+  def insertSequenceDirectly( self, sequence ):
     """
       this method insert a sequence JSON compressed directly into database, as a DLSequence and not as a DLCompressedSequence
 
@@ -666,7 +666,7 @@ class DataLoggingDB( object ):
 
       :return seqs: a list of DLSequence
     """
-    targetSE_alias = aliased(DLStorageElement)
+    targetSE_alias = aliased( DLStorageElement )
     session = self.DBSession()
     query = session.query( DLSequence )\
               .outerjoin( DLCaller )\
@@ -678,8 +678,9 @@ class DataLoggingDB( object ):
               .outerjoin( DLAction )\
               .outerjoin( DLFile )\
               .outerjoin( DLAction.srcSE )\
-              .outerjoin( targetSE_alias, DLAction.targetSE )
-              
+              .outerjoin( targetSE_alias, DLAction.targetSE )\
+              .order_by( DLMethodCall.creationTime )
+
     if lfn :
       query = query.filter( DLFile.name == lfn )
     if callerName :
@@ -734,7 +735,7 @@ class DataLoggingDB( object ):
 
       :return seqs: a list with one DLSequence
     """
-    targetSE_alias = aliased(DLStorageElement)
+    targetSE_alias = aliased( DLStorageElement )
     session = self.DBSession()
     query = session.query( DLSequence )\
               .outerjoin( DLCaller )\
@@ -745,8 +746,8 @@ class DataLoggingDB( object ):
               .outerjoin( DLMethodName )\
               .outerjoin( DLAction )\
               .outerjoin( DLFile )\
-              .outerjoin( DLAction.srcSE)\
-              .outerjoin(targetSE_alias,  DLAction.targetSE)
+              .outerjoin( DLAction.srcSE )\
+              .outerjoin( targetSE_alias, DLAction.targetSE )
     try:
       seqs = query.filter( DLSequence.sequenceID == IDSeq ).all()
       if seqs :
@@ -776,16 +777,16 @@ class DataLoggingDB( object ):
 
       :return calls: a list of DLMethodCall
     """
-    targetSE_alias = aliased(DLStorageElement)
+    targetSE_alias = aliased( DLStorageElement )
     session = self.DBSession()
     query = session.query( DLMethodCall )\
                 .outerjoin( DLMethodName )\
                 .outerjoin( DLAction )\
                 .outerjoin( DLFile )\
-                .outerjoin( DLAction.srcSE)\
-                .outerjoin(targetSE_alias,  DLAction.targetSE)\
+                .outerjoin( DLAction.srcSE )\
+                .outerjoin( targetSE_alias, DLAction.targetSE )\
                 .filter( DLFile.name == lfn )\
-                .order_by( DLMethodCall.sequenceID ).order_by( DLMethodCall.creationTime )
+                .order_by( DLMethodCall.creationTime )
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
     elif before :
@@ -819,16 +820,16 @@ class DataLoggingDB( object ):
 
       :return calls: a list of DLMethodCall
     """
-    targetSE_alias = aliased(DLStorageElement)
+    targetSE_alias = aliased( DLStorageElement )
     session = self.DBSession()
     query = session.query( DLMethodCall )\
                 .outerjoin( DLMethodName )\
                 .outerjoin( DLAction )\
                 .outerjoin( DLFile )\
-                .outerjoin( DLAction.srcSE)\
-                .outerjoin(targetSE_alias,  DLAction.targetSE)\
+                .outerjoin( DLAction.srcSE )\
+                .outerjoin( targetSE_alias, DLAction.targetSE )\
                 .filter( DLMethodName.name == name )\
-                .order_by( DLMethodCall.sequenceID )
+                .order_by( DLMethodCall.creationTime )
 
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
