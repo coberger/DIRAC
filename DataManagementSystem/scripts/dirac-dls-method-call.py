@@ -125,10 +125,9 @@ else :
         for call in res['Value'] :
           print printMethodCallLFN( call, lfn, fullFlag, status )
     else :
-      print res['Message']
+      print 'error %s' % res['Message']
   elif name :
     res = dlc.getMethodCallByName( name, before, after, status )
-    print res
     if res['OK']:
       if not res['Value'] :
         print 'no methodCall to print'
@@ -137,5 +136,5 @@ else :
         for call in res['Value'] :
           print printMethodCall( call, fullFlag, status )
     else :
-      print res['Message']
+      print 'error %s' % res['Message']
 
