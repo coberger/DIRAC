@@ -12,6 +12,7 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.DataManagementSystem.private.DLEncoder import DLEncoder
 
 class DLSerializable( object ):
+  _datetimeFormat = '%Y-%m-%d %H:%M:%S'
   def __init__( self ):
     pass
 

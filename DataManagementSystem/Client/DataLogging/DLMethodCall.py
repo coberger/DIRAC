@@ -14,7 +14,6 @@ class DLMethodCall( DLSerializable ):
   """
 
   attrNames = ['methodCallID', 'creationTime', 'name', 'caller', 'parentID', 'sequenceID', 'rank', 'children', 'actions']
-  _datetimeFormat = '%Y-%m-%d %H:%M:%S'
 
   def __init__( self, fromDict = None ):
     """
