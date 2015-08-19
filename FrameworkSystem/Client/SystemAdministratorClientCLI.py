@@ -24,6 +24,7 @@ from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import gConfig
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
   """
@@ -135,6 +136,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           show log  <system> <service|agent> [nlines]
                              - show last <nlines> lines in the component log file
           show info          - show version of software and setup
+          show doc <type> <system> <name>
+                             - show documentation for a given service or agent
           show host          - show host related parameters
           show hosts         - show all available hosts
           show installations [ list | current | -n <Name> | -h <Host> | -s <System> | -m <Module> | -t <Type> | -itb <InstallationTime before>
@@ -298,6 +301,22 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       self.getErrors( argss )
     elif option == "installations":
       self.getInstallations( argss )
+    elif option == "doc":
+      if len( argss ) > 2:
+        if argss[0] in [ 'service', 'agent' ]:
+          compType = argss[0]
+          compSystem = argss[1]
+          compModule = argss[2]
+          client = SystemAdministratorClient( self.host, self.port )
+          result = client.getComponentDocumentation( compType, compSystem, compModule )
+          if result[ 'OK' ]:
+            gLogger.notice( result[ 'Value' ] )
+          else:
+            self.__errMsg( result[ 'Message' ] )
+        else:
+          gLogger.notice( self.do_show.__doc__ )
+      else:
+        gLogger.notice( self.do_show.__doc__ )
     else:
       gLogger.notice( "Unknown option:", option )
 
@@ -395,14 +414,26 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         gLogger.notice( '' )
         gLogger.notice( ' ' + 'Num'.center( 5 ) + ' ' \
                         + 'Host'.center( 20 ) + ' ' \
-                        + 'Name'.center( 24 ) + ' ' \
-                        + 'Module'.center( 24 ) + ' ' \
-                        + 'System'.center( 20 ) + ' ' \
+                        + 'Name'.center( 20 ) + ' ' \
+                        + 'Module'.center( 20 ) + ' ' \
+                        + 'System'.center( 16 ) + ' ' \
                         + 'Type'.center( 12 ) + ' ' \
                         + 'Installed on'.center( 18 ) + ' ' \
-                        + 'Uninstalled on'.center( 18 ) + ' ' )
-        gLogger.notice( ( '-' ) * 150 )
+                        + 'Install by'.center( 12 ) + ' ' \
+                        + 'Uninstalled on'.center( 18 ) + ' ' \
+                        + 'Uninstall by'.center( 12 ) )
+        gLogger.notice( ( '-' ) * 164 )
       for i, installation in enumerate( installations ):
+        if not installation[ 'InstalledBy' ]:
+          installedBy = ''
+        else:
+          installedBy = installation[ 'InstalledBy' ]
+
+        if not installation[ 'UnInstalledBy' ]:
+          uninstalledBy = ''
+        else:
+          uninstalledBy = installation[ 'UnInstalledBy' ]
+
         if installation[ 'UnInstallationTime' ]:
           uninstalledOn = installation[ 'UnInstallationTime' ].strftime( "%d-%m-%Y %H:%M" )
           isInstalled = 'No'
@@ -413,13 +444,15 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         if display == 'table':
           gLogger.notice( '|' + str( i + 1 ).center( 5 ) + '|' \
                           + installation[ 'Host' ][ 'HostName' ].center( 20 ) + '|' \
-                          + installation[ 'Instance' ].center( 24 ) + '|' \
-                          + installation[ 'Component' ][ 'Module' ].center( 24 ) + '|' \
-                          + installation[ 'Component' ][ 'System' ].center( 20 ) + '|' \
+                          + installation[ 'Instance' ].center( 20 ) + '|' \
+                          + installation[ 'Component' ][ 'Module' ].center( 20 ) + '|' \
+                          + installation[ 'Component' ][ 'System' ].center( 16 ) + '|' \
                           + installation[ 'Component' ][ 'Type' ].center( 12 ) + '|' \
                           + installation[ 'InstallationTime' ].strftime( "%d-%m-%Y %H:%M" ).center( 18 ) + '|' \
-                          + uninstalledOn.center( 18 ) + '|' )
-          gLogger.notice( ( '-' ) * 150 )
+                          + installedBy.center( 12 ) + '|' \
+                          + uninstalledOn.center( 18 ) + '|' \
+                          + uninstalledBy.center( 12 ) + '|' )
+          gLogger.notice( ( '-' ) * 164 )
         elif display == 'list':
           gLogger.notice( '' )
           gLogger.notice( 'Installation: '.rjust( 20 ) + str ( i + 1 ) )
@@ -430,8 +463,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           gLogger.notice( 'System: '.rjust( 20 ) + installation[ 'Component' ][ 'System' ] )
           gLogger.notice( 'Type: '.rjust( 20 ) + installation[ 'Component' ][ 'Type' ] )
           gLogger.notice( 'Installed on: '.rjust( 20 ) + installation[ 'InstallationTime' ].strftime( "%d-%m-%Y %H:%M" ) )
+          if installedBy != '':
+            gLogger.notice( 'Installed by: '.rjust( 20 ) + installedBy )
           if uninstalledOn != '':
             gLogger.notice( 'Uninstalled on: '.rjust( 20 ) + uninstalledOn )
+            gLogger.notice( 'Uninstalled by: '.rjust( 20 ) + uninstalledBy )
         else:
           self.__errMsg( 'No display mode was selected' )
       gLogger.notice( '' )
@@ -476,6 +512,12 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if not argss:
       gLogger.notice( self.do_install.__doc__ )
       return
+
+    # Retrieve user installing the component
+    result = getProxyInfo()
+    if not result[ 'OK' ]:
+      self.__errMsg( result[ 'Message'] )
+    user = result[ 'Value' ][ 'username' ]
 
     option = argss[0]
     del argss[0]
@@ -642,7 +684,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if not argss:
       gLogger.notice( self.do_uninstall.__doc__ )
       return
-    
+
+    # Retrieve user uninstalling the component
+    result = getProxyInfo()
+    if not result[ 'OK' ]:
+      self.__errMsg( result[ 'Message'] )
+    user = result[ 'Value' ][ 'username' ]
+
     option = argss[0]
     if option == 'db':
       component = argss[1]

@@ -318,10 +318,20 @@ class CommandBase( object ):
 
       # return code
       returnCode = _p.wait()
+      self.log.debug( "Return code of %s: %d" % ( cmd, returnCode ) )
 
       return (returnCode, outData)
     except ImportError:
       self.log.error( "Error importing subprocess" )
+
+  def exitWithError( self, errorCode ):
+    """ Wrapper around sys.exit()
+    """
+    self.log.info( "List of child processes of current PID:" )
+    retCode, _outData = self.executeAndGetOutput( "ps --forest -o pid,%%cpu,%%mem,tty,stat,time,cmd -g %d" % os.getpid() )
+    if retCode:
+      self.log.error( "Failed to issue ps [ERROR %d] " % retCode )
+    sys.exit( errorCode )
 
 class PilotParams( object ):
   """ Class that holds the structure with all the parameters to be used across all the commands
@@ -373,7 +383,7 @@ class PilotParams( object ):
     self.diracInstalled = False
     self.diracExtensions = []
     # Some commands can define environment necessary to execute subsequent commands
-    self.installEnv = None
+    self.installEnv = os.environ
     # If DIRAC is preinstalled this file will receive the updates of the local configuration
     self.localConfigFile = ''
     self.executeCmd = False

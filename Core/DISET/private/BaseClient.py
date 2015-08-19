@@ -57,7 +57,7 @@ class BaseClient:
       if not result[ 'OK' ] and self.__initStatus[ 'OK' ]:
         self.__initStatus = result
     self._initialize()
-    #HACK for thread-safety:
+    # HACK for thread-safety:
     self.__allowedThreadID = False
 
 
@@ -71,7 +71,7 @@ class BaseClient:
     return self._serviceName
 
   def __discoverSetup( self ):
-    #Which setup to use?
+    # Which setup to use?
     if self.KW_SETUP in self.kwargs and self.kwargs[ self.KW_SETUP ]:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
     else:
@@ -81,7 +81,7 @@ class BaseClient:
     return S_OK()
 
   def __discoverVO( self ):
-    #Which setup to use?
+    # Which setup to use?
     if self.KW_VO in self.kwargs and self.kwargs[ self.KW_VO ]:
       self.vo = str( self.kwargs[ self.KW_VO ] )
     else:
@@ -89,7 +89,7 @@ class BaseClient:
     return S_OK()
 
   def __discoverURL( self ):
-    #Calculate final URL
+    # Calculate final URL
     try:
       result = self.__findServiceURL()
     except Exception, e:
@@ -123,7 +123,7 @@ class BaseClient:
     return S_OK()
 
   def __discoverCredentialsToUse( self ):
-    #Use certificates?
+    # Use certificates?
     if self.KW_USE_CERTIFICATES in self.kwargs:
       self.useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
     else:
@@ -143,14 +143,14 @@ class BaseClient:
     return S_OK()
 
   def __discoverExtraCredentials( self ):
-    #Wich extra credentials to use?
+    # Wich extra credentials to use?
     if self.useCertificates:
       self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
     else:
       self.__extraCredentials = ""
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
-    #Are we delegating something?
+    # Are we delegating something?
     delegatedDN, delegatedGroup = self.__threadConfig.getID()
     if self.KW_DELEGATED_DN in self.kwargs and self.kwargs[ self.KW_DELEGATED_DN ]:
       delegatedDN = self.kwargs[ self.KW_DELEGATED_DN ]
@@ -236,7 +236,7 @@ and this is thread %s
                                                                          self.__allowedThreadID,
                                                                          cThID )
       gLogger.error( "DISET client thread safety error", msgTxt )
-      #raise Exception( msgTxt )
+      # raise Exception( msgTxt )
 
 
   def _connect( self ):
@@ -253,7 +253,7 @@ and this is thread %s
         if self.__retry < 5:
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
           if url not in self.__bannedUrls:
-            gLogger.info( "URL banned", "%s" % url )
+            gLogger.notice( "URL banned", "%s" % url )
             self.__bannedUrls += [url]
           self.__retry += 1
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
@@ -280,7 +280,7 @@ and this is thread %s
     if not retVal[ 'OK' ]:
       return retVal
     serverReturn = transport.receiveData()
-    #TODO: Check if delegation is required
+    # TODO: Check if delegation is required
     if serverReturn[ 'OK' ] and 'Value' in serverReturn and type( serverReturn[ 'Value' ] ) == types.DictType:
       gLogger.debug( "There is a server requirement" )
       serverRequirements = serverReturn[ 'Value' ]
@@ -323,14 +323,14 @@ and this is thread %s
 
   def _getBaseStub( self ):
     newKwargs = dict( self.kwargs )
-    #Set DN
+    # Set DN
     tDN, tGroup = self.__threadConfig.getID()
     if not self.KW_DELEGATED_DN in newKwargs:
       if tDN:
         newKwargs[ self.KW_DELEGATED_DN ] = tDN
       elif 'DN' in self.__idDict:
         newKwargs[ self.KW_DELEGATED_DN ] = self.__idDict[ 'DN' ]
-    #Discover group
+    # Discover group
     if not self.KW_DELEGATED_GROUP in newKwargs:
       if 'group' in self.__idDict:
         newKwargs[ self.KW_DELEGATED_GROUP ] = self.__idDict[ 'group' ]
