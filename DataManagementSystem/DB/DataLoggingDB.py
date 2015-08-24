@@ -6,6 +6,7 @@ Created on May 4, 2015
 import zlib
 import json
 from datetime import datetime, timedelta
+import time
 # from DIRAC
 from DIRAC import S_OK, gLogger, S_ERROR
 
