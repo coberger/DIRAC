@@ -24,4 +24,3 @@ class DataLoggingAgent( AgentModule ):
     if not res['OK']:
       gLogger.error( 'DataLoggingAgent, error %s' % res['Message'] )
     return S_OK()
-
