@@ -190,14 +190,14 @@ class DataLoggingDB( object ):
     self.dbName = dbParameters[ 'DBName' ]
 
 
-  def __init__( self ):
+  def __init__( self, f1, f2 ):
     """
       init method
 
       :param self: self reference
     """
-    self.f1 = open( '/tmp/insertionTime.txt', 'a' )
-    self.f2 = open( '/tmp/betweenTime.txt', 'a' )
+    self.insert = open( f1, 'a' )
+    self.bet = open( f2, 'a' )
 
     self.log = gLogger.getSubLogger( 'DataLoggingDB' )
     # Initialize the connection info
@@ -323,7 +323,7 @@ class DataLoggingDB( object ):
       if rows:
         # if we have found some
         for sequenceCompressed in rows :
-
+          begin = time.mktime( sequenceCompressed.lastUpdate.timetuple() ) + sequenceCompressed.lastUpdate.microsecond / 1E6
           sequenceJSON = zlib.decompress( sequenceCompressed.value )
           # decode of the JSON
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
@@ -332,14 +332,18 @@ class DataLoggingDB( object ):
           # status update to Ongoing for each DLCompressedSequence
           sequenceCompressed.status = 'Ongoing'
           # we update the lastUpdate value
+          end = time.time()
           sequenceCompressed.lastUpdate = datetime.now()
+          self.bet.write( '%s\t%s\t%s\n' % ( begin, end, end - begin ) )
           session.merge( sequenceCompressed )
         session.commit()
 
+        begin = time.time()
         self.getOrCreateMultiple( session, sequences.values() )
-
+        time_goc = time.time() - begin
         # we run through items of sequences dictionary
         for sequenceCompressed, sequence in sequences.items() :
+          begin = time.time()
           # we set the different attributes with the object get from Data Base
           if sequence.caller:
             sequence.caller = self.dictCaller[sequence.caller.name]
@@ -375,12 +379,14 @@ class DataLoggingDB( object ):
             # update of status and lastUpdate
             sequenceCompressed.lastUpdate = datetime.now()
             sequenceCompressed.status = 'Done'
+            end = time.time()
+            self.insert.write( '%s\t%s\t%s\n' % ( begin, end, end - begin + ( time_goc / len( sequences ) ) ) )
             session.merge( sequenceCompressed )
           except Exception, e:
             gLogger.error( "moveSequences: unexpected exception %s" % e )
             session.rollback()
             # if there is an error we try to insert sequence one by one
-            res = self.moveSequencesOneByOne( session, sequences )
+            res = self.moveSequencesOneByOne( session, sequences, time_goc )
             if not res['OK']:
               return res
         session.commit()
@@ -403,7 +409,7 @@ class DataLoggingDB( object ):
     gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( endMove - beginMove ) ) )
     return S_OK()
 
-  def moveSequencesOneByOne( self, session, sequences ):
+  def moveSequencesOneByOne( self, session, sequences, time_goc ):
     """
       move DLCompressedSequence in DLSequence
       sequences is a list of DLSequence
@@ -416,6 +422,7 @@ class DataLoggingDB( object ):
 
     """
     for sequenceCompressed, sequence in sequences.items() :
+      begin = time.time()
 
       if sequence.caller:
         sequence.caller = self.dictCaller[sequence.caller.name]
@@ -450,6 +457,8 @@ class DataLoggingDB( object ):
         sequenceCompressed.lastUpdate = datetime.now()
         sequenceCompressed.status = 'Done'
         session.merge( sequenceCompressed )
+        end = time.time()
+        self.insert.write( '%s\t%s\t%s\n' % ( begin, end, end - begin + ( time_goc / len( sequences ) ) ) )
         session.commit()
       except Exception, e:
         gLogger.error( "moveSequencesOneByOne: unexpected exception %s" % e )

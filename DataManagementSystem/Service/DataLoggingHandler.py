@@ -31,9 +31,10 @@ class DataLoggingHandler( RequestHandler ):
     cls.moveSequencesPeriod = gConfig.getValue( '%s/MoveSequencesPeriod' % csSection, 10 )
     # period between each call of cleanExpiredCompressedSequence method, in second
     cls.cleanExpiredPeriod = gConfig.getValue( '%s/CleanExpiredPeriod' % csSection, 3600 )
-
+    file1 = gConfig.getValue( '%s/File1' % serviceInfoDict['serviceSectionPath'], None )
+    file2 = gConfig.getValue( '%s/File2' % serviceInfoDict['serviceSectionPath'], None )
     try:
-      cls.__dataLoggingDB = DataLoggingDB()
+      cls.__dataLoggingDB = DataLoggingDB( file1, file2 )
       cls.__dataLoggingDB.createTables()
     except RuntimeError, error:
       gLogger.exception( error )
