@@ -292,7 +292,7 @@ class DataLoggingDB( object ):
     return S_OK()
 
 
-  def moveSequences( self , maxSequenceToMove = 100 ):
+  def moveSequences( self , maxSequenceToMove = 100, deleteCompressedSequences = True ):
     """
       move DLCompressedSequence in DLSequence
       selection of a number of maxSequence DLCompressedSequence in DB
@@ -377,12 +377,14 @@ class DataLoggingDB( object ):
             ret = self.__putSequence( session, sequence )
             if not ret['OK']:
               return S_ERROR( ret['Value'] )
-            # update of status and lastUpdate
-            sequenceCompressed.lastUpdate = datetime.now()
-            sequenceCompressed.status = 'Done'
-            end = time.time()
+            if deleteCompressedSequences:
+              # remove the compressed sequence, the insertion is ok
+              session.delete( sequenceCompressed )
+            else :
+              sequenceCompressed.lastUpdate = datetime.now()
+              sequenceCompressed.status = 'Done'
+              session.merge( sequenceCompressed )
             self.insert.write( '%s\t%s\t%s\n' % ( begin, end, end - begin + ( time_goc / len( sequences ) ) ) )
-            session.merge( sequenceCompressed )
           except Exception, e:
             gLogger.error( "moveSequences: unexpected exception %s" % e )
             session.rollback()
